@@ -1,0 +1,7 @@
+../coverage/
+../dist/
+../node_modules/
+../pnpm-lock.yaml
+../src/routeTree.gen.ts
+../cypress/screenshots/
+../cypress/videos/
