@@ -21,7 +21,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
-    setupFiles: ["./src/test/setup.ts"],
+    setupFiles: ["./tests/setup.ts"],
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
@@ -31,7 +31,7 @@ export default defineConfig({
         "src/routeTree.gen.ts",
         "src/router.tsx",
         "src/routes/**",
-        "src/test/**",
+        "tests/**",
         "src/vite-env.d.ts",
       ],
       thresholds: {
