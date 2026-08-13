@@ -65,7 +65,7 @@ The repository intentionally avoids speculative domain folders. Its current stru
 .
 ├── .github/              # CI, Dependabot, CODEOWNERS, and PR guidance
 ├── .husky/               # Local pre-commit, commit-msg, and pre-push hooks
-├── config/               # Cypress, ESLint, Prettier, commitlint, and lint-staged
+├── config/               # ESLint, Prettier, commitlint, and lint-staged
 ├── cypress/              # Browser smoke and accessibility tests
 ├── docs/                 # Architecture, ADRs, and engineering policies
 ├── src/
@@ -78,6 +78,7 @@ The repository intentionally avoids speculative domain folders. Its current stru
 │   ├── router.tsx        # Router instance and type registration
 │   └── styles.css        # Tailwind entry point and neutral UI variables
 ├── components.json       # shadcn/ui CLI configuration
+├── cypress.config.ts     # Cypress config; its location defines the project root
 ├── vite.config.ts        # Vite, routing, Tailwind, and Vitest configuration
 └── tsconfig*.json        # TypeScript project boundaries
 ```
