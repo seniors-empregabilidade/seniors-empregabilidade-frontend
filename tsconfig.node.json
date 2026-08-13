@@ -20,5 +20,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["vite.config.ts", "cypress.config.ts", "eslint.config.js"]
+  "include": ["vite.config.ts", "cypress.config.ts", "config/eslint.config.js"]
 }

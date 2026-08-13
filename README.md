@@ -61,6 +61,7 @@ Git hooks run staged formatting/linting and a full type check before commits, va
 
 The repository intentionally avoids speculative domain folders. Current files are organized only by technical responsibility:
 
+- `config`: shared ESLint, Prettier, commitlint, and lint-staged configuration
 - `src/routes`: TanStack Router declarations
 - `src/components/ui`: source-owned shadcn/ui components
 - `src/config`: validated runtime configuration

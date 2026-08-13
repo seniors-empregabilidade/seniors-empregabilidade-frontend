@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import js from "@eslint/js";
 import query from "@tanstack/eslint-plugin-query";
 import router from "@tanstack/eslint-plugin-router";
@@ -7,6 +9,8 @@ import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import globals from "globals";
 import tseslint from "typescript-eslint";
+
+const projectRoot = path.resolve(import.meta.dirname, "..");
 
 export default tseslint.config(
   {
@@ -31,7 +35,7 @@ export default tseslint.config(
       },
       parserOptions: {
         projectService: true,
-        tsconfigRootDir: import.meta.dirname,
+        tsconfigRootDir: projectRoot,
       },
     },
   },
