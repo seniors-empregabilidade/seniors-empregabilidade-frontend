@@ -1,113 +1,113 @@
 # Seniors – Empregabilidade Frontend
 
-Frontend web do projeto Seniors – Empregabilidade, desenvolvido pela equipe da AGES. A interface do produto é escrita em português brasileiro; o código-fonte, os identificadores e os arquivos de configuração permanecem em inglês.
+Interface web do projeto Seniors – Empregabilidade, desenvolvida pela equipe da AGES. O frontend roda no navegador; o Vite fornece o servidor local usado durante o desenvolvimento.
 
-Este repositório contém somente a base técnica inicial. Entidades, funcionalidades de negócio, autenticação e identidade visual serão adicionadas depois que seus requisitos forem confirmados.
+## O que já está implementado
 
-## Tecnologias
+O repositório contém a base técnica em React 19 e TypeScript 6: navegação, cliente HTTP, tratamento de erros, estilos iniciais e testes automatizados. É uma aplicação de página única: a navegação acontece no navegador sem recarregar a página inteira.
 
-- React 19 e TypeScript 6
-- Vite 8, renderizado no cliente como uma aplicação de página única (SPA)
-- TanStack Router com rotas baseadas em arquivos
-- TanStack Query com cache padrão somente em memória
-- shadcn/ui, Tailwind CSS 4 e Base UI
-- Axios, React Hook Form e Zod
-- Vitest, React Testing Library e Cypress
-- ESLint, Prettier, Husky, lint-staged e commitlint
+Ainda não há funcionalidades de negócio, autenticação, entidades do produto nem um sistema visual definitivo. A acessibilidade é um requisito: novas telas devem funcionar com teclado, foco visível, contraste adequado e nomes compreensíveis por tecnologias assistivas.
 
 ## Pré-requisitos
 
-- Node.js 24 LTS
-- pnpm 11.16.0 por meio do Corepack
-- Google Chrome ou Chromium para os testes de ponta a ponta
-- Backend disponível na URL configurada em `VITE_API_URL`
+- [Git](https://git-scm.com/downloads), para baixar e versionar o projeto;
+- [Node.js 24 LTS](https://nodejs.org/en/download), que executa as ferramentas JavaScript;
+- pnpm 11.16.0, que instala as dependências. Node.js e pnpm são ferramentas diferentes;
+- Google Chrome ou Chromium, apenas para os testes de navegador.
 
-## Execução local
+O [Corepack](https://nodejs.org/api/corepack.html) permite que o repositório use a versão esperada do pnpm. Consulte também a [documentação oficial de instalação do pnpm](https://pnpm.io/installation) se `corepack` não estiver disponível.
+
+## Escolha do terminal
+
+Os comandos `git`, `corepack` e `pnpm` são iguais no Windows PowerShell, Windows com WSL, Linux e macOS. Blocos marcados como **Bash** funcionam no Linux, macOS e WSL. Use blocos **PowerShell** no PowerShell do Windows.
+
+WSL é um ambiente Linux dentro do Windows. Escolha um ambiente e mantenha o repositório e os comandos nele: caminhos como `C:\Users\...` pertencem ao PowerShell, enquanto `/home/...` pertence ao WSL. Não misture instalações de Node.js ou pastas entre os dois terminais.
+
+## Primeira configuração
+
+Execute uma vez:
 
 ```bash
+git clone https://github.com/seniors-empregabilidade/seniors-empregabilidade-frontend.git
+cd seniors-empregabilidade-frontend
 corepack enable
 pnpm install --frozen-lockfile
-cp .env.example .env.local
+```
+
+`corepack enable` prepara o gerenciador indicado pelo projeto. `pnpm install --frozen-lockfile` instala exatamente as versões registradas no lockfile e também configura os hooks locais do Git.
+
+## Inicialização diária
+
+Na raiz do repositório, execute:
+
+```bash
 pnpm dev
 ```
 
-A aplicação estará disponível em `http://localhost:5173`. A URL padrão da API é `http://localhost:8000/api/v1`; o arquivo `.env.local` pode sobrescrevê-la e não deve ser versionado.
+O backend só precisa estar em execução para as funcionalidades que chamam a API. A página inicial e o trabalho puramente visual podem ser usados sem ele.
 
-No PowerShell, copie o arquivo de ambiente com:
+## Como verificar se funcionou
+
+Abra [http://localhost:5173](http://localhost:5173). Você deve ver a página inicial “Seniors – Empregabilidade” e a indicação de que a fundação técnica está pronta. O terminal deve permanecer aberto enquanto o servidor estiver ativo.
+
+## Como parar
+
+Volte ao terminal onde `pnpm dev` está em execução e pressione `Ctrl+C`. Isso encerra apenas o servidor de desenvolvimento; não remove arquivos nem dependências.
+
+## Variáveis de ambiente (opcional)
+
+A URL local da API já possui o padrão `http://localhost:8000/api/v1`, então não é necessário criar um arquivo de ambiente no início. Para apontar para outra API, copie o exemplo uma vez e edite `VITE_API_URL`:
+
+**Bash (Linux, macOS ou WSL):**
+
+```bash
+cp .env.example .env.local
+```
+
+**PowerShell:**
 
 ```powershell
 Copy-Item .env.example .env.local
 ```
 
-## Comandos
+Reinicie `pnpm dev` após alterar o arquivo. Variáveis iniciadas por `VITE_` ficam visíveis no navegador; nunca coloque senhas ou outros segredos nelas.
 
-| Comando              | Finalidade                                     |
-| -------------------- | ---------------------------------------------- |
-| `pnpm dev`           | Inicia o servidor de desenvolvimento do Vite   |
-| `pnpm build`         | Gera as rotas, compila e verifica os tipos     |
-| `pnpm typecheck`     | Executa o TypeScript sem gerar arquivos        |
-| `pnpm lint`          | Executa o ESLint sem permitir avisos           |
-| `pnpm format:check`  | Verifica a formatação com Prettier             |
-| `pnpm test`          | Executa os testes unitários e de componentes   |
-| `pnpm test:coverage` | Executa os testes com cobertura mínima de 80%  |
-| `pnpm e2e:open`      | Abre o Cypress para desenvolvimento local      |
-| `pnpm e2e:ci`        | Serve o build e executa o Cypress no Chrome    |
-| `pnpm validate`      | Executa todas as verificações, exceto Cypress  |
-| `pnpm validate:push` | Executa todos os controles locais de qualidade |
+## Principais comandos de qualidade
 
-Os hooks do Git formatam e validam os arquivos preparados, além de executar a verificação completa de tipos antes do commit. O hook `commit-msg` valida Conventional Commits e o `pre-push` executa todas as verificações, incluindo Cypress. Não ignore esses hooks.
+| Comando              | O que verifica                                                    |
+| -------------------- | ----------------------------------------------------------------- |
+| `pnpm format:check`  | Formatação dos arquivos                                           |
+| `pnpm lint`          | Problemas e padrões no código                                     |
+| `pnpm typecheck`     | Coerência dos tipos TypeScript                                    |
+| `pnpm test:coverage` | Testes e cobertura mínima de 80%                                  |
+| `pnpm build`         | Geração da versão de produção                                     |
+| `pnpm e2e:ci`        | Teste no navegador e verificações automatizadas de acessibilidade |
+| `pnpm validate`      | Todas as verificações, exceto Cypress                             |
+| `pnpm validate:push` | Todas as verificações locais, incluindo Cypress                   |
 
-## Estrutura técnica
+“Lint” é uma análise automática que encontra erros e padrões indesejados. A verificação de tipos detecta usos incompatíveis antes de o código rodar.
 
-O repositório evita pastas de domínio especulativas. A estrutura atual contém somente a fundação técnica:
+Os hooks do Git são verificações automáticas: antes do commit, validam os arquivos e os tipos; antes do push, executam a suíte completa. O pre-push pode demorar porque também compila e abre testes automatizados no navegador. Eles existem para encontrar problemas antes da revisão e da CI. Se não tiverem sido instalados, execute novamente `pnpm install --frozen-lockfile`; não use `--no-verify`.
 
-```text
-.
-├── .github/              # CI, Dependabot, CODEOWNERS e orientação para PRs
-├── .husky/               # Hooks locais de pre-commit, commit-msg e pre-push
-├── config/               # ESLint, Prettier, commitlint e lint-staged
-├── cypress/              # Testes E2E e de acessibilidade no navegador
-├── docs/                 # Arquitetura, ADRs e políticas de engenharia
-├── src/                  # Somente código entregue na aplicação
-│   ├── components/ui/    # Componentes do shadcn/ui mantidos no repositório
-│   ├── config/           # Configuração pública validada em runtime
-│   ├── lib/              # Cliente HTTP, erros, Query Client e utilitários
-│   ├── routes/           # Declarações de rota do TanStack Router
-│   ├── main.tsx          # Ponto de entrada da aplicação no navegador
-│   ├── router.tsx        # Instância e registro de tipos do Router
-│   └── styles.css        # Entrada do Tailwind e variáveis visuais neutras
-├── tests/
-│   ├── components/       # Testes de componentes e páginas React
-│   ├── unit/             # Testes unitários da configuração e das bibliotecas
-│   └── setup.ts          # Preparação compartilhada do Vitest
-├── components.json       # Configuração do CLI do shadcn/ui
-├── cypress.config.ts     # Configuração do Cypress; define a raiz do projeto
-├── vite.config.ts        # Configuração do Vite, Router, Tailwind e Vitest
-└── tsconfig*.json        # Fronteiras de TypeScript para app, testes e ferramentas
-```
+## Problemas comuns
 
-A raiz mantém apenas pontos de entrada convencionais ou arquivos que precisam ser descobertos diretamente pelas ferramentas. Configurações gerais ficam em `config/`.
+- **`node`, `corepack` ou `pnpm`: command not found:** instale o Node.js 24 pelo link oficial, abra um terminal novo e execute `corepack enable`. Se necessário, siga a instalação oficial do pnpm.
+- **Porta 5173 em uso:** pare outro servidor com `Ctrl+C` ou identifique o processo que ocupa a porta antes de iniciar novamente.
+- **O frontend não alcança o backend:** confirme que a API está ativa em `http://localhost:8000`, confira `VITE_API_URL` em `.env.local` (se existir) e reinicie o Vite. Erros de API não impedem necessariamente a página inicial de abrir.
+- **Dependências não sincronizadas ou módulo ausente:** execute `pnpm install --frozen-lockfile` na raiz. Se o lockfile tiver mudado legitimamente na branch, use o lockfile versionado, sem editar versões manualmente.
+- **Hooks não executam:** rode `pnpm install --frozen-lockfile` novamente e confirme que os comandos são executados dentro do repositório Git.
+- **Comando de cópia ou caminho falha no Windows:** confirme se o terminal é PowerShell ou WSL. Use `Copy-Item` e caminhos do Windows no PowerShell; use `cp` e caminhos Linux no WSL.
 
-O arquivo `index.html` é o documento-base servido pelo Vite. Ele contém o elemento onde o React monta a aplicação; as telas e os componentes continuam sendo implementados em `.tsx`.
+## Estrutura técnica resumida
 
-`src/routeTree.gen.ts` é gerado pelo plugin do TanStack Router e nunca deve ser editado manualmente. `src/` contém apenas código da aplicação; testes unitários e de componentes ficam em `tests/`, enquanto testes de navegador ficam em `cypress/`.
+- `src/`: aplicação React, rotas, configuração e cliente HTTP;
+- `tests/`: testes unitários e de componentes;
+- `cypress/`: testes executados no navegador;
+- `config/`: configuração das ferramentas de qualidade;
+- `docs/`: arquitetura, decisões e políticas do projeto.
 
-Quando o escopo do produto estiver confirmado, organize o código novo a partir de funcionalidades ou capacidades reais do domínio. Não crie pastas vazias como `features`, `hooks`, `schemas`, `services`, `store` ou entidades apenas para demonstrar uma arquitetura futura. Registre uma decisão estrutural em ADR somente quando ela afetar várias funcionalidades ou estabelecer uma fronteira duradoura.
+Os detalhes sobre TanStack Router, estado remoto, tratamento de erros e organização futura estão em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) e nas [decisões arquiteturais](docs/adr). Evite criar módulos de negócio antes de os requisitos serem definidos.
 
-## Variáveis de ambiente
+## Arquitetura e contribuição
 
-Somente variáveis iniciadas por `VITE_` são expostas ao navegador. Nunca coloque segredos nas variáveis do frontend.
-
-| Variável       | Obrigatória | Padrão                         | Finalidade      |
-| -------------- | ----------- | ------------------------------ | --------------- |
-| `VITE_API_URL` | Não         | `http://localhost:8000/api/v1` | URL base da API |
-
-O ambiente de produção deve redirecionar rotas desconhecidas da SPA para `index.html`.
-
-## Acessibilidade
-
-O objetivo do projeto é atender à WCAG 2.2 AA. Use HTML semântico, navegação completa por teclado, foco visível, contraste suficiente, nomes acessíveis e suporte à redução de movimento. O Cypress executa verificações com axe, mas testes automatizados não substituem a revisão manual por teclado e leitor de tela.
-
-## Contribuição
-
-Antes de contribuir, leia [CONTRIBUTING.md](CONTRIBUTING.md), [AGENTS.md](AGENTS.md) e [docs/AI_USAGE.md](docs/AI_USAGE.md). O contexto arquitetural está em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), e as decisões aceitas ficam em [docs/adr](docs/adr).
+Leia [CONTRIBUTING.md](CONTRIBUTING.md) antes de abrir uma contribuição. Consulte também [AGENTS.md](AGENTS.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), as [decisões arquiteturais](docs/adr) e a [política de uso de IA](docs/AI_USAGE.md).
