@@ -15,30 +15,44 @@ Ainda não há funcionalidades de negócio, autenticação, entidades do produto
 - pnpm 11.16.0, que instala as dependências. Node.js e pnpm são ferramentas diferentes;
 - Google Chrome ou Chromium, apenas para os testes de navegador.
 
-O [Corepack](https://nodejs.org/api/corepack.html) permite que o repositório use a versão esperada do pnpm. Consulte também a [documentação oficial de instalação do pnpm](https://pnpm.io/installation) se `corepack` não estiver disponível.
+## Instalação feita uma única vez
+
+Depois de instalar o Node.js 24, instale a versão do pnpm adotada pelo projeto:
+
+```bash
+npm install --global pnpm@11.16.0
+```
+
+Confirme que as duas ferramentas estão disponíveis:
+
+```bash
+node --version
+pnpm --version
+```
+
+O segundo comando deve mostrar exatamente `11.16.0`. Essa instalação só precisa ser repetida se o pnpm for removido ou se o projeto passar a adotar outra versão.
 
 ## Escolha do terminal
 
-Os comandos `git`, `corepack` e `pnpm` são iguais no Windows PowerShell, Windows com WSL, Linux e macOS. Blocos marcados como **Bash** funcionam no Linux, macOS e WSL. Use blocos **PowerShell** no PowerShell do Windows.
+Os comandos `git`, `npm` e `pnpm` são iguais no Windows PowerShell, Windows com WSL, Linux e macOS. Blocos marcados como **Bash** funcionam no Linux, macOS e WSL. Use blocos **PowerShell** no PowerShell do Windows.
 
 WSL é um ambiente Linux dentro do Windows. Escolha um ambiente e mantenha o repositório e os comandos nele: caminhos como `C:\Users\...` pertencem ao PowerShell, enquanto `/home/...` pertence ao WSL. Não misture instalações de Node.js ou pastas entre os dois terminais.
 
-## Primeira configuração
+## Preparação inicial do projeto
 
-Execute uma vez:
+Depois de instalar as ferramentas, execute estes comandos uma vez para baixar e preparar o projeto:
 
 ```bash
 git clone https://github.com/seniors-empregabilidade/seniors-empregabilidade-frontend.git
 cd seniors-empregabilidade-frontend
-corepack enable
 pnpm install --frozen-lockfile
 ```
 
-`corepack enable` prepara o gerenciador indicado pelo projeto. `pnpm install --frozen-lockfile` instala exatamente as versões registradas no lockfile e também configura os hooks locais do Git.
+`pnpm install --frozen-lockfile` instala exatamente as versões registradas no lockfile e também configura os hooks locais do Git.
 
-## Inicialização diária
+## Comandos usados no dia a dia
 
-Na raiz do repositório, execute:
+Para iniciar o frontend, entre na raiz do repositório e execute:
 
 ```bash
 pnpm dev
@@ -91,7 +105,8 @@ Os hooks do Git são verificações automáticas: antes do commit, validam os ar
 
 ## Problemas comuns
 
-- **`node`, `corepack` ou `pnpm`: command not found:** instale o Node.js 24 pelo link oficial, abra um terminal novo e execute `corepack enable`. Se necessário, siga a instalação oficial do pnpm.
+- **`node`: command not found:** instale o Node.js 24 pelo link oficial e abra um terminal novo.
+- **`pnpm`: command not found:** execute `npm install --global pnpm@11.16.0`, abra um terminal novo e confirme a instalação com `pnpm --version`.
 - **Porta 5173 em uso:** pare outro servidor com `Ctrl+C` ou identifique o processo que ocupa a porta antes de iniciar novamente.
 - **O frontend não alcança o backend:** confirme que a API está ativa em `http://localhost:8000`, confira `VITE_API_URL` em `.env.local` (se existir) e reinicie o Vite. Erros de API não impedem necessariamente a página inicial de abrir.
 - **Dependências não sincronizadas ou módulo ausente:** execute `pnpm install --frozen-lockfile` na raiz. Se o lockfile tiver mudado legitimamente na branch, use o lockfile versionado, sem editar versões manualmente.
