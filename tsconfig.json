@@ -1,4 +1,12 @@
 {
+  // The shadcn CLI resolves the "@" import alias from this root tsconfig;
+  // without these paths it writes components into a literal "@/" directory.
+  // Referenced projects do not inherit compilerOptions, so builds are unaffected.
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
   "files": [],
   "references": [
     { "path": "./tsconfig.app.json" },

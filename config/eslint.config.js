@@ -59,9 +59,20 @@ export default tseslint.config(
         "error",
         {
           allowConstantExport: true,
-          allowExportNames: ["Route", "buttonVariants"],
+          allowExportNames: [
+            "Route",
+            "buttonVariants",
+            "badgeVariants",
+            "navigationMenuTriggerStyle",
+          ],
         },
       ],
+    },
+  },
+  {
+    files: ["src/components/ui/**"],
+    rules: {
+      "jsx-a11y/label-has-associated-control": "off",
     },
   },
   ...query.configs["flat/recommended"],

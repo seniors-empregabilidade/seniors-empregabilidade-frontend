@@ -33,6 +33,9 @@ export default defineConfig({
         "src/routes/**",
         "tests/**",
         "src/vite-env.d.ts",
+        // shadcn CLI vendored components are not authored code; badge.tsx
+        // stays covered because we modified it.
+        "src/components/ui/!(badge).tsx",
       ],
       thresholds: {
         branches: 80,
