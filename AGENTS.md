@@ -55,7 +55,19 @@ Never bypass Husky hooks or reduce quality thresholds to make a change pass.
 
 WCAG 2.2 AA is the target. Prefer semantic HTML and native behavior. Preserve keyboard access, visible focus, logical headings, accessible names, adequate contrast, zoom/reflow, 44-by-44-pixel practical targets, and reduced-motion preferences. Automated axe checks supplement—but do not replace—manual review.
 
-No visual design system, brand palette, dark mode, or custom component abstraction is approved yet. Keep neutral shadcn variables until product design exists.
+The Seniors brand palette is approved and specified in `docs/design-system.md`, which is
+the source of truth for color, typography, component states, image slots, and spacing.
+Token values live in `src/styles.css`; components read them through the token contract
+and never through hex literals. Dark mode and custom component abstractions remain
+unapproved.
+
+Body text is 18px and no interface text falls below 16px. The shadcn defaults use
+`text-sm` (14px) for buttons, labels, field descriptions, and table cells; every
+installed component must override this to `text-lg` or `text-base`. Apply the override
+in the component's `cva` variant under `src/components/ui`, not as a class at the call
+site, so a new screen cannot forget it. Form fields are 48px tall to accommodate 18px
+text. Disabled states use the dedicated `--disabled` and `--disabled-foreground` pair
+rather than `opacity`, which drops the label below 3:1.
 
 ## Tests
 
