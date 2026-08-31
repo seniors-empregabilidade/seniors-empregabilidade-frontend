@@ -1,6 +1,6 @@
 # ADR 0003: Seniors brand design tokens over the shadcn token contract
 
-- Status: Accepted; ; superseded in part by `docs/design-system.md`
+- Status: Accepted; superseded in part by `docs/design-system.md`
 - Date: 2026-08-19
 
 ## Context
@@ -16,7 +16,6 @@ Map the Seniors palette onto the shadcn token contract in `src/styles.css`, keep
 Every current and future shadcn component picks up the brand automatically, because theming stays confined to token values rather than component code, and registry updates remain drop-in. New semantic colors (`success`, `warning`) must be consumed through tokens, never hex literals.
 
 AGENTS.md is now outdated and must be updated: it still states "No visual design system, brand palette, dark mode, or custom component abstraction is approved yet. Keep neutral shadcn variables until product design exists." A brand palette is now approved and applied; the statement should be revised to reflect this ADR while keeping dark mode and custom component abstractions unapproved.
-
 
 ## Superseded in part
 

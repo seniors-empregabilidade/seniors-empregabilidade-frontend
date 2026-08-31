@@ -34,36 +34,36 @@ color, a heading color, or an icon color.
 
 ### Text and action
 
-| Token | Hex | oklch | Ratio | Usage and minimum |
-| --- | --- | --- | --- | --- |
-| `--foreground` | `#0B2545` | `0.264 0.068 255` | 15.4 | Text and headings. Also the dark surface. Min. 4.5 |
-| `--foreground-2` | `#33456B` | `0.393 0.069 264` | 9.5 | Supporting paragraphs. Min. 4.5 |
-| `--muted-foreground` | `#46587A` | `0.460 0.060 263` | 7.2 | Metadata, labels, field text. 16px floor |
-| `--primary` | `#1D4ED8` | `0.488 0.217 264` | 6.7 | Primary action fill and focus ring. Min. 3 |
-| `--primary-hover` | `#163FAE` | `0.419 0.183 264` | 8.9 | Primary action hover state |
+| Token                | Hex       | oklch             | Ratio | Usage and minimum                                  |
+| -------------------- | --------- | ----------------- | ----- | -------------------------------------------------- |
+| `--foreground`       | `#0B2545` | `0.264 0.068 255` | 15.4  | Text and headings. Also the dark surface. Min. 4.5 |
+| `--foreground-2`     | `#33456B` | `0.393 0.069 264` | 9.5   | Supporting paragraphs. Min. 4.5                    |
+| `--muted-foreground` | `#46587A` | `0.460 0.060 263` | 7.2   | Metadata, labels, field text. 16px floor           |
+| `--primary`          | `#1D4ED8` | `0.488 0.217 264` | 6.7   | Primary action fill and focus ring. Min. 3         |
+| `--primary-hover`    | `#163FAE` | `0.419 0.183 264` | 8.9   | Primary action hover state                         |
 
 ### Surface and boundary
 
-| Token | Hex | oklch | Ratio | Usage |
-| --- | --- | --- | --- | --- |
-| `--background` | `#FFFFFF` | `1 0 0` | — | Page, card, modal |
-| `--muted` | `#F5F8FD` | `0.978 0.007 261` | 14.5 | Reading blocks and hero. Ratio measured against `--foreground` |
-| `--accent` | `#EFF6FF` | `0.970 0.014 255` | 14.1 | Chips, list item hover, logo slot |
-| `--input` | `#8496B3` | `0.669 0.048 260` | 3.0 | Field and secondary button border. Min. 3 (1.4.11) |
-| `--border` | `#DBE4F0` | `0.916 0.019 256` | 1.3 | Card outline. Decorative, no minimum |
-| `--rule` | `#E7EEF8` | `0.947 0.015 257` | 1.2 | 1px divider between list items |
+| Token          | Hex       | oklch             | Ratio | Usage                                                          |
+| -------------- | --------- | ----------------- | ----- | -------------------------------------------------------------- |
+| `--background` | `#FFFFFF` | `1 0 0`           | —     | Page, card, modal                                              |
+| `--muted`      | `#F5F8FD` | `0.978 0.007 261` | 14.5  | Reading blocks and hero. Ratio measured against `--foreground` |
+| `--accent`     | `#EFF6FF` | `0.970 0.014 255` | 14.1  | Chips, list item hover, logo slot                              |
+| `--input`      | `#8496B3` | `0.669 0.048 260` | 3.0   | Field and secondary button border. Min. 3 (1.4.11)             |
+| `--border`     | `#DBE4F0` | `0.916 0.019 256` | 1.3   | Card outline. Decorative, no minimum                           |
+| `--rule`       | `#E7EEF8` | `0.947 0.015 257` | 1.2   | 1px divider between list items                                 |
 
 ### State
 
-| Token | Hex | oklch | Ratio | Usage |
-| --- | --- | --- | --- | --- |
-| `--success` | `#0B6B3A` | `0.465 0.114 154` | 6.6 | Confirmation label and border. Valid as text |
-| `--destructive` | `#8C1D18` | `0.420 0.147 28` | 9.1 | Field error, error message, destructive action |
-| `--warning-foreground` | `#7A5210` | `0.471 0.093 74` | 6.3 | Warning text, measured against `--warning-background` |
-| `--warning-background` | `#FDF3E3` | `0.968 0.024 80` | — | Warning surface |
-| `--warning-border` | `#B57A17` | `0.625 0.126 73` | — | Warning border |
-| `--disabled` | `#DBE4F0` | `0.916 0.019 256` | 5.6 | Disabled surface. Dedicated pair, replaces kit opacity |
-| `--disabled-foreground` | `#46587A` | `0.460 0.060 263` | 5.6 | Disabled label |
+| Token                   | Hex       | oklch             | Ratio | Usage                                                  |
+| ----------------------- | --------- | ----------------- | ----- | ------------------------------------------------------ |
+| `--success`             | `#0B6B3A` | `0.465 0.114 154` | 6.6   | Confirmation label and border. Valid as text           |
+| `--destructive`         | `#8C1D18` | `0.420 0.147 28`  | 9.1   | Field error, error message, destructive action         |
+| `--warning-foreground`  | `#7A5210` | `0.471 0.093 74`  | 6.3   | Warning text, measured against `--warning-background`  |
+| `--warning-background`  | `#FDF3E3` | `0.968 0.024 80`  | —     | Warning surface                                        |
+| `--warning-border`      | `#B57A17` | `0.625 0.126 73`  | —     | Warning border                                         |
+| `--disabled`            | `#DBE4F0` | `0.916 0.019 256` | 5.6   | Disabled surface. Dedicated pair, replaces kit opacity |
+| `--disabled-foreground` | `#46587A` | `0.460 0.060 263` | 5.6   | Disabled label                                         |
 
 The `--sidebar-*` family reuses these values: surface at `--foreground`, active item in
 white, inactive item at `#DBE4F0`. It introduces no new color.
@@ -76,21 +76,21 @@ rule and returns to the section 2 tokens.
 
 Allowed:
 
-| Token | Role | Ratio |
-| --- | --- | --- |
-| `--on-dark` | Headings and text | 15.4 |
-| `--on-dark-muted` | Labels | 12.0 |
-| `--on-dark-subtle` | Supporting text | 9.1 |
-| `--on-dark-accent` | Markers | 6.5 |
+| Token              | Role              | Ratio |
+| ------------------ | ----------------- | ----- |
+| `--on-dark`        | Headings and text | 15.4  |
+| `--on-dark-muted`  | Labels            | 12.0  |
+| `--on-dark-subtle` | Supporting text   | 9.1   |
+| `--on-dark-accent` | Markers           | 6.5   |
 
 Forbidden on dark surfaces:
 
-| Usage | Ratio |
-| --- | --- |
-| `--muted-foreground` as text | 2.2 |
-| `--primary` as text | 2.3 |
-| `--primary` as a fill | 2.3 |
-| `--input` below 18px | 5.1, permitted only at 18px or larger |
+| Usage                        | Ratio                                 |
+| ---------------------------- | ------------------------------------- |
+| `--muted-foreground` as text | 2.2                                   |
+| `--primary` as text          | 2.3                                   |
+| `--primary` as a fill        | 2.3                                   |
+| `--input` below 18px         | 5.1, permitted only at 18px or larger |
 
 Implementation consequence: a primary action inside a dark band uses a white fill with
 a `--foreground` label.
@@ -101,16 +101,16 @@ Plus Jakarta Sans, weights 400, 500, 600, and 700. Selection criteria: numeral
 legibility, distinction between `1`, `l`, and `I`, and performance at large sizes. Body
 size is 18px with a 16px floor.
 
-| Level | px / weight | Tailwind | Sample |
-| --- | --- | --- | --- |
-| Display | 42 / 700 | `text-[42px]` | Experiência é ativo |
-| Heading 1 | 32 / 700 | `text-3xl` | Vagas compatíveis |
-| Heading 2 | 26 / 700 | `text-[26px]` | Analista de operações |
-| Heading 3 | 21 / 700 | `text-xl` | Suas candidaturas |
-| Body | 18 / 400 | `text-lg` | Product base size. Never use 14px or 16px as body |
-| Label | 16 / 600 | `text-base` | Field label — the floor of the scale |
-| Auxiliary | 16 / 400 | `text-base` | Supporting and help text |
-| Tag | 13 / 600 mono | `font-mono` | Section, category, state. Uppercase, tracked |
+| Level     | px / weight   | Tailwind      | Sample                                            |
+| --------- | ------------- | ------------- | ------------------------------------------------- |
+| Display   | 42 / 700      | `text-[42px]` | Experiência é ativo                               |
+| Heading 1 | 32 / 700      | `text-3xl`    | Vagas compatíveis                                 |
+| Heading 2 | 26 / 700      | `text-[26px]` | Analista de operações                             |
+| Heading 3 | 21 / 700      | `text-xl`     | Suas candidaturas                                 |
+| Body      | 18 / 400      | `text-lg`     | Product base size. Never use 14px or 16px as body |
+| Label     | 16 / 600      | `text-base`   | Field label — the floor of the scale              |
+| Auxiliary | 16 / 400      | `text-base`   | Supporting and help text                          |
+| Tag       | 13 / 600 mono | `font-mono`   | Section, category, state. Uppercase, tracked      |
 
 The monospace tag identifies system vocabulary. It does not apply to running sentences
 or to headings. Uppercase is forbidden in headings.
@@ -130,31 +130,31 @@ text. One primary action per screen.
 
 44px height, radius 8, 17px/600.
 
-| State | Specification |
-| --- | --- |
-| Default | `--primary` fill, white label |
-| Hover | `--primary-hover` fill |
-| Focus visible | 3px ring in `--ring`, 2px offset |
-| Disabled | `--disabled` fill, `--disabled-foreground` label, 5.6 |
+| State         | Specification                                         |
+| ------------- | ----------------------------------------------------- |
+| Default       | `--primary` fill, white label                         |
+| Hover         | `--primary-hover` fill                                |
+| Focus visible | 3px ring in `--ring`, 2px offset                      |
+| Disabled      | `--disabled` fill, `--disabled-foreground` label, 5.6 |
 
 ### Variants
 
-| Variant | Specification |
-| --- | --- |
-| Secondary | White fill, `--foreground` label, 1.5px `--input` border |
-| Subtle | `--accent` fill, `--foreground` label, 1.5px `--border` border |
-| Link | White fill, `--foreground` label, underline with 3px offset |
-| Destructive | `--destructive` fill, white label |
+| Variant     | Specification                                                  |
+| ----------- | -------------------------------------------------------------- |
+| Secondary   | White fill, `--foreground` label, 1.5px `--input` border       |
+| Subtle      | `--accent` fill, `--foreground` label, 1.5px `--border` border |
+| Link        | White fill, `--foreground` label, underline with 3px offset    |
+| Destructive | `--destructive` fill, white label                              |
 
 ### Field
 
 48px height, persistent label above the field.
 
-| State | Specification |
-| --- | --- |
-| Default | 1.5px `--input` border, radius 8, 18px value text |
-| Focus | 1.5px `--primary` border plus 3px ring at 2px offset |
-| Error | 2px `--destructive` border plus an error message carrying the correction |
+| State   | Specification                                                            |
+| ------- | ------------------------------------------------------------------------ |
+| Default | 1.5px `--input` border, radius 8, 18px value text                        |
+| Focus   | 1.5px `--primary` border plus 3px ring at 2px offset                     |
+| Error   | 2px `--destructive` border plus an error message carrying the correction |
 
 A validation error requires text stating the correction. A `--destructive` border alone
 does not satisfy criterion 1.4.1. Example error copy: `Falta o @ e o domínio. Exemplo:
@@ -167,11 +167,11 @@ Placeholder text never replaces the label.
 Redundant signaling: a text label precedes the message. A `lucide-react` icon is
 optional and never replaces the label.
 
-| Kind | Label | Border | Background |
-| --- | --- | --- | --- |
-| Success | `Sucesso` | `--success` | White |
+| Kind    | Label     | Border             | Background             |
+| ------- | --------- | ------------------ | ---------------------- |
+| Success | `Sucesso` | `--success`        | White                  |
 | Warning | `Atenção` | `--warning-border` | `--warning-background` |
-| Error | `Erro` | `--destructive` | White |
+| Error   | `Erro`    | `--destructive`    | White                  |
 
 Radius 10. Label in 13px monospace uppercase; message in 18px body.
 
@@ -183,11 +183,11 @@ pair of actions. Applies to listings, search results, and detail views. Card bor
 
 ## 6. Image slots
 
-| Slot | Shape | Specification |
-| --- | --- | --- |
-| `data-logo="empresa"` | 48 × 48, radius 8 | Precedes the job title in listing, detail, modal, and history. A missing file shows the two initials in `--foreground-2` over `--accent` |
-| `data-imagem="foto-candidato"` | 104 and 72, circular | 104px on the profile, 72px in the edit modal. Upload is optional, JPG or PNG up to 5 MB. Without a file, a circular monogram |
-| `data-imagem="landing-hero"` | 388px height, radius 14 | Right column of the hero. File pending. Free aspect ratio, cropped by the container |
+| Slot                           | Shape                   | Specification                                                                                                                            |
+| ------------------------------ | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `data-logo="empresa"`          | 48 × 48, radius 8       | Precedes the job title in listing, detail, modal, and history. A missing file shows the two initials in `--foreground-2` over `--accent` |
+| `data-imagem="foto-candidato"` | 104 and 72, circular    | 104px on the profile, 72px in the edit modal. Upload is optional, JPG or PNG up to 5 MB. Without a file, a circular monogram             |
+| `data-imagem="landing-hero"`   | 388px height, radius 14 | Right column of the hero. File pending. Free aspect ratio, cropped by the container                                                      |
 
 All slots are `aria-hidden`: the equivalent information lives in the adjacent text. They
 do not require descriptive alternative text.
@@ -199,13 +199,13 @@ Spacing follows the 4px Tailwind scale: 4, 8, 12, 16, 24, 32, 48 (`1`, `2`, `3`,
 
 Radius derives from `--radius: 0.625rem`:
 
-| Name | Value | Usage |
-| --- | --- | --- |
-| `sm` | 6px | Tags, small frames |
-| `md` | 8px | Buttons, fields, logos |
-| `lg` | 10px | Cards, state messages |
-| `xl` | 14px | Modals, bands, containers |
-| `full` | 999px | Chips, circular avatars |
+| Name   | Value | Usage                     |
+| ------ | ----- | ------------------------- |
+| `sm`   | 6px   | Tags, small frames        |
+| `md`   | 8px   | Buttons, fields, logos    |
+| `lg`   | 10px  | Cards, state messages     |
+| `xl`   | 14px  | Modals, bands, containers |
+| `full` | 999px | Chips, circular avatars   |
 
 The prototype uses 12px on modals and bands; the implementation raises those cases to
 `rounded-xl` (14px). No container value exceeds 14px.
@@ -219,42 +219,42 @@ corresponding `@theme inline` entry to become utilities.
 
 ```css
 :root {
-  --radius: 0.625rem;                      /* unchanged */
+  --radius: 0.625rem; /* unchanged */
 
   --background: oklch(1 0 0);
-  --foreground: oklch(0.264 0.068 255);    /* #0B2545 */
-  --foreground-2: oklch(0.393 0.069 264);  /* new - #33456B */
+  --foreground: oklch(0.264 0.068 255); /* #0B2545 */
+  --foreground-2: oklch(0.393 0.069 264); /* new - #33456B */
 
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.264 0.068 255);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.264 0.068 255);
 
-  --primary: oklch(0.488 0.217 264);       /* #1D4ED8 */
+  --primary: oklch(0.488 0.217 264); /* #1D4ED8 */
   --primary-foreground: oklch(1 0 0);
   --primary-hover: oklch(0.419 0.183 264); /* new - #163FAE */
 
-  --secondary: oklch(0.970 0.014 255);     /* #EFF6FF */
+  --secondary: oklch(0.97 0.014 255); /* #EFF6FF */
   --secondary-foreground: oklch(0.264 0.068 255);
 
-  --muted: oklch(0.978 0.007 261);         /* #F5F8FD */
-  --muted-foreground: oklch(0.460 0.060 263);
-  --accent: oklch(0.970 0.014 255);
+  --muted: oklch(0.978 0.007 261); /* #F5F8FD */
+  --muted-foreground: oklch(0.46 0.06 263);
+  --accent: oklch(0.97 0.014 255);
   --accent-foreground: oklch(0.264 0.068 255);
 
-  --border: oklch(0.916 0.019 256);        /* #DBE4F0 */
-  --rule: oklch(0.947 0.015 257);          /* new - #E7EEF8 */
-  --input: oklch(0.669 0.048 260);         /* #8496B3 - 3:1 */
+  --border: oklch(0.916 0.019 256); /* #DBE4F0 */
+  --rule: oklch(0.947 0.015 257); /* new - #E7EEF8 */
+  --input: oklch(0.669 0.048 260); /* #8496B3 - 3:1 */
   --ring: oklch(0.488 0.217 264);
 
-  --disabled: oklch(0.916 0.019 256);           /* new */
-  --disabled-foreground: oklch(0.460 0.060 263);
+  --disabled: oklch(0.916 0.019 256); /* new */
+  --disabled-foreground: oklch(0.46 0.06 263);
 
-  --success: oklch(0.465 0.114 154);       /* #0B6B3A */
-  --destructive: oklch(0.420 0.147 28);    /* #8C1D18 */
-  --warning-foreground: oklch(0.471 0.093 74);  /* new */
-  --warning-background: oklch(0.968 0.024 80);  /* new */
-  --warning-border: oklch(0.625 0.126 73);      /* new */
+  --success: oklch(0.465 0.114 154); /* #0B6B3A */
+  --destructive: oklch(0.42 0.147 28); /* #8C1D18 */
+  --warning-foreground: oklch(0.471 0.093 74); /* new */
+  --warning-background: oklch(0.968 0.024 80); /* new */
+  --warning-border: oklch(0.625 0.126 73); /* new */
 
   --on-dark: oklch(1 0 0);
   --on-dark-muted: oklch(0.916 0.019 256);
@@ -307,28 +307,28 @@ corresponding `@theme inline` entry to become utilities.
 ADR 0003 applied a first pass of the brand palette. This specification supersedes those
 values. The differences that require review:
 
-| Token | Current | This specification | Reason |
-| --- | --- | --- | --- |
-| `--input` | same value as `--border`, 1.28:1 against white | `#8496B3`, 3.0:1 | The current value fails criterion 1.4.11 for field and secondary-button borders |
-| `--primary` | `#1D5FD8`, 5.71:1 | `#1D4ED8`, 6.7:1 | Aligns the action color with the approved visual direction |
-| `--muted-foreground` | `oklch(0.5 0.035 255)` | `oklch(0.460 0.060 263)` | Raises metadata text contrast to 7.2:1 |
-| `--warning` | single color `#F0A83C` | trio: foreground, background, border | A single warning color cannot produce readable text on its own surface |
-| `--sidebar` | light surface | dark surface at `--foreground` | The approved direction inverts the sidebar |
-| New tokens | absent | `--foreground-2`, `--primary-hover`, `--rule`, `--disabled`, `--disabled-foreground`, and the `--warning-*` trio | Required by the component states in section 5 |
+| Token                | Current                                        | This specification                                                                                               | Reason                                                                          |
+| -------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `--input`            | same value as `--border`, 1.28:1 against white | `#8496B3`, 3.0:1                                                                                                 | The current value fails criterion 1.4.11 for field and secondary-button borders |
+| `--primary`          | `#1D5FD8`, 5.71:1                              | `#1D4ED8`, 6.7:1                                                                                                 | Aligns the action color with the approved visual direction                      |
+| `--muted-foreground` | `oklch(0.5 0.035 255)`                         | `oklch(0.460 0.060 263)`                                                                                         | Raises metadata text contrast to 7.2:1                                          |
+| `--warning`          | single color `#F0A83C`                         | trio: foreground, background, border                                                                             | A single warning color cannot produce readable text on its own surface          |
+| `--sidebar`          | light surface                                  | dark surface at `--foreground`                                                                                   | The approved direction inverts the sidebar                                      |
+| New tokens           | absent                                         | `--foreground-2`, `--primary-hover`, `--rule`, `--disabled`, `--disabled-foreground`, and the `--warning-*` trio | Required by the component states in section 5                                   |
 
 ## 9. Verifiable criteria
 
-| Criterion | Requirement | Adopted value |
-| --- | --- | --- |
-| 1.4.1 | Color is not the only means | Text label on every state message; field errors carry correction text |
-| 1.4.3 | Text contrast | System minimum 4.5; lowest value in use 5.6 (disabled label) |
-| 1.4.11 | Component contrast | Field border 3.0; action fill 6.7 |
-| 1.4.10 | Reflow | Specified for 1440; 320px depends on the mobile version |
-| 1.4.12 | Text spacing | Line height at or above 1.38 at every level; containers have no fixed height |
-| 2.4.7 | Focus visible | 3px ring in `--ring`, 2px offset, 6.7 against white |
-| 2.4.11 | Focus not obscured | The 2px offset requires 4px of clearance; no fixed element overlaps scrollable content |
-| 2.5.8 | Target size | 44 × 44px, above the 24 × 24 minimum |
-| 2.3.3 | Motion | The `prefers-reduced-motion` block is already present in the styles file |
+| Criterion | Requirement                 | Adopted value                                                                          |
+| --------- | --------------------------- | -------------------------------------------------------------------------------------- |
+| 1.4.1     | Color is not the only means | Text label on every state message; field errors carry correction text                  |
+| 1.4.3     | Text contrast               | System minimum 4.5; lowest value in use 5.6 (disabled label)                           |
+| 1.4.11    | Component contrast          | Field border 3.0; action fill 6.7                                                      |
+| 1.4.10    | Reflow                      | Specified for 1440; 320px depends on the mobile version                                |
+| 1.4.12    | Text spacing                | Line height at or above 1.38 at every level; containers have no fixed height           |
+| 2.4.7     | Focus visible               | 3px ring in `--ring`, 2px offset, 6.7 against white                                    |
+| 2.4.11    | Focus not obscured          | The 2px offset requires 4px of clearance; no fixed element overlaps scrollable content |
+| 2.5.8     | Target size                 | 44 × 44px, above the 24 × 24 minimum                                                   |
+| 2.3.3     | Motion                      | The `prefers-reduced-motion` block is already present in the styles file               |
 
 Criteria that this specification does not cover and that belong to the implementation
 review: 3.3.7 redundant entry, 3.3.8 accessible authentication, 3.2.6 consistent help.
