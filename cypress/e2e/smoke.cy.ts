@@ -1,14 +1,13 @@
-describe("technical frontend", () => {
-  it("loads the home page and exposes the technical details", () => {
+describe("landing page", () => {
+  it("loads the landing page and presents the value proposition", () => {
     cy.visit("/");
 
-    cy.get("h1").should("have.text", "Seniors – Empregabilidade");
-
-    cy.contains("button", "Ver detalhes técnicos").click();
-    cy.get('section[aria-label="Detalhes técnicos"]').should("be.visible");
+    cy.get("h1").should("contain.text", "Vinte anos de carreira");
+    cy.contains("button", "Criar minha conta").should("be.visible");
+    cy.contains("button", "Cadastrar minha empresa").should("be.visible");
   });
 
-  it("has no detectable WCAG 2.2 AA violations on the home page", () => {
+  it("has no detectable WCAG 2.2 AA violations on the landing page", () => {
     cy.visit("/");
     cy.injectAxe();
     cy.checkA11y(undefined, {
