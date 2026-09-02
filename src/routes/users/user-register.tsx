@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Eye, EyeOff } from "lucide-react";
 
 export function UserRegister() {
   const [nome, setNome] = useState("");
@@ -12,6 +13,8 @@ export function UserRegister() {
   const [senha, setSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
   const [aceitouTermos, setAceitouTermos] = useState(false);
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [mostrarConfirmarSenha, setMostrarConfirmarSenha] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -115,6 +118,10 @@ export function UserRegister() {
               aria-invalid={Boolean(errors.nome)}
               aria-describedby={errors.nome ? "nome-error" : undefined}
             />
+
+            <p id="nome-description" className="text-sm text-muted-foreground">
+              Este é o nome que as empresas verão no seu currículo.
+            </p>
 
             {errors.nome && (
               <p
@@ -220,47 +227,60 @@ export function UserRegister() {
             )}
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="senha" className="text-base font-semibold">
-                Senha <span aria-hidden="true">*</span>
-              </Label>
+          <div className="space-y-2">
+            <Label htmlFor="senha" className="text-base font-semibold">
+              Senha <span aria-hidden="true">*</span>
+            </Label>
 
+            <div className="relative">
               <Input
                 id="senha"
                 name="senha"
-                type="password"
+                type={mostrarSenha ? "text" : "password"}
                 autoComplete="new-password"
                 value={senha}
                 onChange={(event) => setSenha(event.target.value)}
                 aria-required="true"
                 aria-invalid={Boolean(errors.senha)}
                 aria-describedby={errors.senha ? "senha-error" : undefined}
+                className="pr-12"
               />
 
-              {errors.senha && (
-                <p
-                  id="senha-error"
-                  className="text-sm text-destructive"
-                  role="alert"
-                >
-                  {errors.senha}
-                </p>
-              )}
+              <button
+                type="button"
+                onClick={() => setMostrarSenha((valor) => !valor)}
+                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center"
+                aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
+              >
+                {mostrarSenha ? (
+                  <EyeOff className="h-5 w-5" aria-hidden="true" />
+                ) : (
+                  <Eye className="h-5 w-5" aria-hidden="true" />
+                )}
+              </button>
             </div>
 
-            <div className="space-y-2">
-              <Label
-                htmlFor="confirmarSenha"
-                className="text-base font-semibold"
+            {errors.senha && (
+              <p
+                id="senha-error"
+                className="text-sm text-destructive"
+                role="alert"
               >
-                Confirmar senha <span aria-hidden="true">*</span>
-              </Label>
+                {errors.senha}
+              </p>
+            )}
+          </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="confirmarSenha" className="text-base font-semibold">
+              Confirmar senha <span aria-hidden="true">*</span>
+            </Label>
+
+            <div className="relative">
               <Input
                 id="confirmarSenha"
                 name="confirmarSenha"
-                type="password"
+                type={mostrarConfirmarSenha ? "text" : "password"}
                 autoComplete="new-password"
                 value={confirmarSenha}
                 onChange={(event) => setConfirmarSenha(event.target.value)}
@@ -269,18 +289,36 @@ export function UserRegister() {
                 aria-describedby={
                   errors.confirmarSenha ? "confirmar-senha-error" : undefined
                 }
+                className="pr-12"
               />
 
-              {errors.confirmarSenha && (
-                <p
-                  id="confirmar-senha-error"
-                  className="text-sm text-destructive"
-                  role="alert"
-                >
-                  {errors.confirmarSenha}
-                </p>
-              )}
+              <button
+                type="button"
+                onClick={() => setMostrarConfirmarSenha((valor) => !valor)}
+                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center"
+                aria-label={
+                  mostrarConfirmarSenha
+                    ? "Ocultar confirmação da senha"
+                    : "Mostrar confirmação da senha"
+                }
+              >
+                {mostrarConfirmarSenha ? (
+                  <EyeOff className="h-5 w-5" aria-hidden="true" />
+                ) : (
+                  <Eye className="h-5 w-5" aria-hidden="true" />
+                )}
+              </button>
             </div>
+
+            {errors.confirmarSenha && (
+              <p
+                id="confirmar-senha-error"
+                className="text-sm text-destructive"
+                role="alert"
+              >
+                {errors.confirmarSenha}
+              </p>
+            )}
           </div>
 
           <div className="flex items-start gap-3">
