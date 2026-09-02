@@ -85,21 +85,21 @@ export function UserRegister() {
       <div className="rounded-xl border border-border bg-card p-8 shadow-sm sm:p-10">
         <header className="mb-8">
           <h1 className="text-3xl font-semibold tracking-tight">
-            Cadastro do profissional
+            Dados do profissional
           </h1>
 
           <p className="mt-3 text-base leading-7 text-foreground">
-            Preencha seus dados para criar sua conta.
+            Preencha seus dados para se candidatar às vagas.
           </p>
 
-          <p className="mt-3 text-sm text-foreground">
+          <p className="mt-3 text-base text-foreground">
             Os campos marcados com * são obrigatórios.
           </p>
         </header>
 
         <form onSubmit={handleSubmit} noValidate className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="nome">
+            <Label htmlFor="nome" className="text-base font-semibold">
               Nome completo <span aria-hidden="true">*</span>
             </Label>
 
@@ -126,68 +126,73 @@ export function UserRegister() {
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="cpf">
-              CPF <span aria-hidden="true">*</span>
-            </Label>
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="cpf" className="text-base font-semibold">
+                CPF <span aria-hidden="true">*</span>
+              </Label>
 
-            <Input
-              id="cpf"
-              name="cpf"
-              type="text"
-              inputMode="numeric"
-              autoComplete="off"
-              placeholder="000.000.000-00"
-              value={cpf}
-              onChange={(event) => handleCpfChange(event.target.value)}
-              aria-required="true"
-              aria-invalid={Boolean(errors.cpf)}
-              aria-describedby={errors.cpf ? "cpf-error" : undefined}
-            />
+              <Input
+                id="cpf"
+                name="cpf"
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                placeholder="000.000.000-00"
+                value={cpf}
+                onChange={(event) => handleCpfChange(event.target.value)}
+                aria-required="true"
+                aria-invalid={Boolean(errors.cpf)}
+                aria-describedby={errors.cpf ? "cpf-error" : undefined}
+              />
 
-            {errors.cpf && (
-              <p
-                id="cpf-error"
-                className="text-sm text-destructive"
-                role="alert"
+              {errors.cpf && (
+                <p
+                  id="cpf-error"
+                  className="text-sm text-destructive"
+                  role="alert"
+                >
+                  {errors.cpf}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label
+                htmlFor="dataNascimento"
+                className="text-base font-semibold"
               >
-                {errors.cpf}
-              </p>
-            )}
+                Data de nascimento <span aria-hidden="true">*</span>
+              </Label>
+
+              <Input
+                id="dataNascimento"
+                name="dataNascimento"
+                type="date"
+                autoComplete="bday"
+                value={dataNascimento}
+                onChange={(event) => setDataNascimento(event.target.value)}
+                aria-required="true"
+                aria-invalid={Boolean(errors.dataNascimento)}
+                aria-describedby={
+                  errors.dataNascimento ? "data-nascimento-error" : undefined
+                }
+              />
+
+              {errors.dataNascimento && (
+                <p
+                  id="data-nascimento-error"
+                  className="text-sm text-destructive"
+                  role="alert"
+                >
+                  {errors.dataNascimento}
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="dataNascimento">
-              Data de nascimento <span aria-hidden="true">*</span>
-            </Label>
-
-            <Input
-              id="dataNascimento"
-              name="dataNascimento"
-              type="date"
-              autoComplete="bday"
-              value={dataNascimento}
-              onChange={(event) => setDataNascimento(event.target.value)}
-              aria-required="true"
-              aria-invalid={Boolean(errors.dataNascimento)}
-              aria-describedby={
-                errors.dataNascimento ? "data-nascimento-error" : undefined
-              }
-            />
-
-            {errors.dataNascimento && (
-              <p
-                id="data-nascimento-error"
-                className="text-sm text-destructive"
-                role="alert"
-              >
-                {errors.dataNascimento}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">
+            <Label htmlFor="email" className="text-base font-semibold">
               E-mail <span aria-hidden="true">*</span>
             </Label>
 
@@ -214,62 +219,67 @@ export function UserRegister() {
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="senha">
-              Senha <span aria-hidden="true">*</span>
-            </Label>
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="senha" className="text-base font-semibold">
+                Senha <span aria-hidden="true">*</span>
+              </Label>
 
-            <Input
-              id="senha"
-              name="senha"
-              type="password"
-              autoComplete="new-password"
-              value={senha}
-              onChange={(event) => setSenha(event.target.value)}
-              aria-required="true"
-              aria-invalid={Boolean(errors.senha)}
-              aria-describedby={errors.senha ? "senha-error" : undefined}
-            />
+              <Input
+                id="senha"
+                name="senha"
+                type="password"
+                autoComplete="new-password"
+                value={senha}
+                onChange={(event) => setSenha(event.target.value)}
+                aria-required="true"
+                aria-invalid={Boolean(errors.senha)}
+                aria-describedby={errors.senha ? "senha-error" : undefined}
+              />
 
-            {errors.senha && (
-              <p
-                id="senha-error"
-                className="text-sm text-destructive"
-                role="alert"
+              {errors.senha && (
+                <p
+                  id="senha-error"
+                  className="text-sm text-destructive"
+                  role="alert"
+                >
+                  {errors.senha}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label
+                htmlFor="confirmarSenha"
+                className="text-base font-semibold"
               >
-                {errors.senha}
-              </p>
-            )}
-          </div>
+                Confirmar senha <span aria-hidden="true">*</span>
+              </Label>
 
-          <div className="space-y-2">
-            <Label htmlFor="confirmarSenha">
-              Confirmar senha <span aria-hidden="true">*</span>
-            </Label>
+              <Input
+                id="confirmarSenha"
+                name="confirmarSenha"
+                type="password"
+                autoComplete="new-password"
+                value={confirmarSenha}
+                onChange={(event) => setConfirmarSenha(event.target.value)}
+                aria-required="true"
+                aria-invalid={Boolean(errors.confirmarSenha)}
+                aria-describedby={
+                  errors.confirmarSenha ? "confirmar-senha-error" : undefined
+                }
+              />
 
-            <Input
-              id="confirmarSenha"
-              name="confirmarSenha"
-              type="password"
-              autoComplete="new-password"
-              value={confirmarSenha}
-              onChange={(event) => setConfirmarSenha(event.target.value)}
-              aria-required="true"
-              aria-invalid={Boolean(errors.confirmarSenha)}
-              aria-describedby={
-                errors.confirmarSenha ? "confirmar-senha-error" : undefined
-              }
-            />
-
-            {errors.confirmarSenha && (
-              <p
-                id="confirmar-senha-error"
-                className="text-sm text-destructive"
-                role="alert"
-              >
-                {errors.confirmarSenha}
-              </p>
-            )}
+              {errors.confirmarSenha && (
+                <p
+                  id="confirmar-senha-error"
+                  className="text-sm text-destructive"
+                  role="alert"
+                >
+                  {errors.confirmarSenha}
+                </p>
+              )}
+            </div>
           </div>
 
           <Button type="submit" className="w-full">
