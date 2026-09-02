@@ -88,11 +88,11 @@ export function UserRegister() {
             Cadastro do profissional
           </h1>
 
-          <p className="mt-3 text-base leading-7 text-muted-foreground">
+          <p className="mt-3 text-base leading-7 text-foreground">
             Preencha seus dados para criar sua conta.
           </p>
 
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-3 text-sm text-foreground">
             Os campos marcados com * são obrigatórios.
           </p>
         </header>
