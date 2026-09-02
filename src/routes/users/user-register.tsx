@@ -11,6 +11,7 @@ export function UserRegister() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
+  const [aceitouTermos, setAceitouTermos] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -282,9 +283,37 @@ export function UserRegister() {
             </div>
           </div>
 
-          <Button type="submit" className="w-full">
+          <div className="flex items-start gap-3">
+            <input
+              id="aceitouTermos"
+              type="checkbox"
+              checked={aceitouTermos}
+              onChange={(event) => setAceitouTermos(event.target.checked)}
+              className="mt-1 h-5 w-5"
+            />
+
+            <Label
+              htmlFor="aceitouTermos"
+              className="text-base leading-6 font-normal"
+            >
+              Li e aceito os Termos de Uso e a Política de Privacidade.
+            </Label>
+          </div>
+
+          <Button
+            type="submit"
+            className="h-14 w-full text-lg"
+            disabled={!aceitouTermos}
+          >
             Criar conta
           </Button>
+
+          <p className="text-center text-base">
+            Já tenho uma conta?{" "}
+            <a href="/login" className="font-semibold underline">
+              Entrar
+            </a>
+          </p>
         </form>
       </div>
     </main>
