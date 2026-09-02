@@ -249,13 +249,19 @@ export function UserRegister() {
               <button
                 type="button"
                 onClick={() => setMostrarSenha((valor) => !valor)}
-                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center"
+                className="absolute inset-y-0 right-0 flex items-center gap-2 px-4 text-base font-semibold"
                 aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
               >
                 {mostrarSenha ? (
-                  <EyeOff className="h-5 w-5" aria-hidden="true" />
+                  <>
+                    <EyeOff className="h-5 w-5" aria-hidden="true" />
+                    Ocultar
+                  </>
                 ) : (
-                  <Eye className="h-5 w-5" aria-hidden="true" />
+                  <>
+                    <Eye className="h-5 w-5" aria-hidden="true" />
+                    Mostrar
+                  </>
                 )}
               </button>
             </div>
@@ -295,17 +301,21 @@ export function UserRegister() {
               <button
                 type="button"
                 onClick={() => setMostrarConfirmarSenha((valor) => !valor)}
-                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center"
+                className="absolute inset-y-0 right-0 flex items-center gap-2 px-4 text-base font-semibold"
                 aria-label={
-                  mostrarConfirmarSenha
-                    ? "Ocultar confirmação da senha"
-                    : "Mostrar confirmação da senha"
+                  mostrarConfirmarSenha ? "Ocultar senha" : "Mostrar senha"
                 }
               >
-                {mostrarConfirmarSenha ? (
-                  <EyeOff className="h-5 w-5" aria-hidden="true" />
+                {mostrarSenha ? (
+                  <>
+                    <EyeOff className="h-5 w-5" aria-hidden="true" />
+                    Ocultar
+                  </>
                 ) : (
-                  <Eye className="h-5 w-5" aria-hidden="true" />
+                  <>
+                    <Eye className="h-5 w-5" aria-hidden="true" />
+                    Mostrar
+                  </>
                 )}
               </button>
             </div>
