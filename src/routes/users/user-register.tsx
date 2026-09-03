@@ -118,12 +118,13 @@ export function UserRegister() {
       setCity(data.localidade ?? "");
       setState(data.uf ?? "");
       setIsCepValid(true);
-    } catch (error: unknown) {
+    } catch (caughtError: unknown) {
       setIsCepValid(false);
 
+      const err = caughtError;
       const errorMessage =
-        error instanceof Error
-          ? error.message
+        err instanceof Error
+          ? err.message
           : "Não foi possível consultar o CEP. Verifique sua conexão e tente novamente.";
 
       setErrors((currentErrors) => ({
