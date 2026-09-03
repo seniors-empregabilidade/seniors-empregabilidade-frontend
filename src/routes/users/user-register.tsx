@@ -5,6 +5,42 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
 
+type ViaCepResponse = {
+  cep?: string;
+  logradouro?: string;
+  bairro?: string;
+  localidade?: string;
+  uf?: string;
+  erro?: boolean;
+};
+
+function isViaCepResponse(data: unknown): data is ViaCepResponse {
+  if (typeof data !== "object" || data === null) {
+    return false;
+  }
+
+  const response = data as Record<string, unknown>;
+
+  return (
+    (response.cep === undefined || typeof response.cep === "string") &&
+    (response.logradouro === undefined ||
+      typeof response.logradouro === "string") &&
+    (response.bairro === undefined || typeof response.bairro === "string") &&
+    (response.localidade === undefined ||
+      typeof response.localidade === "string") &&
+    (response.uf === undefined || typeof response.uf === "string") &&
+    (response.erro === undefined || typeof response.erro === "boolean")
+  );
+}
+
+function parseJson(text: string): unknown {
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return null;
+  }
+}
+
 export function UserRegister() {
   const [nome, setNome] = useState("");
   const [cpf, setCpf] = useState("");
@@ -13,43 +49,112 @@ export function UserRegister() {
   const [senha, setSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
   const [aceitouTermos, setAceitouTermos] = useState(false);
+
+  const [cep, setCep] = useState("");
+  const [logradouro, setLogradouro] = useState("");
+  const [bairro, setBairro] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [estado, setEstado] = useState("");
+
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [mostrarConfirmarSenha, setMostrarConfirmarSenha] = useState(false);
 
+  const [consultandoCep, setConsultandoCep] = useState(false);
+  const [cepValido, setCepValido] = useState(false);
+
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function consultarCep(cepValue: string) {
+    const cepNumbers = cepValue.replace(/\D/g, "");
 
-    const newErrors: Record<string, string> = {};
-
-    if (!nome.trim()) {
-      newErrors.nome = "Informe seu nome completo.";
+    if (cepNumbers.length !== 8) {
+      setCepValido(false);
+      return;
     }
 
-    if (!cpf.trim()) {
-      newErrors.cpf = "Informe seu CPF.";
+    setConsultandoCep(true);
+
+    setErrors((currentErrors) => {
+      const newErrors = { ...currentErrors };
+      delete newErrors.cep;
+      return newErrors;
+    });
+
+    try {
+      const response = await fetch(
+        `https://viacep.com.br/ws/${cepNumbers}/json/`,
+      );
+
+      if (!response.ok) {
+        throw new Error("Erro ao consultar o CEP.");
+      }
+
+      const responseText = await response.text();
+      const data = parseJson(responseText);
+
+      if (!isViaCepResponse(data)) {
+        throw new Error("Resposta inválida da API.");
+      }
+
+      if (data.erro) {
+        setCepValido(false);
+
+        setLogradouro("");
+        setBairro("");
+        setCidade("");
+        setEstado("");
+
+        setErrors((currentErrors) => ({
+          ...currentErrors,
+          cep: "Não encontramos esse CEP. Verifique os números e tente novamente.",
+        }));
+
+        return;
+      }
+
+      setLogradouro(data.logradouro ?? "");
+      setBairro(data.bairro ?? "");
+      setCidade(data.localidade ?? "");
+      setEstado(data.uf ?? "");
+      setCepValido(true);
+    } catch {
+      setCepValido(false);
+
+      setErrors((currentErrors) => ({
+        ...currentErrors,
+        cep: "Não foi possível consultar o CEP. Verifique sua conexão e tente novamente.",
+      }));
+    } finally {
+      setConsultandoCep(false);
+    }
+  }
+
+  function handleCepChange(value: string) {
+    const numbers = value.replace(/\D/g, "").slice(0, 8);
+
+    let formatted = numbers;
+
+    if (numbers.length > 5) {
+      formatted = numbers.substring(0, 5) + "-" + numbers.substring(5);
     }
 
-    if (!dataNascimento) {
-      newErrors.dataNascimento = "Informe sua data de nascimento.";
-    }
+    setCep(formatted);
+    setCepValido(false);
 
-    if (!email.trim()) {
-      newErrors.email = "Informe seu e-mail.";
-    }
+    setLogradouro("");
+    setBairro("");
+    setCidade("");
+    setEstado("");
 
-    if (!senha) {
-      newErrors.senha = "Informe uma senha.";
-    }
+    setErrors((currentErrors) => {
+      const newErrors = { ...currentErrors };
+      delete newErrors.cep;
+      return newErrors;
+    });
 
-    if (!confirmarSenha) {
-      newErrors.confirmarSenha = "Confirme sua senha.";
-    } else if (senha !== confirmarSenha) {
-      newErrors.confirmarSenha = "As senhas não coincidem.";
+    if (numbers.length === 8) {
+      void consultarCep(numbers);
     }
-
-    setErrors(newErrors);
   }
 
   function handleCpfChange(value: string) {
@@ -84,6 +189,52 @@ export function UserRegister() {
     setCpf(formatted);
   }
 
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const newErrors: Record<string, string> = {};
+
+    if (!nome.trim()) {
+      newErrors.nome = "Informe seu nome completo.";
+    }
+
+    if (!cpf.trim()) {
+      newErrors.cpf = "Informe seu CPF.";
+    }
+
+    if (!dataNascimento) {
+      newErrors.dataNascimento = "Informe sua data de nascimento.";
+    }
+
+    if (!email.trim()) {
+      newErrors.email = "Informe seu e-mail.";
+    }
+
+    if (!cep.trim()) {
+      newErrors.cep = "Informe seu CEP.";
+    } else if (!cepValido) {
+      newErrors.cep = "Informe um CEP válido antes de continuar.";
+    }
+
+    if (!senha) {
+      newErrors.senha = "Informe uma senha.";
+    } else if (senha.length < 8) {
+      newErrors.senha = "A senha deve ter no mínimo 8 caracteres.";
+    } else if (!/[A-Za-z]/.test(senha)) {
+      newErrors.senha = "A senha deve conter pelo menos uma letra.";
+    } else if (!/\d/.test(senha)) {
+      newErrors.senha = "A senha deve conter pelo menos um número.";
+    }
+
+    if (!confirmarSenha) {
+      newErrors.confirmarSenha = "Confirme sua senha.";
+    } else if (senha !== confirmarSenha) {
+      newErrors.confirmarSenha = "As senhas não coincidem.";
+    }
+
+    setErrors(newErrors);
+  }
+
   return (
     <main className="mx-auto flex min-h-svh max-w-2xl flex-col justify-center px-6 py-12">
       <div className="rounded-xl border border-border bg-card p-8 shadow-sm sm:p-10">
@@ -116,10 +267,10 @@ export function UserRegister() {
               onChange={(event) => setNome(event.target.value)}
               aria-required="true"
               aria-invalid={Boolean(errors.nome)}
-              aria-describedby={errors.nome ? "nome-error" : undefined}
+              aria-describedby={errors.nome ? "nome-error" : "nome-description"}
             />
 
-            <p id="nome-description" className="text-sm text-muted-foreground">
+            <p id="nome-description" className="text-sm text-foreground">
               Este é o nome que as empresas verão no seu currículo.
             </p>
 
@@ -227,6 +378,118 @@ export function UserRegister() {
             )}
           </div>
 
+          <fieldset className="space-y-6">
+            <legend className="text-xl font-semibold">Endereço</legend>
+
+            <div className="space-y-2">
+              <Label htmlFor="cep" className="text-base font-semibold">
+                CEP <span aria-hidden="true">*</span>
+              </Label>
+
+              <Input
+                id="cep"
+                name="cep"
+                type="text"
+                inputMode="numeric"
+                autoComplete="postal-code"
+                placeholder="00000-000"
+                value={cep}
+                onChange={(event) => handleCepChange(event.target.value)}
+                aria-required="true"
+                aria-invalid={Boolean(errors.cep)}
+                aria-describedby={errors.cep ? "cep-error" : "cep-description"}
+              />
+
+              <p id="cep-description" className="text-sm text-foreground">
+                Digite seu CEP para preencher o endereço automaticamente.
+              </p>
+
+              {consultandoCep && (
+                <p className="text-sm text-muted-foreground" aria-live="polite">
+                  Consultando CEP...
+                </p>
+              )}
+
+              {errors.cep && (
+                <p
+                  id="cep-error"
+                  className="text-sm text-destructive"
+                  role="alert"
+                >
+                  {errors.cep}
+                </p>
+              )}
+
+              {cepValido && !consultandoCep && (
+                <p className="text-sm text-green-700" role="status">
+                  Endereço encontrado.
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="logradouro" className="text-base font-semibold">
+                Logradouro
+              </Label>
+
+              <Input
+                id="logradouro"
+                name="logradouro"
+                type="text"
+                autoComplete="street-address"
+                value={logradouro}
+                onChange={(event) => setLogradouro(event.target.value)}
+              />
+            </div>
+
+            <div className="grid gap-6 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="bairro" className="text-base font-semibold">
+                  Bairro
+                </Label>
+
+                <Input
+                  id="bairro"
+                  name="bairro"
+                  type="text"
+                  autoComplete="address-level3"
+                  value={bairro}
+                  onChange={(event) => setBairro(event.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cidade" className="text-base font-semibold">
+                  Cidade
+                </Label>
+
+                <Input
+                  id="cidade"
+                  name="cidade"
+                  type="text"
+                  autoComplete="address-level2"
+                  value={cidade}
+                  onChange={(event) => setCidade(event.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="estado" className="text-base font-semibold">
+                Estado
+              </Label>
+
+              <Input
+                id="estado"
+                name="estado"
+                type="text"
+                autoComplete="address-level1"
+                value={estado}
+                onChange={(event) => setEstado(event.target.value)}
+              />
+            </div>
+          </fieldset>
+
           <div className="space-y-2">
             <Label htmlFor="senha" className="text-base font-semibold">
               Senha <span aria-hidden="true">*</span>
@@ -242,7 +505,7 @@ export function UserRegister() {
                 onChange={(event) => setSenha(event.target.value)}
                 aria-required="true"
                 aria-invalid={Boolean(errors.senha)}
-                aria-describedby={errors.senha ? "senha-error" : undefined}
+                aria-describedby="senha-description"
                 className="pr-12"
               />
 
@@ -265,6 +528,11 @@ export function UserRegister() {
                 )}
               </button>
             </div>
+
+            <p id="senha-description" className="text-sm text-foreground">
+              A senha deve ter no mínimo 8 caracteres, incluindo pelo menos uma
+              letra e um número.
+            </p>
 
             {errors.senha && (
               <p
@@ -306,7 +574,7 @@ export function UserRegister() {
                   mostrarConfirmarSenha ? "Ocultar senha" : "Mostrar senha"
                 }
               >
-                {mostrarSenha ? (
+                {mostrarConfirmarSenha ? (
                   <>
                     <EyeOff className="h-5 w-5" aria-hidden="true" />
                     Ocultar
@@ -350,8 +618,8 @@ export function UserRegister() {
 
           <Button
             type="submit"
-            className="h-14 w-full text-lg"
-            disabled={!aceitouTermos}
+            className="h-14 w-full bg-[#1D4ED8] text-lg text-white hover:bg-[#1E40AF]"
+            disabled={!aceitouTermos || consultandoCep}
           >
             Criar conta
           </Button>
