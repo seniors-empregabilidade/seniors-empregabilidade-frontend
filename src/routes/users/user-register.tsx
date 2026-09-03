@@ -91,13 +91,13 @@ export function UserRegister() {
       }
 
       const responseText = await response.text();
-      const data = parseJson(responseText);
+      const rawData = parseJson(responseText);
 
-      if (!isViaCepResponse(data)) {
+      if (!isViaCepResponse(rawData)) {
         throw new Error("Resposta inválida da API.");
       }
 
-      if (data.erro) {
+      if (rawData.erro) {
         setIsCepValid(false);
 
         setStreet("");
@@ -113,18 +113,17 @@ export function UserRegister() {
         return;
       }
 
-      setStreet(data.logradouro ?? "");
-      setNeighborhood(data.bairro ?? "");
-      setCity(data.localidade ?? "");
-      setState(data.uf ?? "");
+      setStreet(rawData.logradouro ?? "");
+      setNeighborhood(rawData.bairro ?? "");
+      setCity(rawData.localidade ?? "");
+      setState(rawData.uf ?? "");
       setIsCepValid(true);
-    } catch (caughtError: unknown) {
+    } catch (error: unknown) {
       setIsCepValid(false);
 
-      const err = caughtError;
       const errorMessage =
-        err instanceof Error
-          ? err.message
+        error instanceof Error
+          ? error.message
           : "Não foi possível consultar o CEP. Verifique sua conexão e tente novamente.";
 
       setErrors((currentErrors) => ({
