@@ -42,38 +42,38 @@ function parseJson(text: string): unknown {
 }
 
 export function UserRegister() {
-  const [nome, setNome] = useState("");
+  const [name, setName] = useState("");
   const [cpf, setCpf] = useState("");
-  const [dataNascimento, setDataNascimento] = useState("");
+  const [birthDate, setBirthDate] = useState("");
   const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
-  const [confirmarSenha, setConfirmarSenha] = useState("");
-  const [aceitouTermos, setAceitouTermos] = useState(false);
-  const [telefone, setTelefone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [phone, setPhone] = useState("");
 
   const [cep, setCep] = useState("");
-  const [logradouro, setLogradouro] = useState("");
-  const [bairro, setBairro] = useState("");
-  const [cidade, setCidade] = useState("");
-  const [estado, setEstado] = useState("");
+  const [street, setStreet] = useState("");
+  const [neighborhood, setNeighborhood] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
 
-  const [mostrarSenha, setMostrarSenha] = useState(false);
-  const [mostrarConfirmarSenha, setMostrarConfirmarSenha] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const [consultandoCep, setConsultandoCep] = useState(false);
-  const [cepValido, setCepValido] = useState(false);
+  const [isFetchingCep, setIsFetchingCep] = useState(false);
+  const [isCepValid, setIsCepValid] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  async function consultarCep(cepValue: string) {
+  async function fetchAddressByCep(cepValue: string) {
     const cepNumbers = cepValue.replace(/\D/g, "");
 
     if (cepNumbers.length !== 8) {
-      setCepValido(false);
+      setIsCepValid(false);
       return;
     }
 
-    setConsultandoCep(true);
+    setIsFetchingCep(true);
 
     setErrors((currentErrors) => {
       const newErrors = { ...currentErrors };
@@ -98,12 +98,12 @@ export function UserRegister() {
       }
 
       if (data.erro) {
-        setCepValido(false);
+        setIsCepValid(false);
 
-        setLogradouro("");
-        setBairro("");
-        setCidade("");
-        setEstado("");
+        setStreet("");
+        setNeighborhood("");
+        setCity("");
+        setState("");
 
         setErrors((currentErrors) => ({
           ...currentErrors,
@@ -113,20 +113,20 @@ export function UserRegister() {
         return;
       }
 
-      setLogradouro(data.logradouro ?? "");
-      setBairro(data.bairro ?? "");
-      setCidade(data.localidade ?? "");
-      setEstado(data.uf ?? "");
-      setCepValido(true);
+      setStreet(data.logradouro ?? "");
+      setNeighborhood(data.bairro ?? "");
+      setCity(data.localidade ?? "");
+      setState(data.uf ?? "");
+      setIsCepValid(true);
     } catch {
-      setCepValido(false);
+      setIsCepValid(false);
 
       setErrors((currentErrors) => ({
         ...currentErrors,
         cep: "Não foi possível consultar o CEP. Verifique sua conexão e tente novamente.",
       }));
     } finally {
-      setConsultandoCep(false);
+      setIsFetchingCep(false);
     }
   }
 
@@ -140,12 +140,12 @@ export function UserRegister() {
     }
 
     setCep(formatted);
-    setCepValido(false);
+    setIsCepValid(false);
 
-    setLogradouro("");
-    setBairro("");
-    setCidade("");
-    setEstado("");
+    setStreet("");
+    setNeighborhood("");
+    setCity("");
+    setState("");
 
     setErrors((currentErrors) => {
       const newErrors = { ...currentErrors };
@@ -154,11 +154,11 @@ export function UserRegister() {
     });
 
     if (numbers.length === 8) {
-      void consultarCep(numbers);
+      void fetchAddressByCep(numbers);
     }
   }
 
-  function handleTelefoneChange(value: string) {
+  function handlePhoneChange(value: string) {
     const numbers = value.replace(/\D/g, "").slice(0, 11);
 
     let formatted = numbers;
@@ -174,7 +174,7 @@ export function UserRegister() {
       )}-${numbers.substring(7)}`;
     }
 
-    setTelefone(formatted);
+    setPhone(formatted);
   }
 
   function handleCpfChange(value: string) {
@@ -214,46 +214,46 @@ export function UserRegister() {
 
     const newErrors: Record<string, string> = {};
 
-    if (!nome.trim()) {
-      newErrors.nome = "Informe seu nome completo.";
+    if (!name.trim()) {
+      newErrors.name = "Informe seu nome completo.";
     }
 
     if (!cpf.trim()) {
       newErrors.cpf = "Informe seu CPF.";
     }
 
-    if (!dataNascimento) {
-      newErrors.dataNascimento = "Informe sua data de nascimento.";
+    if (!birthDate) {
+      newErrors.birthDate = "Informe sua data de nascimento.";
     }
 
     if (!email.trim()) {
       newErrors.email = "Informe seu e-mail.";
     }
 
-    if (!telefone.trim()) {
-      newErrors.telefone = "Informe seu telefone.";
+    if (!phone.trim()) {
+      newErrors.phone = "Informe seu telefone.";
     }
 
     if (!cep.trim()) {
       newErrors.cep = "Informe seu CEP.";
-    } else if (!cepValido) {
+    } else if (!isCepValid) {
       newErrors.cep = "Informe um CEP válido antes de continuar.";
     }
 
-    if (!senha) {
-      newErrors.senha = "Informe uma senha.";
-    } else if (senha.length < 8) {
-      newErrors.senha = "A senha deve ter no mínimo 8 caracteres.";
-    } else if (!/[A-Za-z]/.test(senha)) {
-      newErrors.senha = "A senha deve conter pelo menos uma letra.";
-    } else if (!/\d/.test(senha)) {
-      newErrors.senha = "A senha deve conter pelo menos um número.";
+    if (!password) {
+      newErrors.password = "Informe uma senha.";
+    } else if (password.length < 8) {
+      newErrors.password = "A senha deve ter no mínimo 8 caracteres.";
+    } else if (!/[A-Za-z]/.test(password)) {
+      newErrors.password = "A senha deve conter pelo menos uma letra.";
+    } else if (!/\d/.test(password)) {
+      newErrors.password = "A senha deve conter pelo menos um número.";
     }
 
-    if (!confirmarSenha) {
-      newErrors.confirmarSenha = "Confirme sua senha.";
-    } else if (senha !== confirmarSenha) {
-      newErrors.confirmarSenha = "As senhas não coincidem.";
+    if (!confirmPassword) {
+      newErrors.confirmPassword = "Confirme sua senha.";
+    } else if (password !== confirmPassword) {
+      newErrors.confirmPassword = "As senhas não coincidem.";
     }
 
     setErrors(newErrors);
@@ -278,33 +278,33 @@ export function UserRegister() {
 
         <form onSubmit={handleSubmit} noValidate className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="nome" className="text-base font-semibold">
+            <Label htmlFor="name" className="text-base font-semibold">
               Nome completo <span aria-hidden="true">*</span>
             </Label>
 
             <Input
-              id="nome"
-              name="nome"
+              id="name"
+              name="name"
               type="text"
               autoComplete="name"
-              value={nome}
-              onChange={(event) => setNome(event.target.value)}
+              value={name}
+              onChange={(event) => setName(event.target.value)}
               aria-required="true"
-              aria-invalid={Boolean(errors.nome)}
-              aria-describedby={errors.nome ? "nome-error" : "nome-description"}
+              aria-invalid={Boolean(errors.name)}
+              aria-describedby={errors.name ? "name-error" : "name-description"}
             />
 
-            <p id="nome-description" className="text-sm text-foreground">
+            <p id="name-description" className="text-sm text-foreground">
               Este é o nome que as empresas verão no seu currículo.
             </p>
 
-            {errors.nome && (
+            {errors.name && (
               <p
-                id="nome-error"
+                id="name-error"
                 className="text-sm text-destructive"
                 role="alert"
               >
-                {errors.nome}
+                {errors.name}
               </p>
             )}
           </div>
@@ -341,65 +341,62 @@ export function UserRegister() {
             </div>
 
             <div className="space-y-2">
-              <Label
-                htmlFor="dataNascimento"
-                className="text-base font-semibold"
-              >
+              <Label htmlFor="birthDate" className="text-base font-semibold">
                 Data de nascimento <span aria-hidden="true">*</span>
               </Label>
 
               <Input
-                id="dataNascimento"
-                name="dataNascimento"
+                id="birthDate"
+                name="birthDate"
                 type="date"
                 autoComplete="bday"
-                value={dataNascimento}
-                onChange={(event) => setDataNascimento(event.target.value)}
+                value={birthDate}
+                onChange={(event) => setBirthDate(event.target.value)}
                 aria-required="true"
-                aria-invalid={Boolean(errors.dataNascimento)}
+                aria-invalid={Boolean(errors.birthDate)}
                 aria-describedby={
-                  errors.dataNascimento ? "data-nascimento-error" : undefined
+                  errors.birthDate ? "birth-date-error" : undefined
                 }
               />
 
-              {errors.dataNascimento && (
+              {errors.birthDate && (
                 <p
-                  id="data-nascimento-error"
+                  id="birth-date-error"
                   className="text-sm text-destructive"
                   role="alert"
                 >
-                  {errors.dataNascimento}
+                  {errors.birthDate}
                 </p>
               )}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="telefone" className="text-base font-semibold">
+            <Label htmlFor="phone" className="text-base font-semibold">
               Telefone <span aria-hidden="true">*</span>
             </Label>
 
             <Input
-              id="telefone"
-              name="telefone"
+              id="phone"
+              name="phone"
               type="tel"
               inputMode="tel"
               autoComplete="tel"
               placeholder="(00) 00000-0000"
-              value={telefone}
-              onChange={(event) => handleTelefoneChange(event.target.value)}
+              value={phone}
+              onChange={(event) => handlePhoneChange(event.target.value)}
               aria-required="true"
-              aria-invalid={Boolean(errors.telefone)}
-              aria-describedby={errors.telefone ? "telefone-error" : undefined}
+              aria-invalid={Boolean(errors.phone)}
+              aria-describedby={errors.phone ? "phone-error" : undefined}
             />
 
-            {errors.telefone && (
+            {errors.phone && (
               <p
-                id="telefone-error"
+                id="phone-error"
                 className="text-sm text-destructive"
                 role="alert"
               >
-                {errors.telefone}
+                {errors.phone}
               </p>
             )}
           </div>
@@ -458,7 +455,7 @@ export function UserRegister() {
                 Digite seu CEP para preencher o endereço automaticamente.
               </p>
 
-              {consultandoCep && (
+              {isFetchingCep && (
                 <p className="text-sm text-muted-foreground" aria-live="polite">
                   Consultando CEP...
                 </p>
@@ -474,7 +471,7 @@ export function UserRegister() {
                 </p>
               )}
 
-              {cepValido && !consultandoCep && (
+              {isCepValid && !isFetchingCep && (
                 <p className="text-sm text-green-700" role="status">
                   Endereço encontrado.
                 </p>
@@ -482,94 +479,97 @@ export function UserRegister() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="logradouro" className="text-base font-semibold">
+              <Label htmlFor="street" className="text-base font-semibold">
                 Logradouro
               </Label>
 
               <Input
-                id="logradouro"
-                name="logradouro"
+                id="street"
+                name="street"
                 type="text"
                 autoComplete="street-address"
-                value={logradouro}
-                onChange={(event) => setLogradouro(event.target.value)}
+                value={street}
+                onChange={(event) => setStreet(event.target.value)}
               />
             </div>
 
             <div className="grid gap-6 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="bairro" className="text-base font-semibold">
+                <Label
+                  htmlFor="neighborhood"
+                  className="text-base font-semibold"
+                >
                   Bairro
                 </Label>
 
                 <Input
-                  id="bairro"
-                  name="bairro"
+                  id="neighborhood"
+                  name="neighborhood"
                   type="text"
                   autoComplete="address-level3"
-                  value={bairro}
-                  onChange={(event) => setBairro(event.target.value)}
+                  value={neighborhood}
+                  onChange={(event) => setNeighborhood(event.target.value)}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="cidade" className="text-base font-semibold">
+                <Label htmlFor="city" className="text-base font-semibold">
                   Cidade
                 </Label>
 
                 <Input
-                  id="cidade"
-                  name="cidade"
+                  id="city"
+                  name="city"
                   type="text"
                   autoComplete="address-level2"
-                  value={cidade}
-                  onChange={(event) => setCidade(event.target.value)}
+                  value={city}
+                  onChange={(event) => setCity(event.target.value)}
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="estado" className="text-base font-semibold">
+              <Label htmlFor="state" className="text-base font-semibold">
                 Estado
               </Label>
 
               <Input
-                id="estado"
-                name="estado"
+                id="state"
+                name="state"
                 type="text"
                 autoComplete="address-level1"
-                value={estado}
-                onChange={(event) => setEstado(event.target.value)}
+                value={state}
+                onChange={(event) => setState(event.target.value)}
               />
             </div>
           </fieldset>
 
           <div className="space-y-2">
-            <Label htmlFor="senha" className="text-base font-semibold">
+            <Label htmlFor="password" className="text-base font-semibold">
               Senha <span aria-hidden="true">*</span>
             </Label>
 
             <div className="relative">
               <Input
-                id="senha"
-                name="senha"
-                type={mostrarSenha ? "text" : "password"}
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
-                value={senha}
-                onChange={(event) => setSenha(event.target.value)}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
                 aria-required="true"
-                aria-invalid={Boolean(errors.senha)}
-                aria-describedby="senha-description"
+                aria-invalid={Boolean(errors.password)}
+                aria-describedby="password-description"
                 className="pr-12"
               />
 
               <button
                 type="button"
-                onClick={() => setMostrarSenha((valor) => !valor)}
+                onClick={() => setShowPassword((value) => !value)}
                 className="absolute inset-y-0 right-0 flex items-center gap-2 px-4 text-base font-semibold"
-                aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
+                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
               >
-                {mostrarSenha ? (
+                {showPassword ? (
                   <>
                     <EyeOff className="h-5 w-5" aria-hidden="true" />
                     Ocultar
@@ -583,52 +583,55 @@ export function UserRegister() {
               </button>
             </div>
 
-            <p id="senha-description" className="text-sm text-foreground">
+            <p id="password-description" className="text-sm text-foreground">
               A senha deve ter no mínimo 8 caracteres, incluindo pelo menos uma
               letra e um número.
             </p>
 
-            {errors.senha && (
+            {errors.password && (
               <p
-                id="senha-error"
+                id="password-error"
                 className="text-sm text-destructive"
                 role="alert"
               >
-                {errors.senha}
+                {errors.password}
               </p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirmarSenha" className="text-base font-semibold">
+            <Label
+              htmlFor="confirmPassword"
+              className="text-base font-semibold"
+            >
               Confirmar senha <span aria-hidden="true">*</span>
             </Label>
 
             <div className="relative">
               <Input
-                id="confirmarSenha"
-                name="confirmarSenha"
-                type={mostrarConfirmarSenha ? "text" : "password"}
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
                 autoComplete="new-password"
-                value={confirmarSenha}
-                onChange={(event) => setConfirmarSenha(event.target.value)}
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
                 aria-required="true"
-                aria-invalid={Boolean(errors.confirmarSenha)}
+                aria-invalid={Boolean(errors.confirmPassword)}
                 aria-describedby={
-                  errors.confirmarSenha ? "confirmar-senha-error" : undefined
+                  errors.confirmPassword ? "confirm-password-error" : undefined
                 }
                 className="pr-12"
               />
 
               <button
                 type="button"
-                onClick={() => setMostrarConfirmarSenha((valor) => !valor)}
+                onClick={() => setShowConfirmPassword((value) => !value)}
                 className="absolute inset-y-0 right-0 flex items-center gap-2 px-4 text-base font-semibold"
                 aria-label={
-                  mostrarConfirmarSenha ? "Ocultar senha" : "Mostrar senha"
+                  showConfirmPassword ? "Ocultar senha" : "Mostrar senha"
                 }
               >
-                {mostrarConfirmarSenha ? (
+                {showConfirmPassword ? (
                   <>
                     <EyeOff className="h-5 w-5" aria-hidden="true" />
                     Ocultar
@@ -642,28 +645,28 @@ export function UserRegister() {
               </button>
             </div>
 
-            {errors.confirmarSenha && (
+            {errors.confirmPassword && (
               <p
-                id="confirmar-senha-error"
+                id="confirm-password-error"
                 className="text-sm text-destructive"
                 role="alert"
               >
-                {errors.confirmarSenha}
+                {errors.confirmPassword}
               </p>
             )}
           </div>
 
           <div className="flex items-start gap-3">
             <input
-              id="aceitouTermos"
+              id="acceptedTerms"
               type="checkbox"
-              checked={aceitouTermos}
-              onChange={(event) => setAceitouTermos(event.target.checked)}
+              checked={acceptedTerms}
+              onChange={(event) => setAcceptedTerms(event.target.checked)}
               className="mt-1 h-5 w-5"
             />
 
             <Label
-              htmlFor="aceitouTermos"
+              htmlFor="acceptedTerms"
               className="text-base leading-6 font-normal"
             >
               Li e aceito os Termos de Uso e a Política de Privacidade.
@@ -673,7 +676,7 @@ export function UserRegister() {
           <Button
             type="submit"
             className="h-14 w-full bg-[#1D4ED8] text-lg text-white hover:bg-[#1E40AF]"
-            disabled={!aceitouTermos || consultandoCep}
+            disabled={!acceptedTerms || isFetchingCep}
           >
             Criar conta
           </Button>
