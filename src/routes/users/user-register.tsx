@@ -49,6 +49,7 @@ export function UserRegister() {
   const [senha, setSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
   const [aceitouTermos, setAceitouTermos] = useState(false);
+  const [telefone, setTelefone] = useState("");
 
   const [cep, setCep] = useState("");
   const [logradouro, setLogradouro] = useState("");
@@ -157,6 +158,25 @@ export function UserRegister() {
     }
   }
 
+  function handleTelefoneChange(value: string) {
+    const numbers = value.replace(/\D/g, "").slice(0, 11);
+
+    let formatted = numbers;
+
+    if (numbers.length > 2) {
+      formatted = `(${numbers.substring(0, 2)}) ${numbers.substring(2)}`;
+    }
+
+    if (numbers.length > 6) {
+      formatted = `(${numbers.substring(0, 2)}) ${numbers.substring(
+        2,
+        7,
+      )}-${numbers.substring(7)}`;
+    }
+
+    setTelefone(formatted);
+  }
+
   function handleCpfChange(value: string) {
     const numbers = value.replace(/\D/g, "").slice(0, 11);
 
@@ -208,6 +228,10 @@ export function UserRegister() {
 
     if (!email.trim()) {
       newErrors.email = "Informe seu e-mail.";
+    }
+
+    if (!telefone.trim()) {
+      newErrors.telefone = "Informe seu telefone.";
     }
 
     if (!cep.trim()) {
@@ -348,6 +372,36 @@ export function UserRegister() {
                 </p>
               )}
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="telefone" className="text-base font-semibold">
+              Telefone <span aria-hidden="true">*</span>
+            </Label>
+
+            <Input
+              id="telefone"
+              name="telefone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder="(00) 00000-0000"
+              value={telefone}
+              onChange={(event) => handleTelefoneChange(event.target.value)}
+              aria-required="true"
+              aria-invalid={Boolean(errors.telefone)}
+              aria-describedby={errors.telefone ? "telefone-error" : undefined}
+            />
+
+            {errors.telefone && (
+              <p
+                id="telefone-error"
+                className="text-sm text-destructive"
+                role="alert"
+              >
+                {errors.telefone}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
