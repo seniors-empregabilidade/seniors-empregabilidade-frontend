@@ -14,7 +14,7 @@
     "preview": "vite preview",
     "preview:ci": "vite preview --host 127.0.0.1 --port 4173",
     "typecheck": "tsc -b --pretty false",
-    "lint": "pnpm tsr generate && eslint . --config config/eslint.config.js --max-warnings=0",
+    "lint": "eslint . --config config/eslint.config.js --max-warnings=0",
     "lint:fix": "eslint . --config config/eslint.config.js --fix --max-warnings=0",
     "format": "prettier . --config config/prettier.config.mjs --ignore-path config/prettierignore --write",
     "format:check": "prettier . --config config/prettier.config.mjs --ignore-path config/prettierignore --check",
