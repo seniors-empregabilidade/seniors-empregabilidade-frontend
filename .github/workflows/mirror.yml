@@ -3,18 +3,27 @@ name: Mirror to GitLab Self-Managed
 on:
   push:
     branches:
-      - "**" # Sincroniza qualquer branch enviada
+      - "**"
+
+concurrency:
+  group: mirror-gitlab
+  cancel-in-progress: false
 
 jobs:
   mirror:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout do código
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Push para o GitLab
         run: |
           git remote add gitlab "https://oauth2:${{ secrets.GITLAB_TOKEN_FRONT }}@tools.ages.pucrs.br/2026-2/2lm-4lm/seniors-empregabilidade/seniors-empregabilidade-frontend.git"
-          git push gitlab --all --force
+          for tentativa in 1 2 3; do
+            git push gitlab --all --force && exit 0
+            echo "Tentativa $tentativa falhou. Aguardando 30s."
+            sleep 30
+          done
+          exit 1
