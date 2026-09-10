@@ -3,8 +3,15 @@ describe("landing page", () => {
     cy.visit("/");
 
     cy.get("h1").should("contain.text", "Vinte anos de carreira");
-    cy.contains("button", "Criar minha conta").should("be.visible");
-    cy.contains("button", "Cadastrar minha empresa").should("be.visible");
+    cy.contains("a", "Criar minha conta")
+      .should("be.visible")
+      .and("have.attr", "href", "/cadastro");
+    cy.contains("a", "Cadastrar minha empresa")
+      .should("be.visible")
+      .and("have.attr", "href", "/cadastro-empresa");
+    cy.contains("a", "Entrar")
+      .should("be.visible")
+      .and("have.attr", "href", "/login");
   });
 
   it("has no detectable WCAG 2.2 AA violations on the landing page", () => {

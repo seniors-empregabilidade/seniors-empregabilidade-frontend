@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -49,10 +49,15 @@ function SiteHeader() {
           >
             Como funciona
           </a>
-          <span className="text-base text-foreground-2 underline underline-offset-4">
+          <a
+            href="/login"
+            className="text-base text-foreground-2 underline underline-offset-4 hover:text-foreground"
+          >
             Entrar
-          </span>
-          <Button type="button">Criar conta</Button>
+          </a>
+          <a href="/cadastro" className={buttonVariants()}>
+            Criar conta
+          </a>
         </nav>
       </div>
     </header>
@@ -77,25 +82,22 @@ function HeroSection() {
             empresa está procurando.
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-foreground-2">
-            A Seniors conecta profissionais com 50 anos ou mais a empresas que
+            A Seniors conecta profissionais com 45 anos ou mais a empresas que
             contratam por competência. Você monta seu currículo, vê quais
             requisitos de cada vaga já atende e acompanha cada processo do
             início ao fim.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-4">
-            <Button type="button" size="lg">
+            <a href="/cadastro" className={buttonVariants({ size: "lg" })}>
               Criar minha conta
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              nativeButton={false}
-              // eslint-disable-next-line jsx-a11y/anchor-has-content -- Button injects its children into this anchor at render time.
-              render={<a href="#como-funciona" />}
+            </a>
+            <a
+              href="#como-funciona"
+              className={buttonVariants({ variant: "outline", size: "lg" })}
             >
               Como funciona
-            </Button>
+            </a>
           </div>
 
           <Separator className="mt-8 bg-rule" />
@@ -134,7 +136,7 @@ function HeroSection() {
               IMAGEM
             </span>
             <span className="mt-2 max-w-xs text-base text-muted-foreground">
-              Foto de profissional 50+ em ambiente de trabalho. Arquivo a
+              Foto de profissional 45+ em ambiente de trabalho. Arquivo a
               definir.
             </span>
           </div>
@@ -268,9 +270,12 @@ function GetStartedSection() {
               Você preenche uma vez e usa em todas as candidaturas. Leva cerca
               de 15 minutos.
             </p>
-            <Button type="button" className="mt-6">
+            <a
+              href="/cadastro"
+              className={buttonVariants({ className: "mt-6" })}
+            >
               Criar minha conta
-            </Button>
+            </a>
           </CardContent>
         </Card>
 
@@ -282,9 +287,15 @@ function GetStartedSection() {
               atendidos. A plataforma não exibe a idade dos candidatos para as
               empresas.
             </p>
-            <Button type="button" variant="outline" className="mt-6">
+            <a
+              href="/cadastro-empresa"
+              className={buttonVariants({
+                variant: "outline",
+                className: "mt-6",
+              })}
+            >
               Cadastrar minha empresa
-            </Button>
+            </a>
           </CardContent>
         </Card>
       </div>
@@ -327,7 +338,7 @@ function SiteFooter() {
             <span className="text-xl font-bold text-on-dark">Seniors</span>
           </div>
           <p className="mt-4 max-w-xs text-base text-on-dark-subtle">
-            Plataforma de empregabilidade para profissionais com 50 anos ou
+            Plataforma de empregabilidade para profissionais com 45 anos ou
             mais.
           </p>
         </div>

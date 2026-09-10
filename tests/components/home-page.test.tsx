@@ -15,16 +15,38 @@ describe("HomePage", () => {
     ).toBeVisible();
   });
 
-  it("offers primary calls to action for candidates and companies", () => {
+  it("directs candidates to sign-up wherever the call to action appears", () => {
+    render(<HomePage />);
+
+    const signupLinks = screen.getAllByRole("link", {
+      name: "Criar minha conta",
+    });
+    expect(signupLinks.length).toBeGreaterThan(0);
+    for (const link of signupLinks) {
+      expect(link).toHaveAttribute("href", "/cadastro");
+    }
+
+    expect(screen.getByRole("link", { name: "Criar conta" })).toHaveAttribute(
+      "href",
+      "/cadastro",
+    );
+  });
+
+  it("directs companies to their own sign-up destination", () => {
     render(<HomePage />);
 
     expect(
-      screen.getAllByRole("button", { name: "Criar minha conta" }).length,
-    ).toBeGreaterThan(0);
-    expect(
-      screen.getByRole("button", { name: "Cadastrar minha empresa" }),
-    ).toBeVisible();
-    expect(screen.getByRole("button", { name: "Criar conta" })).toBeVisible();
+      screen.getByRole("link", { name: "Cadastrar minha empresa" }),
+    ).toHaveAttribute("href", "/cadastro-empresa");
+  });
+
+  it("directs returning visitors to the login destination", () => {
+    render(<HomePage />);
+
+    expect(screen.getByRole("link", { name: "Entrar" })).toHaveAttribute(
+      "href",
+      "/login",
+    );
   });
 
   it("links 'Como funciona' to the how-it-works section", () => {
