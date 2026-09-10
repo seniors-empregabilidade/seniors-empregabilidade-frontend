@@ -1,11 +1,11 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { HomePage } from "@/home-page";
+import { LandingPage } from "./landing-page";
 
-describe("HomePage", () => {
+describe("LandingPage", () => {
   it("presents the platform's value proposition as the main heading", () => {
-    render(<HomePage />);
+    render(<LandingPage />);
 
     expect(
       screen.getByRole("heading", {
@@ -16,7 +16,7 @@ describe("HomePage", () => {
   });
 
   it("directs candidates to sign-up wherever the call to action appears", () => {
-    render(<HomePage />);
+    render(<LandingPage />);
 
     const signupLinks = screen.getAllByRole("link", {
       name: "Criar minha conta",
@@ -33,7 +33,7 @@ describe("HomePage", () => {
   });
 
   it("directs companies to their own sign-up destination", () => {
-    render(<HomePage />);
+    render(<LandingPage />);
 
     expect(
       screen.getByRole("link", { name: "Cadastrar minha empresa" }),
@@ -41,7 +41,7 @@ describe("HomePage", () => {
   });
 
   it("directs returning visitors to the login destination", () => {
-    render(<HomePage />);
+    render(<LandingPage />);
 
     expect(screen.getByRole("link", { name: "Entrar" })).toHaveAttribute(
       "href",
@@ -50,7 +50,7 @@ describe("HomePage", () => {
   });
 
   it("links 'Como funciona' to the how-it-works section", () => {
-    render(<HomePage />);
+    render(<LandingPage />);
 
     const links = screen.getAllByRole("link", { name: "Como funciona" });
     expect(links.length).toBeGreaterThan(0);
@@ -62,7 +62,7 @@ describe("HomePage", () => {
   });
 
   it("explains why to choose the platform with three supporting reasons", () => {
-    render(<HomePage />);
+    render(<LandingPage />);
 
     const section = screen
       .getByRole("heading", { name: "Por que escolher a Seniors" })
@@ -87,7 +87,7 @@ describe("HomePage", () => {
   });
 
   it("lists the trust signals below the hero", () => {
-    render(<HomePage />);
+    render(<LandingPage />);
 
     expect(screen.getByText("Gratuita para candidatos")).toBeVisible();
     expect(screen.getByText("Empresas identificadas por CNPJ")).toBeVisible();
@@ -95,7 +95,7 @@ describe("HomePage", () => {
   });
 
   it("shows the footer with candidate, company and institutional links", () => {
-    render(<HomePage />);
+    render(<LandingPage />);
 
     const footer = screen.getByRole("contentinfo");
 

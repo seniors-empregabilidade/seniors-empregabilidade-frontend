@@ -368,7 +368,7 @@ function SiteFooter() {
   );
 }
 
-export function HomePage() {
+export function LandingPage() {
   return (
     <>
       <SiteHeader />

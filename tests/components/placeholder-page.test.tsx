@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { PlaceholderPage } from "@/placeholder-page";
+import { PlaceholderPage } from "@/components/placeholder-page";
 
 describe("PlaceholderPage", () => {
   it("shows the given context and a way back to the home page", () => {

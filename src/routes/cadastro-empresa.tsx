@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { PlaceholderPage } from "@/placeholder-page";
+import { PlaceholderPage } from "@/components/placeholder-page";
 
 export const Route = createFileRoute("/cadastro-empresa")({
   component: () => (
