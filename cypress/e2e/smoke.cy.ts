@@ -14,6 +14,30 @@ describe("landing page", () => {
       .and("have.attr", "href", "/login");
   });
 
+  it("navigates candidates, companies, and returning visitors to their placeholder pages and back", () => {
+    cy.visit("/");
+
+    cy.contains("a", "Criar minha conta").click();
+    cy.location("pathname").should("eq", "/cadastro");
+    cy.get("h1").should("contain.text", "Essa etapa ainda está em construção");
+    cy.contains("p", "Cadastro de profissional").should("be.visible");
+    cy.contains("a", "Voltar para a página inicial").click();
+    cy.location("pathname").should("eq", "/");
+    cy.get("h1").should("contain.text", "Vinte anos de carreira");
+
+    cy.contains("a", "Cadastrar minha empresa").click();
+    cy.location("pathname").should("eq", "/cadastro-empresa");
+    cy.contains("p", "Cadastro de empresa").should("be.visible");
+    cy.contains("a", "Voltar para a página inicial").click();
+    cy.location("pathname").should("eq", "/");
+
+    cy.contains("a", "Entrar").click();
+    cy.location("pathname").should("eq", "/login");
+    cy.contains("p", "Entrar").should("be.visible");
+    cy.contains("a", "Voltar para a página inicial").click();
+    cy.location("pathname").should("eq", "/");
+  });
+
   it("has no detectable WCAG 2.2 AA violations on the landing page", () => {
     cy.visit("/");
     cy.injectAxe();
