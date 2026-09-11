@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,10 @@ export function EmailConfirmation({
 }) {
   const [code, setCode] = useState("");
   const [confirmed, setConfirmed] = useState(false);
+  const confirmationMessage = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (confirmed) confirmationMessage.current?.focus();
+  }, [confirmed]);
   const confirmation = useMutation({
     mutationFn: () => confirmCompanyEmail(email, code),
     retry: false,
@@ -34,7 +38,7 @@ export function EmailConfirmation({
   });
   if (confirmed)
     return (
-      <p role="status">
+      <p ref={confirmationMessage} tabIndex={-1} role="status">
         E-mail confirmado. A aprovação da empresa é uma etapa separada.
       </p>
     );

@@ -32,9 +32,13 @@ export async function getCompanyRecord(cnpj: string, signal?: AbortSignal) {
     `/company-registry-records/${cnpj}`,
     signal ? { signal } : {},
   );
-  const record = registrySchema.parse(response.data);
-  if (record.cnpj !== cnpj) throw new Error("Unexpected registry record");
-  return record;
+  const record = registrySchema.safeParse(response.data);
+  if (!record.success || record.data.cnpj !== cnpj)
+    throw new ApiError({
+      message: "Não foi possível validar a resposta da consulta de CNPJ.",
+      code: "cnpj_provider_unavailable",
+    });
+  return record.data;
 }
 
 export async function getPostalAddress(zipCode: string, signal?: AbortSignal) {
@@ -74,7 +78,13 @@ export async function registerCompany(
     terms_accepted: values.terms_accepted,
     terms_version: "v1",
   });
-  return registrationSchema.parse(response.data);
+  const registration = registrationSchema.safeParse(response.data);
+  if (!registration.success)
+    throw new ApiError({
+      message: "Não foi possível validar a resposta do cadastro.",
+      code: "invalid_registration_response",
+    });
+  return registration.data;
 }
 
 export async function confirmCompanyEmail(

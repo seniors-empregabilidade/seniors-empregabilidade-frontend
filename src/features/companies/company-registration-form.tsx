@@ -338,14 +338,16 @@ export function CompanyRegistrationForm() {
             <Label htmlFor="address.zip_code">CEP *</Label>
             <Input
               {...register("address.zip_code", {
-                onChange: () => {
-                  for (const name of [
-                    "street",
-                    "neighborhood",
-                    "city",
-                    "state",
-                  ] as const)
-                    setValue(`address.${name}`, "");
+                onChange: (event: React.ChangeEvent<HTMLInputElement>) => {
+                  if (digits(event.target.value) !== zipCode) {
+                    for (const name of [
+                      "street",
+                      "neighborhood",
+                      "city",
+                      "state",
+                    ] as const)
+                      setValue(`address.${name}`, "");
+                  }
                   clearErrors("address.zip_code");
                 },
               })}
@@ -504,6 +506,7 @@ export function CompanyRegistrationForm() {
           email={recoveryEmail}
           onConfirmed={() => {
             setRecoveryEmail(null);
+            setFocus("display_name");
             setGeneralError(
               "E-mail confirmado. Confira seus dados e clique em Criar conta para concluir.",
             );
