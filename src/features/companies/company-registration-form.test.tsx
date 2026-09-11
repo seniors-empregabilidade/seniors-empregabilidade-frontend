@@ -73,6 +73,37 @@ beforeEach(() => {
 });
 
 describe("Company registration", () => {
+  it("preserves the address when only CEP formatting changes", async () => {
+    mount();
+    await fillValidForm();
+    fill("CEP *", "12345-678");
+    expect(screen.getByLabelText("Cidade *")).toHaveValue("Synthetic City");
+    await submit();
+    expect(await screen.findByText("Cadastro recebido")).toBeInTheDocument();
+    expect(api.getPostalAddress).toHaveBeenCalledTimes(1);
+  });
+
+  it("replaces an old address when another CEP is selected", async () => {
+    mount();
+    await fillValidForm();
+    vi.mocked(api.getPostalAddress).mockResolvedValueOnce({
+      cep: "87654-321",
+      logradouro: "Another Street",
+      bairro: "Another District",
+      localidade: "Another City",
+      uf: "SC",
+    });
+    fill("CEP *", "87654321");
+    expect(screen.getByLabelText("Cidade *")).toHaveValue("");
+    await waitFor(() =>
+      expect(screen.getByLabelText("Cidade *")).toHaveValue("Another City"),
+    );
+    fill("CEP *", "12345678");
+    await waitFor(() =>
+      expect(screen.getByLabelText("Cidade *")).toHaveValue("Synthetic City"),
+    );
+  });
+
   it("requires terms and fills registry/address before registering a pending company", async () => {
     mount();
     expect(screen.getByRole("button", { name: "Criar conta" })).toBeDisabled();
@@ -94,7 +125,7 @@ describe("Company registration", () => {
     await userEvent.click(
       screen.getByRole("button", { name: "Confirmar e-mail" }),
     );
-    expect(await screen.findByText(/E-mail confirmado/)).toBeInTheDocument();
+    expect(await screen.findByText(/E-mail confirmado/)).toHaveFocus();
     expect(api.confirmCompanyEmail).toHaveBeenCalledWith(
       created.email,
       "123456",
@@ -248,6 +279,7 @@ describe("Company registration", () => {
     expect(
       await screen.findByText(/E-mail confirmado. Confira seus dados/),
     ).toBeInTheDocument();
+    expect(screen.getByLabelText("Nome da empresa *")).toHaveFocus();
     expect(screen.getByLabelText("Nome da empresa *")).toHaveValue(
       "Synthetic Company",
     );

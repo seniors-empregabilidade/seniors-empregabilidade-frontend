@@ -75,9 +75,18 @@ it("validates registry identity and passes the cancellation signal", async () =>
     `/company-registry-records/${record.cnpj}`,
     { signal },
   );
-  await expect(getCompanyRecord("11444777000161")).rejects.toThrow(
-    "Unexpected registry record",
-  );
+  await expect(getCompanyRecord("11444777000161")).rejects.toMatchObject({
+    name: "ApiError",
+    code: "cnpj_provider_unavailable",
+  });
+});
+
+it("maps a malformed registry response to the API error contract", async () => {
+  requests.get.mockResolvedValue({ data: { cnpj: "11222333000181" } });
+  await expect(getCompanyRecord("11222333000181")).rejects.toMatchObject({
+    name: "ApiError",
+    code: "cnpj_provider_unavailable",
+  });
 });
 
 it.each([
