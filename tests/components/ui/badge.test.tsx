@@ -17,7 +17,7 @@ describe("Badge", () => {
 
     const badge = screen.getByText("Pendente");
     expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass("bg-warning");
+    expect(badge).toHaveClass("bg-warning-background");
   });
 
   it("renders the default variant when no variant is given", () => {
