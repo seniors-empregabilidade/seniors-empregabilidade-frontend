@@ -1,10 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { LoginPage } from "@/login-page";
 import { ApiError } from "@/lib/api-error";
+
+import { LoginPage } from "./login-page";
 
 const navigateMock = vi.fn();
 
@@ -14,11 +15,25 @@ vi.mock("@tanstack/react-router", () => ({
   }),
 }));
 
-vi.mock("@/lib/auth/login", () => ({
+vi.mock("./login", () => ({
   login: vi.fn(),
 }));
 
-import { login } from "@/lib/auth/login";
+import { login } from "./login";
+
+const candidateSession = {
+  access_token: "access-token",
+  id_token: "id-token",
+  refresh_token: "refresh-token",
+  expires_in: 3600,
+  token_type: "Bearer",
+  user_id: "11111111-1111-4111-8111-111111111111",
+  user_type: "candidate" as const,
+};
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 function renderLoginPage() {
   const queryClient = new QueryClient({
@@ -79,6 +94,7 @@ describe("LoginPage", () => {
       name: "Esqueci minha senha",
     });
 
+    expect(forgotPassword).toHaveAttribute("href", "/forgot-password");
     expect(submitButton.compareDocumentPosition(forgotPassword)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
@@ -202,7 +218,7 @@ describe("LoginPage", () => {
       () =>
         new Promise((resolve) => {
           setTimeout(() => {
-            resolve({ role: "candidato" });
+            resolve(candidateSession);
           }, 50);
         }),
     );
@@ -224,5 +240,55 @@ describe("LoginPage", () => {
     await waitFor(() => {
       expect(navigateMock).toHaveBeenCalledWith({ href: "/candidato" });
     });
+  });
+
+  it("does not submit twice while login is pending", async () => {
+    const user = userEvent.setup();
+    let resolveLogin!: (value: typeof candidateSession) => void;
+
+    vi.mocked(login).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveLogin = resolve;
+        }),
+    );
+
+    renderLoginPage();
+
+    await user.type(
+      screen.getByLabelText("Usuário (e-mail)"),
+      "usuario@exemplo.com",
+    );
+    await user.type(screen.getByLabelText("Senha"), "senha-segura");
+
+    const form = screen.getByRole("button", { name: "Entrar" }).closest("form");
+
+    expect(form).not.toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Entrar" }));
+    expect(
+      await screen.findByRole("button", { name: "Entrando..." }),
+    ).toBeDisabled();
+
+    form?.requestSubmit();
+    form?.requestSubmit();
+
+    expect(login).toHaveBeenCalledTimes(1);
+
+    resolveLogin(candidateSession);
+
+    await waitFor(() => {
+      expect(navigateMock).toHaveBeenCalledWith({ href: "/candidato" });
+    });
+  });
+
+  it("navigates to the professional registration route", async () => {
+    const user = userEvent.setup();
+
+    renderLoginPage();
+
+    await user.click(screen.getByRole("button", { name: "Criar conta" }));
+
+    expect(navigateMock).toHaveBeenCalledWith({ href: "/users/register" });
   });
 });

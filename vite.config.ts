@@ -31,6 +31,8 @@ export default defineConfig({
         "src/routeTree.gen.ts",
         "src/router.tsx",
         "src/routes/**",
+        "src/**/*.test.ts",
+        "src/**/*.test.tsx",
         "tests/**",
         "src/vite-env.d.ts",
         // shadcn CLI vendored components are not authored code; badge.tsx

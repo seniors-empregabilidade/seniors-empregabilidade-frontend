@@ -10,10 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ApiError } from "@/lib/api-error";
-import { login } from "@/lib/auth/login";
-import { getRoleHomePath } from "@/lib/auth/role-routes";
-import { type LoginFormValues, loginSchema } from "@/lib/schemas/login";
 import { cn } from "@/lib/utils";
+
+import { login } from "./login";
+import { getRoleHomePath } from "./role-routes";
+import { type LoginFormValues, loginSchema } from "./schema";
 
 const GENERIC_LOGIN_ERROR = "E-mail ou senha incorretos";
 
@@ -47,7 +48,7 @@ export function LoginPage() {
   const loginMutation = useMutation({
     mutationFn: login,
     onSuccess: (session) => {
-      void router.navigate({ href: getRoleHomePath(session.role) });
+      void router.navigate({ href: getRoleHomePath(session.user_type) });
     },
     onError: (error) => {
       if (error instanceof ApiError && applyLoginFieldErrors(error, setError)) {
@@ -62,6 +63,10 @@ export function LoginPage() {
   const isSubmitting = loginMutation.isPending;
 
   function onSubmit(values: LoginFormValues) {
+    if (loginMutation.isPending) {
+      return;
+    }
+
     setAuthError(null);
     clearErrors();
     loginMutation.mutate(values);
@@ -110,6 +115,7 @@ export function LoginPage() {
                 aria-invalid={errors.email ? true : undefined}
                 aria-describedby={errors.email ? "email-error" : undefined}
                 className={fieldClassName}
+                disabled={isSubmitting}
                 {...register("email")}
               />
               {errors.email ? (
@@ -132,6 +138,7 @@ export function LoginPage() {
                   errors.password ? "password-error" : undefined
                 }
                 className={cn("col-span-2 row-start-2", fieldClassName)}
+                disabled={isSubmitting}
                 {...register("password")}
               />
               <button
@@ -139,6 +146,7 @@ export function LoginPage() {
                 className={cn(linkClassName, "col-start-2 row-start-1")}
                 aria-controls="password"
                 aria-pressed={showPassword}
+                disabled={isSubmitting}
                 onClick={() => {
                   setShowPassword((current) => !current);
                 }}
@@ -174,7 +182,7 @@ export function LoginPage() {
           </form>
 
           <a
-            href="/recuperar-senha"
+            href="/forgot-password"
             className={cn(linkClassName, "mt-5 inline-block")}
           >
             Esqueci minha senha
@@ -188,8 +196,9 @@ export function LoginPage() {
               type="button"
               variant="outline"
               className="w-full sm:w-auto"
+              disabled={isSubmitting}
               onClick={() => {
-                void router.navigate({ href: "/criar-conta" });
+                void router.navigate({ href: "/users/register" });
               }}
             >
               Criar conta

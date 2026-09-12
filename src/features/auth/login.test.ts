@@ -1,25 +1,35 @@
 import { describe, expect, it } from "vitest";
 
 import { ApiError } from "@/lib/api-error";
-import { login } from "@/lib/auth/login";
+
+import { login } from "./login";
 
 describe("login", () => {
-  it("returns a candidato session for a successful mock login", async () => {
+  it("returns a candidate session for a successful mock login", async () => {
     await expect(
       login({
         email: "usuario@exemplo.com",
         password: "senha-segura",
       }),
-    ).resolves.toEqual({ role: "candidato" });
+    ).resolves.toMatchObject({ user_type: "candidate" });
   });
 
-  it("returns an empresa session when the mock email starts with empresa@", async () => {
+  it("returns a company session when the mock email starts with empresa@", async () => {
     await expect(
       login({
         email: "empresa@exemplo.com",
         password: "senha-segura",
       }),
-    ).resolves.toEqual({ role: "empresa" });
+    ).resolves.toMatchObject({ user_type: "company" });
+  });
+
+  it("returns an administrator session when the mock email starts with admin@", async () => {
+    await expect(
+      login({
+        email: "admin@exemplo.com",
+        password: "senha-segura",
+      }),
+    ).resolves.toMatchObject({ user_type: "administrator" });
   });
 
   it("throws a generic authentication error for the mock incorrect password", async () => {
