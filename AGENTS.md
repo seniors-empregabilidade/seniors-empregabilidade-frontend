@@ -21,7 +21,9 @@ Do not replace or duplicate these choices without an approved architectural deci
 
 ## Language
 
-- Write code, identifiers, comments, configuration, tests, branches, commits, pull requests, reviews, and technical documentation in English.
+- Write code, identifiers, comments, configuration, tests, branches, commits, and technical documentation in English.
+- Write pull request titles and descriptions in Brazilian Portuguese, keeping the Conventional Commits type prefix in English and quoting identifiers, paths, error codes and commands in English as they appear in the code.
+- Write code review comments in Brazilian Portuguese, quoting identifiers, paths, error codes and commands in English as they appear in the code.
 - Write user-facing interface text in Brazilian Portuguese.
 - Use `.tsx` only when a file contains JSX; otherwise use `.ts`.
 
