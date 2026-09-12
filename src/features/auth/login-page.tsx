@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
@@ -10,8 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ApiError } from "@/lib/api-error";
+import { writeAccessToken } from "@/lib/session-storage";
 import { cn } from "@/lib/utils";
 
+import { currentUserQueryKey } from "./current-user";
 import { login } from "./login";
 import { getRoleHomePath } from "./role-routes";
 import { type LoginFormValues, loginSchema } from "./schema";
@@ -27,6 +29,7 @@ const linkClassName = cn(
 
 export function LoginPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -48,6 +51,9 @@ export function LoginPage() {
   const loginMutation = useMutation({
     mutationFn: login,
     onSuccess: (session) => {
+      writeAccessToken(session.access_token);
+      // A previous account’s /auth/me answer must not outlive a new sign-in.
+      queryClient.removeQueries({ queryKey: currentUserQueryKey });
       void router.navigate({ href: getRoleHomePath(session.user_type) });
     },
     onError: (error) => {

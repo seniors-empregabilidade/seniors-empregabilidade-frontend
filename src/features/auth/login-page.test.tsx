@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "@/lib/api-error";
+import { clearSession, readAccessToken } from "@/lib/session-storage";
 
 import { LoginPage } from "./login-page";
 
@@ -33,6 +34,7 @@ const candidateSession = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  clearSession();
 });
 
 function renderLoginPage() {
@@ -280,6 +282,26 @@ describe("LoginPage", () => {
     await waitFor(() => {
       expect(navigateMock).toHaveBeenCalledWith({ href: "/candidato" });
     });
+  });
+
+  it("keeps the session so the protected route can present the token", async () => {
+    const user = userEvent.setup();
+
+    vi.mocked(login).mockResolvedValueOnce(candidateSession);
+
+    renderLoginPage();
+
+    await user.type(
+      screen.getByLabelText("Usuário (e-mail)"),
+      "usuario@exemplo.com",
+    );
+    await user.type(screen.getByLabelText("Senha"), "senha-segura");
+    await user.click(screen.getByRole("button", { name: "Entrar" }));
+
+    await waitFor(() => {
+      expect(navigateMock).toHaveBeenCalledWith({ href: "/candidato" });
+    });
+    expect(readAccessToken()).toBe("access-token");
   });
 
   it("navigates to the professional registration route", async () => {

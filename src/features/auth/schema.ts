@@ -22,3 +22,22 @@ export const sessionSchema = z.object({
 });
 
 export type Session = z.infer<typeof sessionSchema>;
+
+export const companyStatusSchema = z.enum([
+  "pending",
+  "approved",
+  "rejected",
+  "blocked",
+]);
+
+export type CompanyStatus = z.infer<typeof companyStatusSchema>;
+
+// GET /auth/me. The role is read from the database on every request, so this is
+// the authority on what the signed-in account may reach, never the login payload.
+export const currentUserSchema = z.object({
+  id: z.uuid(),
+  user_type: userTypeSchema,
+  company_status: companyStatusSchema.nullable().default(null),
+});
+
+export type CurrentUser = z.infer<typeof currentUserSchema>;

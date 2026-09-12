@@ -75,6 +75,26 @@ export default tseslint.config(
       "jsx-a11y/label-has-associated-control": "off",
     },
   },
+  {
+    files: ["**/*.{ts,tsx}"],
+    rules: {
+      // TanStack Router signals navigation by throwing the Response that
+      // redirect() returns, so route guards cannot throw an Error here. Only
+      // that one type is allowed; throwing anything else stays an error.
+      "@typescript-eslint/only-throw-error": [
+        "error",
+        {
+          allow: [
+            {
+              from: "package",
+              package: "@tanstack/router-core",
+              name: "Redirect",
+            },
+          ],
+        },
+      ],
+    },
+  },
   ...query.configs["flat/recommended"],
   ...router.configs["flat/recommended"],
   prettier,
