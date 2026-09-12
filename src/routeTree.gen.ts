@@ -10,33 +10,73 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdministradorRouteImport } from './routes/administrador'
+import { Route as CandidatoRouteImport } from './routes/candidato'
+import { Route as EmpresaRouteImport } from './routes/empresa'
+import { Route as LoginRouteImport } from './routes/login'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdministradorRoute = AdministradorRouteImport.update({
+  id: '/administrador',
+  path: '/administrador',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CandidatoRoute = CandidatoRouteImport.update({
+  id: '/candidato',
+  path: '/candidato',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmpresaRoute = EmpresaRouteImport.update({
+  id: '/empresa',
+  path: '/empresa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/administrador': typeof AdministradorRoute
+  '/candidato': typeof CandidatoRoute
+  '/empresa': typeof EmpresaRoute
+  '/login': typeof LoginRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/administrador': typeof AdministradorRoute
+  '/candidato': typeof CandidatoRoute
+  '/empresa': typeof EmpresaRoute
+  '/login': typeof LoginRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/administrador': typeof AdministradorRoute
+  '/candidato': typeof CandidatoRoute
+  '/empresa': typeof EmpresaRoute
+  '/login': typeof LoginRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/administrador' | '/candidato' | '/empresa' | '/login'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/administrador' | '/candidato' | '/empresa' | '/login'
+  id: '__root__' | '/' | '/administrador' | '/candidato' | '/empresa' | '/login'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdministradorRoute: typeof AdministradorRoute
+  CandidatoRoute: typeof CandidatoRoute
+  EmpresaRoute: typeof EmpresaRoute
+  LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +88,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/administrador': {
+      id: '/administrador'
+      path: '/administrador'
+      fullPath: '/administrador'
+      preLoaderRoute: typeof AdministradorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/candidato': {
+      id: '/candidato'
+      path: '/candidato'
+      fullPath: '/candidato'
+      preLoaderRoute: typeof CandidatoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/empresa': {
+      id: '/empresa'
+      path: '/empresa'
+      fullPath: '/empresa'
+      preLoaderRoute: typeof EmpresaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdministradorRoute: AdministradorRoute,
+  CandidatoRoute: CandidatoRoute,
+  EmpresaRoute: EmpresaRoute,
+  LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
