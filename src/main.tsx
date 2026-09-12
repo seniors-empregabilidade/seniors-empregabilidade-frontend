@@ -7,6 +7,7 @@ import { RouterProvider } from "@tanstack/react-router";
 
 import { queryClient } from "@/lib/query-client";
 import { router } from "@/router";
+import "@fontsource-variable/plus-jakarta-sans";
 import "@/styles.css";
 
 const rootElement = document.getElementById("root");

@@ -95,6 +95,45 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    files: ["src/features/*/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@/features/*/*"],
+              message:
+                "Uma feature nao importa de outra feature. Promova o codigo compartilhado para src/components, src/hooks ou src/lib.",
+            },
+            {
+              group: ["@/routes/*"],
+              message:
+                "Uma feature nao importa de routes. O fluxo e compartilhado -> features -> routes.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/components/**", "src/hooks/**", "src/lib/**", "src/config/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@/features/*", "@/routes/*"],
+              message:
+                "Codigo compartilhado nao depende de feature nem de rota.",
+            },
+          ],
+        },
+      ],
+    },
+  },
   ...query.configs["flat/recommended"],
   ...router.configs["flat/recommended"],
   prettier,
