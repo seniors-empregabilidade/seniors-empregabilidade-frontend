@@ -18,16 +18,19 @@ describe("company registration", () => {
   });
 
   function completeForm() {
-    cy.get('[id="display_name"]').type("Synthetic Company");
-    cy.get('[id="cnpj"]').type("11222333000181");
-    cy.get('[id="address.zip_code"]').type("12345678");
+    cy.get('[id="company-display_name"]').type("Synthetic Company");
+    cy.get('[id="company-cnpj"]').type("11222333000181");
+    cy.get('[id="company-address.zip_code"]').type("12345678");
     cy.wait(["@registry", "@postal"]);
-    cy.get('[id="address.city"]').should("have.value", "Synthetic City");
-    cy.get('[id="address.number"]').type("42");
-    cy.get('[id="corporate_email"]').type("contact@synthetic.invalid");
-    cy.get('[id="password"]').type("SyntheticPass!2026");
-    cy.get('[id="confirm_password"]').type("SyntheticPass!2026");
-    cy.get('input[type="checkbox"]').check();
+    cy.get('[id="company-address.city"]').should(
+      "have.value",
+      "Synthetic City",
+    );
+    cy.get('[id="company-address.number"]').type("42");
+    cy.get('[id="company-corporate_email"]').type("contact@synthetic.invalid");
+    cy.get('[id="company-password"]').type("SyntheticPass!2026");
+    cy.get('[id="company-confirm_password"]').type("SyntheticPass!2026");
+    cy.get('[id="company-terms_accepted"]').check();
   }
 
   it("submits the API contract and confirms email while remaining pending", () => {
@@ -44,7 +47,7 @@ describe("company registration", () => {
       statusCode: 204,
     }).as("confirm");
     completeForm();
-    cy.contains("button", "Criar conta").click();
+    cy.get('[id="company-submit"]').click();
     cy.wait("@register")
       .its("request.body")
       .should("include", {
@@ -53,7 +56,9 @@ describe("company registration", () => {
         terms_accepted: true,
       })
       .and("not.have.property", "confirm_password");
-    cy.get("h1").should("have.text", "Cadastro recebido").and("have.focus");
+    cy.get("h1:visible")
+      .should("have.text", "Cadastro recebido")
+      .and("have.focus");
     cy.contains("Sua empresa está pendente de aprovação").should("be.visible");
     cy.get("#confirmation-code").type("123456");
     cy.contains("button", "Confirmar e-mail").click();
@@ -74,12 +79,15 @@ describe("company registration", () => {
       },
     }).as("register");
     completeForm();
-    cy.contains("button", "Criar conta").click();
+    cy.get('[id="company-submit"]').click();
     cy.wait("@register");
-    cy.get("#cnpj")
+    cy.get("#company-cnpj")
       .should("have.attr", "aria-invalid", "true")
       .and("have.focus");
-    cy.get('[id="display_name"]').should("have.value", "Synthetic Company");
+    cy.get('[id="company-display_name"]').should(
+      "have.value",
+      "Synthetic Company",
+    );
   });
 
   it("has no detectable WCAG 2.2 AA issues and fits a narrow viewport", () => {
@@ -94,9 +102,9 @@ describe("company registration", () => {
     cy.document().then((document) => {
       expect(document.documentElement.scrollWidth).to.be.at.most(390);
     });
-    cy.get("#password").focus();
-    cy.focused().should("have.attr", "id", "password");
+    cy.get("#company-password").focus();
+    cy.focused().should("have.attr", "id", "company-password");
     cy.contains("button", "Mostrar senha").click();
-    cy.get("#password").should("have.attr", "type", "text");
+    cy.get("#company-password").should("have.attr", "type", "text");
   });
 });

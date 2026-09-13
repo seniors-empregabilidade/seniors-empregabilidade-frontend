@@ -26,6 +26,8 @@ import {
   type CompanyRegistrationValues,
 } from "./registration-schema";
 
+const fieldId = (name: string) => `company-${name}`;
+
 const fieldNames: FieldPath<CompanyRegistrationValues>[] = [
   "cnpj",
   "display_name",
@@ -203,22 +205,26 @@ export function CompanyRegistrationForm() {
     const error = getFieldState(name, formState).error;
     return (
       <div className="space-y-2" key={name}>
-        <Label htmlFor={name}>
+        <Label htmlFor={fieldId(name)}>
           {label}
           {options.optional ? " (opcional)" : " *"}
         </Label>
         <Input
           {...register(name)}
-          id={name}
+          id={fieldId(name)}
           type={options.type ?? "text"}
           autoComplete={options.autoComplete}
           readOnly={options.readOnly}
           aria-required={!options.optional}
           aria-invalid={Boolean(error)}
-          aria-describedby={error ? `${name}-error` : undefined}
+          aria-describedby={error ? `${fieldId(name)}-error` : undefined}
         />
         {error && (
-          <p id={`${name}-error`} className="text-destructive" role="alert">
+          <p
+            id={`${fieldId(name)}-error`}
+            className="text-destructive"
+            role="alert"
+          >
             {error.message}
           </p>
         )}
@@ -278,7 +284,7 @@ export function CompanyRegistrationForm() {
           })}
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="cnpj">CNPJ *</Label>
+              <Label htmlFor={fieldId("cnpj")}>CNPJ *</Label>
               <Input
                 {...register("cnpj", {
                   onChange: (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -297,7 +303,7 @@ export function CompanyRegistrationForm() {
                     });
                   },
                 })}
-                id="cnpj"
+                id={fieldId("cnpj")}
                 inputMode="numeric"
                 maxLength={18}
                 aria-required="true"
@@ -306,9 +312,9 @@ export function CompanyRegistrationForm() {
                   record.isError ||
                   cnpjFailsCheckDigit
                 }
-                aria-describedby="cnpj-feedback"
+                aria-describedby={`${fieldId("cnpj")}-feedback`}
               />
-              <div id="cnpj-feedback">
+              <div id={`${fieldId("cnpj")}-feedback`}>
                 {formState.errors.cnpj ? (
                   <p role="alert" className="text-destructive">
                     {formState.errors.cnpj.message}
@@ -340,24 +346,26 @@ export function CompanyRegistrationForm() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="primary-cnae">Ramo de atividade (CNAE)</Label>
+              <Label htmlFor={fieldId("primary-cnae")}>
+                Ramo de atividade (CNAE)
+              </Label>
               <Input
-                id="primary-cnae"
+                id={fieldId("primary-cnae")}
                 value={record.data?.primary_cnae ?? ""}
                 readOnly
-                aria-describedby="registry-explanation"
+                aria-describedby={fieldId("registry-explanation")}
               />
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="legal-name">Razão social</Label>
+            <Label htmlFor={fieldId("legal-name")}>Razão social</Label>
             <Input
-              id="legal-name"
+              id={fieldId("legal-name")}
               value={record.data?.legal_name ?? ""}
               readOnly
             />
           </div>
-          <p id="registry-explanation">
+          <p id={fieldId("registry-explanation")}>
             Razão social e CNAE são consultados pelo CNPJ. CNAE é o código que
             identifica a atividade econômica da empresa.
           </p>
@@ -369,7 +377,7 @@ export function CompanyRegistrationForm() {
         <fieldset disabled={busy} className="space-y-6">
           <legend className="mb-4 text-2xl font-semibold">Endereço</legend>
           <div className="space-y-2">
-            <Label htmlFor="address.zip_code">CEP *</Label>
+            <Label htmlFor={fieldId("address.zip_code")}>CEP *</Label>
             <Input
               {...register("address.zip_code", {
                 onChange: (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -385,7 +393,7 @@ export function CompanyRegistrationForm() {
                   clearErrors("address.zip_code");
                 },
               })}
-              id="address.zip_code"
+              id={fieldId("address.zip_code")}
               inputMode="numeric"
               maxLength={9}
               autoComplete="postal-code"
@@ -394,9 +402,9 @@ export function CompanyRegistrationForm() {
                 Boolean(formState.errors.address?.zip_code) ||
                 postalAddress.isError
               }
-              aria-describedby="postal-feedback"
+              aria-describedby={fieldId("postal-feedback")}
             />
-            <div id="postal-feedback">
+            <div id={fieldId("postal-feedback")}>
               {formState.errors.address?.zip_code && (
                 <p role="alert" className="text-destructive">
                   {formState.errors.address.zip_code.message}
@@ -499,6 +507,7 @@ export function CompanyRegistrationForm() {
         <label className="flex min-h-11 items-center gap-3">
           <input
             {...register("terms_accepted")}
+            id={fieldId("terms_accepted")}
             type="checkbox"
             disabled={busy}
             className="size-6"
@@ -512,6 +521,7 @@ export function CompanyRegistrationForm() {
         )}
         <Button
           type="submit"
+          id={fieldId("submit")}
           className="w-full"
           disabled={
             !accepted || busy || record.isFetching || postalAddress.isFetching
