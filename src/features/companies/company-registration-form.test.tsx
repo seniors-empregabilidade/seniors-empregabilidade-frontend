@@ -413,3 +413,23 @@ it("clears the check digit message once the CNPJ becomes valid", async () => {
   );
   await waitFor(() => expect(api.getCompanyRecord).toHaveBeenCalled());
 });
+
+it("masks the zip code while it is typed", async () => {
+  mount();
+  const input = screen.getByLabelText("CEP *");
+  fireEvent.change(input, { target: { value: "90430000" } });
+  await waitFor(() => expect(input).toHaveValue("90430-000"));
+});
+
+it("keeps the caret in place while editing the middle of the zip code", async () => {
+  mount();
+  const input = screen.getByLabelText<HTMLInputElement>("CEP *");
+  fireEvent.change(input, { target: { value: "9043000" } });
+  await waitFor(() => expect(input).toHaveValue("90430-00"));
+  input.focus();
+  fireEvent.change(input, {
+    target: { value: "90439-00", selectionStart: 5 },
+  });
+  await waitFor(() => expect(input).toHaveValue("90439-00"));
+  await waitFor(() => expect(input.selectionStart).toBe(5));
+});

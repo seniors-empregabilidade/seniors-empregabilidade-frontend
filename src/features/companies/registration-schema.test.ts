@@ -8,6 +8,7 @@ import {
   isValidCnpj,
   maskCnpj,
   maskedCaret,
+  maskZipCode,
 } from "./registration-schema";
 
 it.each(["11222333000181", "11.222.333/0001-81", "11444777000161"])(
@@ -90,4 +91,17 @@ it.each([
   [99, 18],
 ])("keeps the caret after digit %i of a masked CNPJ", (typed, expected) => {
   expect(maskedCaret(maskCnpj("11222333000181"), typed)).toBe(expected);
+});
+
+it.each([
+  ["", ""],
+  ["9", "9"],
+  ["90430", "90430"],
+  ["904300", "90430-0"],
+  ["90430000", "90430-000"],
+  ["90430-000", "90430-000"],
+  ["90.430-000", "90430-000"],
+  ["904300001234", "90430-000"],
+])("masks the zip code %s as %s", (typed, expected) => {
+  expect(maskZipCode(typed)).toBe(expected);
 });

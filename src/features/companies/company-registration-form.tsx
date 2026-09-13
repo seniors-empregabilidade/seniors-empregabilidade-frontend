@@ -23,6 +23,7 @@ import {
   isValidCnpj,
   maskCnpj,
   maskedCaret,
+  maskZipCode,
   type CompanyRegistrationValues,
 } from "./registration-schema";
 
@@ -381,7 +382,13 @@ export function CompanyRegistrationForm() {
             <Input
               {...register("address.zip_code", {
                 onChange: (event: React.ChangeEvent<HTMLInputElement>) => {
-                  if (digits(event.target.value) !== zipCode) {
+                  const input = event.target;
+                  const caret = input.selectionStart ?? input.value.length;
+                  const typedBeforeCaret = digits(
+                    input.value.slice(0, caret),
+                  ).length;
+                  const masked = maskZipCode(input.value);
+                  if (digits(masked) !== zipCode) {
                     for (const name of [
                       "street",
                       "neighborhood",
@@ -390,7 +397,13 @@ export function CompanyRegistrationForm() {
                     ] as const)
                       setValue(`address.${name}`, "");
                   }
+                  setValue("address.zip_code", masked);
                   clearErrors("address.zip_code");
+                  const position = maskedCaret(masked, typedBeforeCaret);
+                  requestAnimationFrame(() => {
+                    if (document.activeElement === input)
+                      input.setSelectionRange(position, position);
+                  });
                 },
               })}
               id={fieldId("address.zip_code")}

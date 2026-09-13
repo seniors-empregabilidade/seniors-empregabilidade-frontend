@@ -32,6 +32,12 @@ export function maskCnpj(value: string): string {
     .replace(/(\d{4})(\d)/, "$1-$2");
 }
 
+export function maskZipCode(value: string): string {
+  return digits(value)
+    .slice(0, 8)
+    .replace(/^(\d{5})(\d)/, "$1-$2");
+}
+
 export function maskedCaret(masked: string, digitsBeforeCaret: number): number {
   if (digitsBeforeCaret <= 0) return 0;
   let seen = 0;
