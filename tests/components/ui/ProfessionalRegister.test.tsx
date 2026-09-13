@@ -1,14 +1,27 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ProfessionalRegister } from "@/features/professional-register";
+import { apiClient } from "@/lib/api-client";
+
+// Mock do apiClient para testes de submissão do formulário
+vi.mock("@/lib/api-client", () => ({
+  apiClient: {
+    post: vi.fn(),
+  },
+}));
 
 const mockFetch = vi.fn();
-
 vi.stubGlobal("fetch", mockFetch);
 
-describe("ProfessionalRegister - Testes de Integração e CEP", () => {
+describe("ProfessionalRegister - Testes de Integração, Validação e Cobertura", () => {
   beforeEach(() => {
     vi.resetAllMocks();
   });
@@ -255,5 +268,113 @@ describe("ProfessionalRegister - Testes de Integração e CEP", () => {
 
       expect(screen.getByLabelText(/logradouro/i)).toHaveValue("");
     });
+  });
+
+  it("deve rejeitar se a idade for inferior a 45 anos devido a aniversário ainda não ocorrido no ano corrente", async () => {
+    const user = userEvent.setup();
+    render(<ProfessionalRegister />);
+
+    const today = new Date();
+    const targetYear = today.getFullYear() - 45;
+    const futureDate = new Date(today);
+    futureDate.setDate(today.getDate() + 1);
+
+    const monthStr = String(futureDate.getMonth() + 1).padStart(2, "0");
+    const dayStr = String(futureDate.getDate()).padStart(2, "0");
+    const birthDateStr = `${targetYear}-${monthStr}-${dayStr}`;
+
+    const birthInput = screen.getByLabelText(/data de nascimento/i);
+    fireEvent.change(birthInput, { target: { value: birthDateStr } });
+
+    await user.click(screen.getByLabelText(/li e aceito os termos/i));
+    await user.click(screen.getByRole("button", { name: /criar conta/i }));
+
+    expect(
+      await screen.findByText("A idade mínima para cadastro é de 45 anos."),
+    ).toBeInTheDocument();
+  });
+
+  it("deve aplicar a máscara adequada para telefone celular com 11 dígitos (Linhas 124-138)", async () => {
+    const user = userEvent.setup();
+    render(<ProfessionalRegister />);
+
+    const phoneInput = screen.getByLabelText(/telefone/i);
+    await user.type(phoneInput, "11988887777");
+
+    expect(phoneInput).toHaveValue("(11) 98888-7777");
+  });
+
+  it("deve tratar resposta HTTP de erro na busca do CEP", async () => {
+    const user = userEvent.setup();
+
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+    });
+
+    render(<ProfessionalRegister />);
+
+    await user.type(screen.getByLabelText(/cep/i), "01001000");
+
+    expect(
+      await screen.findByText(
+        "Não foi possível consultar o CEP. Verifique sua conexão e tente novamente.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("deve submeter o formulário com sucesso e redirecionar para a página de login", async () => {
+    const user = userEvent.setup();
+
+    const locationSpy = vi.spyOn(window, "location", "get").mockReturnValue({
+      ...window.location,
+      href: "",
+      assign: vi.fn(),
+    });
+
+    const postSpy = vi
+      .spyOn(apiClient, "post")
+      .mockResolvedValueOnce({ status: 200 });
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () =>
+        Promise.resolve({
+          logradouro: "Rua A",
+          bairro: "Bairro B",
+          localidade: "Cidade C",
+          uf: "SP",
+        }),
+    });
+
+    render(<ProfessionalRegister />);
+
+    await user.type(screen.getByLabelText(/nome completo/i), "Carlos Silva");
+    await user.type(screen.getByLabelText(/cpf/i), "12345678901");
+
+    fireEvent.change(screen.getByLabelText(/data de nascimento/i), {
+      target: { value: "1970-01-01" },
+    });
+
+    await user.type(screen.getByLabelText(/telefone/i), "11988887777");
+    await user.type(screen.getByLabelText(/e-mail/i), "carlos@email.com");
+    await user.type(screen.getByLabelText(/cep/i), "01001000");
+
+    await screen.findByText("Endereço encontrado.");
+
+    await user.type(screen.getByLabelText(/^senha/i), "Senha123!");
+    await user.type(screen.getByLabelText(/confirmar senha/i), "Senha123!");
+
+    await user.click(screen.getByLabelText(/li e aceito os termos/i));
+    await user.click(screen.getByRole("button", { name: /criar conta/i }));
+
+    await waitFor(() => {
+      expect(postSpy).toHaveBeenCalledWith(
+        "/professionals/register",
+        expect.anything(),
+      );
+    });
+
+    locationSpy.mockRestore();
   });
 });
