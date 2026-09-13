@@ -8,124 +8,182 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AdministradorRouteImport } from './routes/administrador'
-import { Route as CandidatoRouteImport } from './routes/candidato'
-import { Route as EmpresaRouteImport } from './routes/empresa'
-import { Route as LoginRouteImport } from './routes/login'
+import { Route as rootRouteImport } from "./routes/__root";
+import { Route as IndexRouteImport } from "./routes/index";
+import { Route as AdministradorRouteImport } from "./routes/administrador";
+import { Route as CadastroRouteImport } from "./routes/cadastro";
+import { Route as CadastroEmpresaRouteImport } from "./routes/cadastro-empresa";
+import { Route as CandidatoRouteImport } from "./routes/candidato";
+import { Route as EmpresaRouteImport } from "./routes/empresa";
+import { Route as LoginRouteImport } from "./routes/login";
 
 const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+  id: "/",
+  path: "/",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const AdministradorRoute = AdministradorRouteImport.update({
-  id: '/administrador',
-  path: '/administrador',
+  id: "/administrador",
+  path: "/administrador",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
+const CadastroRoute = CadastroRouteImport.update({
+  id: "/cadastro",
+  path: "/cadastro",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const CadastroEmpresaRoute = CadastroEmpresaRouteImport.update({
+  id: "/cadastro-empresa",
+  path: "/cadastro-empresa",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const CandidatoRoute = CandidatoRouteImport.update({
-  id: '/candidato',
-  path: '/candidato',
+  id: "/candidato",
+  path: "/candidato",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const EmpresaRoute = EmpresaRouteImport.update({
-  id: '/empresa',
-  path: '/empresa',
+  id: "/empresa",
+  path: "/empresa",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+  id: "/login",
+  path: "/login",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/administrador': typeof AdministradorRoute
-  '/candidato': typeof CandidatoRoute
-  '/empresa': typeof EmpresaRoute
-  '/login': typeof LoginRoute
+  "/": typeof IndexRoute;
+  "/administrador": typeof AdministradorRoute;
+  "/cadastro": typeof CadastroRoute;
+  "/cadastro-empresa": typeof CadastroEmpresaRoute;
+  "/candidato": typeof CandidatoRoute;
+  "/empresa": typeof EmpresaRoute;
+  "/login": typeof LoginRoute;
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/administrador': typeof AdministradorRoute
-  '/candidato': typeof CandidatoRoute
-  '/empresa': typeof EmpresaRoute
-  '/login': typeof LoginRoute
+  "/": typeof IndexRoute;
+  "/administrador": typeof AdministradorRoute;
+  "/cadastro": typeof CadastroRoute;
+  "/cadastro-empresa": typeof CadastroEmpresaRoute;
+  "/candidato": typeof CandidatoRoute;
+  "/empresa": typeof EmpresaRoute;
+  "/login": typeof LoginRoute;
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/administrador': typeof AdministradorRoute
-  '/candidato': typeof CandidatoRoute
-  '/empresa': typeof EmpresaRoute
-  '/login': typeof LoginRoute
+  __root__: typeof rootRouteImport;
+  "/": typeof IndexRoute;
+  "/administrador": typeof AdministradorRoute;
+  "/cadastro": typeof CadastroRoute;
+  "/cadastro-empresa": typeof CadastroEmpresaRoute;
+  "/candidato": typeof CandidatoRoute;
+  "/empresa": typeof EmpresaRoute;
+  "/login": typeof LoginRoute;
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/administrador' | '/candidato' | '/empresa' | '/login'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/administrador' | '/candidato' | '/empresa' | '/login'
-  id: '__root__' | '/' | '/administrador' | '/candidato' | '/empresa' | '/login'
-  fileRoutesById: FileRoutesById
+  fileRoutesByFullPath: FileRoutesByFullPath;
+  fullPaths:
+    | "/"
+    | "/administrador"
+    | "/cadastro"
+    | "/cadastro-empresa"
+    | "/candidato"
+    | "/empresa"
+    | "/login";
+  fileRoutesByTo: FileRoutesByTo;
+  to:
+    | "/"
+    | "/administrador"
+    | "/cadastro"
+    | "/cadastro-empresa"
+    | "/candidato"
+    | "/empresa"
+    | "/login";
+  id:
+    | "__root__"
+    | "/"
+    | "/administrador"
+    | "/cadastro"
+    | "/cadastro-empresa"
+    | "/candidato"
+    | "/empresa"
+    | "/login";
+  fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AdministradorRoute: typeof AdministradorRoute
-  CandidatoRoute: typeof CandidatoRoute
-  EmpresaRoute: typeof EmpresaRoute
-  LoginRoute: typeof LoginRoute
+  IndexRoute: typeof IndexRoute;
+  AdministradorRoute: typeof AdministradorRoute;
+  CadastroRoute: typeof CadastroRoute;
+  CadastroEmpresaRoute: typeof CadastroEmpresaRoute;
+  CandidatoRoute: typeof CandidatoRoute;
+  EmpresaRoute: typeof EmpresaRoute;
+  LoginRoute: typeof LoginRoute;
 }
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/administrador': {
-      id: '/administrador'
-      path: '/administrador'
-      fullPath: '/administrador'
-      preLoaderRoute: typeof AdministradorRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/candidato': {
-      id: '/candidato'
-      path: '/candidato'
-      fullPath: '/candidato'
-      preLoaderRoute: typeof CandidatoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/empresa': {
-      id: '/empresa'
-      path: '/empresa'
-      fullPath: '/empresa'
-      preLoaderRoute: typeof EmpresaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+    "/": {
+      id: "/";
+      path: "/";
+      fullPath: "/";
+      preLoaderRoute: typeof IndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/administrador": {
+      id: "/administrador";
+      path: "/administrador";
+      fullPath: "/administrador";
+      preLoaderRoute: typeof AdministradorRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/cadastro": {
+      id: "/cadastro";
+      path: "/cadastro";
+      fullPath: "/cadastro";
+      preLoaderRoute: typeof CadastroRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/cadastro-empresa": {
+      id: "/cadastro-empresa";
+      path: "/cadastro-empresa";
+      fullPath: "/cadastro-empresa";
+      preLoaderRoute: typeof CadastroEmpresaRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/candidato": {
+      id: "/candidato";
+      path: "/candidato";
+      fullPath: "/candidato";
+      preLoaderRoute: typeof CandidatoRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/empresa": {
+      id: "/empresa";
+      path: "/empresa";
+      fullPath: "/empresa";
+      preLoaderRoute: typeof EmpresaRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/login": {
+      id: "/login";
+      path: "/login";
+      fullPath: "/login";
+      preLoaderRoute: typeof LoginRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdministradorRoute: AdministradorRoute,
+  CadastroRoute: CadastroRoute,
+  CadastroEmpresaRoute: CadastroEmpresaRoute,
   CandidatoRoute: CandidatoRoute,
   EmpresaRoute: EmpresaRoute,
   LoginRoute: LoginRoute,
-}
+};
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+  ._addFileTypes<FileRouteTypes>();
