@@ -32,6 +32,18 @@ export function maskCnpj(value: string): string {
     .replace(/(\d{4})(\d)/, "$1-$2");
 }
 
+export function maskedCaret(masked: string, digitsBeforeCaret: number): number {
+  if (digitsBeforeCaret <= 0) return 0;
+  let seen = 0;
+  for (let index = 0; index < masked.length; index += 1) {
+    if (/\d/.test(masked.charAt(index))) {
+      seen += 1;
+      if (seen === digitsBeforeCaret) return index + 1;
+    }
+  }
+  return masked.length;
+}
+
 const required = (max: number) =>
   z
     .string()

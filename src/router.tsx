@@ -1,9 +1,9 @@
-import { createRouter } from "@tanstack/react-router";
+import { createRouter, type AnyRoute } from "@tanstack/react-router";
 
 import { routeTree } from "@/routeTree.gen";
 
 export const router = createRouter({
-  routeTree,
+  routeTree: routeTree as AnyRoute,
   defaultPreload: "intent",
   scrollRestoration: true,
 });

@@ -62,3 +62,18 @@ it("shows resend failure without claiming an email was sent", async () => {
   );
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
 });
+
+it("sends a pasted code without the surrounding whitespace", async () => {
+  vi.mocked(confirmCompanyEmail).mockResolvedValueOnce(undefined);
+  mount();
+  fireEvent.change(screen.getByLabelText("Código de confirmação"), {
+    target: { value: " 123456\n" },
+  });
+  await userEvent.click(
+    screen.getByRole("button", { name: "Confirmar e-mail" }),
+  );
+  expect(confirmCompanyEmail).toHaveBeenCalledWith(
+    "test@synthetic.invalid",
+    "123456",
+  );
+});

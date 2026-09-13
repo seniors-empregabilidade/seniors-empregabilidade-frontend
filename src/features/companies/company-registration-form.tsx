@@ -22,6 +22,7 @@ import {
   digits,
   isValidCnpj,
   maskCnpj,
+  maskedCaret,
   type CompanyRegistrationValues,
 } from "./registration-schema";
 
@@ -122,9 +123,19 @@ export function CompanyRegistrationForm() {
     gcTime: 0,
   });
   const busy = mutation.isPending || formState.isSubmitting;
+  const submitting = useRef(false);
 
   async function submit(values: CompanyRegistrationValues) {
-    if (busy) return;
+    if (submitting.current || busy) return;
+    submitting.current = true;
+    try {
+      await runSubmit(values);
+    } finally {
+      submitting.current = false;
+    }
+  }
+
+  async function runSubmit(values: CompanyRegistrationValues) {
     setGeneralError(null);
     if (!record.isSuccess || record.isFetching) {
       setError(
@@ -269,8 +280,19 @@ export function CompanyRegistrationForm() {
               <Input
                 {...register("cnpj", {
                   onChange: (event: React.ChangeEvent<HTMLInputElement>) => {
-                    setValue("cnpj", maskCnpj(event.target.value));
+                    const input = event.target;
+                    const caret = input.selectionStart ?? input.value.length;
+                    const typedBeforeCaret = digits(
+                      input.value.slice(0, caret),
+                    ).length;
+                    const masked = maskCnpj(input.value);
+                    setValue("cnpj", masked);
                     clearErrors("cnpj");
+                    const position = maskedCaret(masked, typedBeforeCaret);
+                    requestAnimationFrame(() => {
+                      if (document.activeElement === input)
+                        input.setSelectionRange(position, position);
+                    });
                   },
                 })}
                 id="cnpj"

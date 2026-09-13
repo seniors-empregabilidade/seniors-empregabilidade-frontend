@@ -7,6 +7,7 @@ import {
   companyRegistrationSchema,
   isValidCnpj,
   maskCnpj,
+  maskedCaret,
 } from "./registration-schema";
 
 it.each(["11222333000181", "11.222.333/0001-81", "11444777000161"])(
@@ -75,4 +76,18 @@ it("maps unknown API failures to a safe Portuguese message", () => {
   expect(registrationErrorMessage(new Error("Private"))).not.toContain(
     "Private",
   );
+});
+
+it.each([
+  [0, 0],
+  [1, 1],
+  [2, 2],
+  [3, 4],
+  [5, 6],
+  [6, 8],
+  [8, 10],
+  [14, 18],
+  [99, 18],
+])("keeps the caret after digit %i of a masked CNPJ", (typed, expected) => {
+  expect(maskedCaret(maskCnpj("11222333000181"), typed)).toBe(expected);
 });

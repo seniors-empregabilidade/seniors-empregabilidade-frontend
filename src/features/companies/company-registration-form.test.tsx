@@ -1,6 +1,12 @@
 import "@testing-library/jest-dom/vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -337,4 +343,45 @@ describe("Company registration", () => {
       "password",
     );
   });
+});
+
+it("sends a single registration when the button is double clicked", async () => {
+  let release = () => {};
+  vi.mocked(api.registerCompany).mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        release = () => resolve(created);
+      }),
+  );
+  mount();
+  await fillValidForm();
+  const button = screen.getByRole("button", { name: "Criar conta" });
+  await act(() => {
+    button.dispatchEvent(
+      new MouseEvent("click", { bubbles: true, cancelable: true }),
+    );
+    button.dispatchEvent(
+      new MouseEvent("click", { bubbles: true, cancelable: true }),
+    );
+    return Promise.resolve();
+  });
+  await waitFor(() => expect(api.registerCompany).toHaveBeenCalled());
+  expect(api.registerCompany).toHaveBeenCalledTimes(1);
+  release();
+  await waitFor(() =>
+    expect(screen.getByRole("heading", { name: /Cadastro/ })).toBeVisible(),
+  );
+});
+
+it("keeps the caret in place while editing the middle of the CNPJ", async () => {
+  mount();
+  const input = screen.getByLabelText<HTMLInputElement>("CNPJ *");
+  fireEvent.change(input, { target: { value: "11222333000181" } });
+  await waitFor(() => expect(input).toHaveValue("11.222.333/0001-81"));
+  input.focus();
+  fireEvent.change(input, {
+    target: { value: "11.2229.333/0001-81", selectionStart: 7 },
+  });
+  await waitFor(() => expect(input).toHaveValue("11.222.933/3000-18"));
+  await waitFor(() => expect(input.selectionStart).toBe(8));
 });

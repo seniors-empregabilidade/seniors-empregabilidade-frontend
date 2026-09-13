@@ -22,7 +22,7 @@ export function EmailConfirmation({
     if (confirmed) confirmationMessage.current?.focus();
   }, [confirmed]);
   const confirmation = useMutation({
-    mutationFn: () => confirmCompanyEmail(email, code),
+    mutationFn: () => confirmCompanyEmail(email, code.trim()),
     retry: false,
     gcTime: 0,
     onSuccess: () => {
