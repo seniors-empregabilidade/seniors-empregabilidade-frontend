@@ -385,3 +385,31 @@ it("keeps the caret in place while editing the middle of the CNPJ", async () => 
   await waitFor(() => expect(input).toHaveValue("11.222.933/3000-18"));
   await waitFor(() => expect(input.selectionStart).toBe(8));
 });
+
+it("flags a CNPJ that fails the check digit as soon as it is complete", async () => {
+  mount();
+  const input = screen.getByLabelText("CNPJ *");
+  fireEvent.change(input, { target: { value: "1234567890123" } });
+  await waitFor(() => expect(input).toHaveValue("12.345.678/9012-3"));
+  expect(screen.queryByText("Informe um CNPJ válido.")).not.toBeInTheDocument();
+
+  fireEvent.change(input, { target: { value: "12.345.678/9012-34" } });
+  expect(await screen.findByText("Informe um CNPJ válido.")).toBeVisible();
+  expect(input).toHaveAttribute("aria-invalid", "true");
+  expect(api.getCompanyRecord).not.toHaveBeenCalled();
+});
+
+it("clears the check digit message once the CNPJ becomes valid", async () => {
+  mount();
+  const input = screen.getByLabelText("CNPJ *");
+  fireEvent.change(input, { target: { value: "12345678901234" } });
+  expect(await screen.findByText("Informe um CNPJ válido.")).toBeVisible();
+
+  fireEvent.change(input, { target: { value: "11222333000181" } });
+  await waitFor(() =>
+    expect(
+      screen.queryByText("Informe um CNPJ válido."),
+    ).not.toBeInTheDocument(),
+  );
+  await waitFor(() => expect(api.getCompanyRecord).toHaveBeenCalled());
+});

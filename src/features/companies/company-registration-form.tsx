@@ -124,6 +124,8 @@ export function CompanyRegistrationForm() {
   });
   const busy = mutation.isPending || formState.isSubmitting;
   const submitting = useRef(false);
+  const cnpjIsComplete = cnpj.length === 14;
+  const cnpjFailsCheckDigit = cnpjIsComplete && !isValidCnpj(cnpj);
 
   async function submit(values: CompanyRegistrationValues) {
     if (submitting.current || busy) return;
@@ -299,14 +301,24 @@ export function CompanyRegistrationForm() {
                 inputMode="numeric"
                 maxLength={18}
                 aria-required="true"
-                aria-invalid={Boolean(formState.errors.cnpj) || record.isError}
+                aria-invalid={
+                  Boolean(formState.errors.cnpj) ||
+                  record.isError ||
+                  cnpjFailsCheckDigit
+                }
                 aria-describedby="cnpj-feedback"
               />
               <div id="cnpj-feedback">
-                {formState.errors.cnpj && (
+                {formState.errors.cnpj ? (
                   <p role="alert" className="text-destructive">
                     {formState.errors.cnpj.message}
                   </p>
+                ) : (
+                  cnpjFailsCheckDigit && (
+                    <p role="alert" className="text-destructive">
+                      Informe um CNPJ válido.
+                    </p>
+                  )
                 )}
                 {record.isFetching && <p role="status">Consultando CNPJ…</p>}
                 {record.isError && (
