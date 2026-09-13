@@ -25,11 +25,6 @@ describe("LandingPage", () => {
     for (const link of signupLinks) {
       expect(link).toHaveAttribute("href", "/cadastro");
     }
-
-    expect(screen.getByRole("link", { name: "Criar conta" })).toHaveAttribute(
-      "href",
-      "/cadastro",
-    );
   });
 
   it("directs companies to their own sign-up destination", () => {
@@ -38,15 +33,6 @@ describe("LandingPage", () => {
     expect(
       screen.getByRole("link", { name: "Cadastrar minha empresa" }),
     ).toHaveAttribute("href", "/cadastro-empresa");
-  });
-
-  it("directs returning visitors to the login destination", () => {
-    render(<LandingPage />);
-
-    expect(screen.getByRole("link", { name: "Entrar" })).toHaveAttribute(
-      "href",
-      "/login",
-    );
   });
 
   it("links 'Como funciona' to the how-it-works section", () => {

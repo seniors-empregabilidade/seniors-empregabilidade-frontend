@@ -1,12 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-
-import { PlaceholderPage } from "@/components/placeholder-page";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/cadastro")({
-  component: () => (
-    <PlaceholderPage
-      eyebrow="Cadastro de profissional"
-      description="Em breve você vai poder criar sua conta por aqui e montar seu currículo."
-    />
-  ),
+  beforeLoad: () => {
+    throw redirect({ to: "/users/register", search: { tipo: "candidato" } });
+  },
 });

@@ -80,15 +80,6 @@ export function LoginPage() {
 
   return (
     <div className="flex min-h-svh flex-col bg-background">
-      <header className="border-b border-border px-6 py-6 sm:px-12 lg:px-16">
-        <p className="text-xl font-semibold tracking-tight sm:text-2xl">
-          <span className="text-foreground">Seniors</span>{" "}
-          <span className="font-normal text-muted-foreground">
-            Empregabilidade
-          </span>
-        </p>
-      </header>
-
       <main className="flex flex-1 justify-center px-6 pt-10 pb-16 sm:px-12 sm:pt-14 lg:px-16 lg:pt-16">
         <div className="w-full max-w-lg">
           <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-[2rem]">
