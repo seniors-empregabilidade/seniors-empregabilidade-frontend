@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from "./routes/__root";
 import { Route as IndexRouteImport } from "./routes/index";
 import { Route as AdministradorRouteImport } from "./routes/administrador";
+import { Route as CadastroRouteImport } from "./routes/cadastro";
+import { Route as CadastroEmpresaRouteImport } from "./routes/cadastro-empresa";
 import { Route as CandidatoRouteImport } from "./routes/candidato";
 import { Route as EmpresaRouteImport } from "./routes/empresa";
 import { Route as LoginRouteImport } from "./routes/login";
@@ -24,6 +26,16 @@ const IndexRoute = IndexRouteImport.update({
 const AdministradorRoute = AdministradorRouteImport.update({
   id: "/administrador",
   path: "/administrador",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const CadastroRoute = CadastroRouteImport.update({
+  id: "/cadastro",
+  path: "/cadastro",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const CadastroEmpresaRoute = CadastroEmpresaRouteImport.update({
+  id: "/cadastro-empresa",
+  path: "/cadastro-empresa",
   getParentRoute: () => rootRouteImport,
 } as any);
 const CandidatoRoute = CandidatoRouteImport.update({
@@ -50,6 +62,8 @@ const UsersRegisterRoute = UsersRegisterRouteImport.update({
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
   "/administrador": typeof AdministradorRoute;
+  "/cadastro": typeof CadastroRoute;
+  "/cadastro-empresa": typeof CadastroEmpresaRoute;
   "/candidato": typeof CandidatoRoute;
   "/empresa": typeof EmpresaRoute;
   "/login": typeof LoginRoute;
@@ -58,6 +72,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
   "/administrador": typeof AdministradorRoute;
+  "/cadastro": typeof CadastroRoute;
+  "/cadastro-empresa": typeof CadastroEmpresaRoute;
   "/candidato": typeof CandidatoRoute;
   "/empresa": typeof EmpresaRoute;
   "/login": typeof LoginRoute;
@@ -67,6 +83,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   "/": typeof IndexRoute;
   "/administrador": typeof AdministradorRoute;
+  "/cadastro": typeof CadastroRoute;
+  "/cadastro-empresa": typeof CadastroEmpresaRoute;
   "/candidato": typeof CandidatoRoute;
   "/empresa": typeof EmpresaRoute;
   "/login": typeof LoginRoute;
@@ -77,6 +95,8 @@ export interface FileRouteTypes {
   fullPaths:
     | "/"
     | "/administrador"
+    | "/cadastro"
+    | "/cadastro-empresa"
     | "/candidato"
     | "/empresa"
     | "/login"
@@ -85,6 +105,8 @@ export interface FileRouteTypes {
   to:
     | "/"
     | "/administrador"
+    | "/cadastro"
+    | "/cadastro-empresa"
     | "/candidato"
     | "/empresa"
     | "/login"
@@ -93,6 +115,8 @@ export interface FileRouteTypes {
     | "__root__"
     | "/"
     | "/administrador"
+    | "/cadastro"
+    | "/cadastro-empresa"
     | "/candidato"
     | "/empresa"
     | "/login"
@@ -102,6 +126,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
   AdministradorRoute: typeof AdministradorRoute;
+  CadastroRoute: typeof CadastroRoute;
+  CadastroEmpresaRoute: typeof CadastroEmpresaRoute;
   CandidatoRoute: typeof CandidatoRoute;
   EmpresaRoute: typeof EmpresaRoute;
   LoginRoute: typeof LoginRoute;
@@ -122,6 +148,20 @@ declare module "@tanstack/react-router" {
       path: "/administrador";
       fullPath: "/administrador";
       preLoaderRoute: typeof AdministradorRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/cadastro": {
+      id: "/cadastro";
+      path: "/cadastro";
+      fullPath: "/cadastro";
+      preLoaderRoute: typeof CadastroRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/cadastro-empresa": {
+      id: "/cadastro-empresa";
+      path: "/cadastro-empresa";
+      fullPath: "/cadastro-empresa";
+      preLoaderRoute: typeof CadastroEmpresaRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     "/candidato": {
@@ -158,6 +198,8 @@ declare module "@tanstack/react-router" {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdministradorRoute: AdministradorRoute,
+  CadastroRoute: CadastroRoute,
+  CadastroEmpresaRoute: CadastroEmpresaRoute,
   CandidatoRoute: CandidatoRoute,
   EmpresaRoute: EmpresaRoute,
   LoginRoute: LoginRoute,
