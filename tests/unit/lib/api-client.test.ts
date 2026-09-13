@@ -1,6 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { apiClient } from "@/lib/api-client";
+import { clearSession, writeAccessToken } from "@/lib/session-storage";
+
+import { stubApi, type ApiStub } from "../../api-stub";
+
+let stub: ApiStub | undefined;
 
 describe("apiClient", () => {
   it("uses the validated base URL and timeout", () => {
@@ -34,5 +39,30 @@ describe("apiClient", () => {
       status: 503,
       code: "service_unavailable",
     });
+  });
+});
+
+describe("apiClient authorization", () => {
+  afterEach(() => {
+    stub?.restore();
+    stub = undefined;
+    clearSession();
+  });
+
+  it("sends no Authorization header while nobody is signed in", async () => {
+    stub = stubApi(200, {});
+
+    await apiClient.get("/auth/me");
+
+    expect(stub.requests[0]?.authorization).toBeNull();
+  });
+
+  it("carries the stored access token as a bearer credential", async () => {
+    writeAccessToken("access-token-value");
+    stub = stubApi(200, {});
+
+    await apiClient.get("/auth/me");
+
+    expect(stub.requests[0]?.authorization).toBe("Bearer access-token-value");
   });
 });
