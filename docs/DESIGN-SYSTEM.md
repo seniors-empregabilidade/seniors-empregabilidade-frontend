@@ -187,7 +187,7 @@ pair of actions. Applies to listings, search results, and detail views. Card bor
 | ------------------------------ | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | `data-logo="empresa"`          | 48 × 48, radius 8       | Precedes the job title in listing, detail, modal, and history. A missing file shows the two initials in `--foreground-2` over `--accent` |
 | `data-imagem="foto-candidato"` | 104 and 72, circular    | 104px on the profile, 72px in the edit modal. Upload is optional, JPG or PNG up to 5 MB. Without a file, a circular monogram             |
-| `data-imagem="landing-hero"`   | 388px height, radius 14 | Right column of the hero. File pending. Free aspect ratio, cropped by the container                                                      |
+| `data-imagem="landing-hero"`   | 388px height, radius 14 | Right column of the hero. `public/images/retrato-de-mulher-com-laptop-trabalhando.webp`. Free aspect ratio, cropped by the container     |
 
 All slots are `aria-hidden`: the equivalent information lives in the adjacent text. They
 do not require descriptive alternative text.

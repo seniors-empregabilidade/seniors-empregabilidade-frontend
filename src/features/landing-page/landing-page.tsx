@@ -68,19 +68,13 @@ function HeroSection() {
             />
             Perfil visível para empresas
           </p>
-          <div
+          <img
             data-imagem="landing-hero"
+            src="/images/retrato-de-mulher-com-laptop-trabalhando.webp"
+            alt=""
             aria-hidden="true"
-            className="flex h-[388px] flex-col items-center justify-center rounded-xl border border-dashed border-input bg-background text-center"
-          >
-            <span className="text-base font-semibold tracking-wide text-muted-foreground">
-              IMAGEM
-            </span>
-            <span className="mt-2 max-w-xs text-base text-muted-foreground">
-              Foto de profissional 45+ em ambiente de trabalho. Arquivo a
-              definir.
-            </span>
-          </div>
+            className="h-[388px] w-full rounded-xl object-cover"
+          />
         </div>
       </div>
     </section>

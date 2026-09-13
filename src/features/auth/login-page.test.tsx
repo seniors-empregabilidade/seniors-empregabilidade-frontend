@@ -133,6 +133,9 @@ describe("LoginPage", () => {
     ).toHaveFocus();
 
     await user.tab();
+    expect(screen.getByRole("button", { name: "Voltar" })).toHaveFocus();
+
+    await user.tab();
     expect(screen.getByRole("button", { name: "Criar conta" })).toHaveFocus();
   });
 
@@ -312,5 +315,15 @@ describe("LoginPage", () => {
     await user.click(screen.getByRole("button", { name: "Criar conta" }));
 
     expect(navigateMock).toHaveBeenCalledWith({ href: "/users/register" });
+  });
+
+  it("navigates back to the landing page", async () => {
+    const user = userEvent.setup();
+
+    renderLoginPage();
+
+    await user.click(screen.getByRole("button", { name: "Voltar" }));
+
+    expect(navigateMock).toHaveBeenCalledWith({ href: "/" });
   });
 });
