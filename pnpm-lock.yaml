@@ -113,6 +113,9 @@ importers:
       cypress-axe:
         specifier: ^1.7.0
         version: 1.7.0(axe-core@4.13.0)(cypress@15.20.1)
+      cypress-real-events:
+        specifier: ^1.15.0
+        version: 1.15.0(cypress@15.20.1)
       eslint:
         specifier: ^9.39.5
         version: 9.39.5(jiti@2.7.0)(supports-color@8.1.1)
@@ -2287,6 +2290,14 @@ packages:
     peerDependencies:
       axe-core: ^3 || ^4
       cypress: ^10 || ^11 || ^12 || ^13 || ^14 || ^15
+
+  cypress-real-events@1.15.0:
+    resolution:
+      {
+        integrity: sha512-in98xxTnnM9Z7lZBvvVozm99PBT2eEOjXRG5LKWyYvQnj9mGWXMiPNpfw7e7WiraBFh7XlXIxnE9Cu5o+52kQQ==,
+      }
+    peerDependencies:
+      cypress: ^4.x || ^5.x || ^6.x || ^7.x || ^8.x || ^9.x || ^10.x || ^11.x || ^12.x || ^13.x || ^14.x || ^15.x
 
   cypress@15.20.1:
     resolution:
@@ -6762,6 +6773,10 @@ snapshots:
   cypress-axe@1.7.0(axe-core@4.13.0)(cypress@15.20.1):
     dependencies:
       axe-core: 4.13.0
+      cypress: 15.20.1
+
+  cypress-real-events@1.15.0(cypress@15.20.1):
+    dependencies:
       cypress: 15.20.1
 
   cypress@15.20.1:
