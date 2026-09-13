@@ -1,20 +1,21 @@
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 
-type AccountType = "candidate" | "company";
+export type AccountType = "candidate" | "company";
 
 export function RegistrationPage({
   candidate,
   company,
-  initialAccountType = "candidate",
+  accountType,
+  onAccountTypeChange,
 }: {
   candidate: ReactNode;
   company: ReactNode;
-  initialAccountType?: AccountType;
+  accountType: AccountType;
+  onAccountTypeChange: (next: AccountType) => void;
 }) {
-  const [accountType, setAccountType] =
-    useState<AccountType>(initialAccountType);
+  const showingCandidate = accountType === "candidate";
   return (
     <>
       <nav
@@ -23,26 +24,25 @@ export function RegistrationPage({
       >
         <Button
           type="button"
-          variant={accountType === "candidate" ? "default" : "outline"}
-          aria-pressed={accountType === "candidate"}
-          onClick={() => setAccountType("candidate")}
+          variant={showingCandidate ? "default" : "outline"}
+          aria-pressed={showingCandidate}
+          onClick={() => onAccountTypeChange("candidate")}
         >
           Candidato
         </Button>
         <Button
           type="button"
-          variant={accountType === "company" ? "default" : "outline"}
-          aria-pressed={accountType === "company"}
-          onClick={() => setAccountType("company")}
+          variant={showingCandidate ? "outline" : "default"}
+          aria-pressed={!showingCandidate}
+          onClick={() => onAccountTypeChange("company")}
         >
           Empresa
         </Button>
       </nav>
-      {accountType === "candidate" ? (
-        candidate
-      ) : (
-        <main className="mx-auto max-w-2xl px-6 py-8">{company}</main>
-      )}
+      <div hidden={!showingCandidate}>{candidate}</div>
+      <main hidden={showingCandidate} className="mx-auto max-w-2xl px-6 py-8">
+        {company}
+      </main>
     </>
   );
 }

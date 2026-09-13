@@ -1,5 +1,5 @@
 import { z } from "zod";
 
 export const registerSearchSchema = z.object({
-  tipo: z.enum(["candidato", "empresa"]).default("candidato"),
+  tipo: z.enum(["candidato", "empresa"]).catch("candidato"),
 });
