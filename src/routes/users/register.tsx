@@ -1,6 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ProfessionalRegister } from "@/features/professional-register";
+
+import { RegisterAccount } from "./-register-account";
+import { registerSearchSchema } from "./-register-search";
 
 export const Route = createFileRoute("/users/register")({
-  component: ProfessionalRegister,
+  validateSearch: registerSearchSchema,
+  component: RegisterAccount,
 });

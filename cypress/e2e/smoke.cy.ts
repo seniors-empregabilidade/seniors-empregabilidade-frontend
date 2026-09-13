@@ -14,23 +14,28 @@ describe("landing page", () => {
       .and("have.attr", "href", "/login");
   });
 
-  it("navigates candidates and companies to their placeholder pages and back, and returning visitors to the login page", () => {
+  it("sends candidates and companies to the registration page on their own tab, and returning visitors to the login page", () => {
     cy.visit("/");
 
     cy.contains("a", "Criar minha conta").click();
-    cy.location("pathname").should("eq", "/cadastro");
-    cy.get("h1").should("contain.text", "Essa etapa ainda está em construção");
-    cy.contains("p", "Cadastro de profissional").should("be.visible");
-    cy.contains("a", "Voltar para a página inicial").click();
-    cy.location("pathname").should("eq", "/");
-    cy.get("h1").should("contain.text", "Vinte anos de carreira");
+    cy.location("pathname").should("eq", "/users/register");
+    cy.contains("button", "Candidato").should(
+      "have.attr",
+      "aria-pressed",
+      "true",
+    );
 
+    cy.visit("/");
     cy.contains("a", "Cadastrar minha empresa").click();
-    cy.location("pathname").should("eq", "/cadastro-empresa");
-    cy.contains("p", "Cadastro de empresa").should("be.visible");
-    cy.contains("a", "Voltar para a página inicial").click();
-    cy.location("pathname").should("eq", "/");
+    cy.location("pathname").should("eq", "/users/register");
+    cy.contains("button", "Empresa").should(
+      "have.attr",
+      "aria-pressed",
+      "true",
+    );
+    cy.contains("legend", "Organização").should("be.visible");
 
+    cy.visit("/");
     cy.contains("a", "Entrar").click();
     cy.location("pathname").should("eq", "/login");
     cy.get("h1").should("contain.text", "Entrar");

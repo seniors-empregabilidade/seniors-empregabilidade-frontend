@@ -5,65 +5,6 @@ import { cn } from "@/lib/utils";
 
 const container = "mx-auto w-full max-w-6xl px-6";
 
-function BrandMark() {
-  return (
-    <span className="flex items-center gap-1" aria-hidden="true">
-      <span className="size-2.5 rounded-full bg-foreground" />
-      <span className="size-2.5 rounded-full bg-foreground-2" />
-      <span className="size-2.5 rounded-full bg-border" />
-    </span>
-  );
-}
-
-function SiteHeader() {
-  return (
-    <header className="border-b border-border bg-background">
-      <div
-        className={cn(
-          container,
-          "flex flex-wrap items-center justify-between gap-4 py-4",
-        )}
-      >
-        <div className="flex items-center gap-3">
-          <BrandMark />
-          <div>
-            <span className="block text-xl font-bold text-foreground">
-              Seniors
-            </span>
-            <span className="block text-base text-muted-foreground">
-              Conectando experiência a novas oportunidades
-            </span>
-          </div>
-        </div>
-
-        <nav
-          aria-label="Principal"
-          className="flex flex-wrap items-center gap-6"
-        >
-          <span className="text-base text-foreground-2">Vagas</span>
-          <span className="text-base text-foreground-2">Empresas</span>
-          <span className="text-base text-foreground-2">Capacitação</span>
-          <a
-            href="#como-funciona"
-            className="text-base text-foreground-2 underline underline-offset-4 hover:text-foreground"
-          >
-            Como funciona
-          </a>
-          <a
-            href="/login"
-            className="text-base text-foreground-2 underline underline-offset-4 hover:text-foreground"
-          >
-            Entrar
-          </a>
-          <a href="/cadastro" className={buttonVariants()}>
-            Criar conta
-          </a>
-        </nav>
-      </div>
-    </header>
-  );
-}
-
 function HeroSection() {
   return (
     <section aria-labelledby="hero-heading" className="bg-muted">
@@ -371,7 +312,6 @@ function SiteFooter() {
 export function LandingPage() {
   return (
     <>
-      <SiteHeader />
       <main>
         <HeroSection />
         <WhyChooseSection />
