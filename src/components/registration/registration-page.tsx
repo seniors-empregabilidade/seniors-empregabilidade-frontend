@@ -20,24 +20,30 @@ export function RegistrationPage({
     <>
       <nav
         aria-label="Tipo de cadastro"
-        className="mx-auto flex max-w-2xl gap-4 px-6 pt-8"
+        className="mx-auto max-w-2xl px-6 pt-8"
       >
-        <Button
-          type="button"
-          variant={showingCandidate ? "default" : "outline"}
-          aria-pressed={showingCandidate}
-          onClick={() => onAccountTypeChange("candidate")}
-        >
-          Candidato
-        </Button>
-        <Button
-          type="button"
-          variant={showingCandidate ? "outline" : "default"}
-          aria-pressed={!showingCandidate}
-          onClick={() => onAccountTypeChange("company")}
-        >
-          Empresa
-        </Button>
+        <div className="grid grid-cols-2 gap-1 rounded-xl bg-accent p-1">
+          <Button
+            type="button"
+            size="lg"
+            variant={showingCandidate ? "default" : "ghost"}
+            className="w-full rounded-lg"
+            aria-pressed={showingCandidate}
+            onClick={() => onAccountTypeChange("candidate")}
+          >
+            Sou um candidato
+          </Button>
+          <Button
+            type="button"
+            size="lg"
+            variant={showingCandidate ? "ghost" : "default"}
+            className="w-full rounded-lg"
+            aria-pressed={!showingCandidate}
+            onClick={() => onAccountTypeChange("company")}
+          >
+            Sou uma empresa
+          </Button>
+        </div>
       </nav>
       <div hidden={!showingCandidate}>{candidate}</div>
       <main hidden={showingCandidate} className="mx-auto max-w-2xl px-6 py-8">

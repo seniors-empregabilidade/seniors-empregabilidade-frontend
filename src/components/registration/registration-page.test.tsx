@@ -18,29 +18,31 @@ function mount(accountType: "candidate" | "company") {
   return { onAccountTypeChange, view };
 }
 
-it("shows the candidate side and asks to switch when Empresa is pressed", async () => {
+it("shows the candidate side and asks to switch when Sou uma empresa is pressed", async () => {
   const { onAccountTypeChange } = mount("candidate");
   expect(screen.getByLabelText("Candidate field")).toBeVisible();
   expect(screen.getByLabelText("Company field")).not.toBeVisible();
-  expect(screen.getByRole("button", { name: "Candidato" })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  expect(
+    screen.getByRole("button", { name: "Sou um candidato" }),
+  ).toHaveAttribute("aria-pressed", "true");
 
-  await userEvent.click(screen.getByRole("button", { name: "Empresa" }));
+  await userEvent.click(
+    screen.getByRole("button", { name: "Sou uma empresa" }),
+  );
   expect(onAccountTypeChange).toHaveBeenCalledWith("company");
 });
 
-it("shows the company side and asks to switch when Candidato is pressed", async () => {
+it("shows the company side and asks to switch when Sou um candidato is pressed", async () => {
   const { onAccountTypeChange } = mount("company");
   expect(screen.getByLabelText("Company field")).toBeVisible();
   expect(screen.getByLabelText("Candidate field")).not.toBeVisible();
-  expect(screen.getByRole("button", { name: "Empresa" })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  expect(
+    screen.getByRole("button", { name: "Sou uma empresa" }),
+  ).toHaveAttribute("aria-pressed", "true");
 
-  await userEvent.click(screen.getByRole("button", { name: "Candidato" }));
+  await userEvent.click(
+    screen.getByRole("button", { name: "Sou um candidato" }),
+  );
   expect(onAccountTypeChange).toHaveBeenCalledWith("candidate");
 });
 

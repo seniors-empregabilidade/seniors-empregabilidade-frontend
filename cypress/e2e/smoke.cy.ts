@@ -19,7 +19,7 @@ describe("landing page", () => {
 
     cy.contains("a", "Criar minha conta").click();
     cy.location("pathname").should("eq", "/users/register");
-    cy.contains("button", "Candidato").should(
+    cy.contains("button", "Sou um candidato").should(
       "have.attr",
       "aria-pressed",
       "true",
@@ -28,7 +28,7 @@ describe("landing page", () => {
     cy.visit("/");
     cy.contains("a", "Cadastrar minha empresa").click();
     cy.location("pathname").should("eq", "/users/register");
-    cy.contains("button", "Empresa").should(
+    cy.contains("button", "Sou uma empresa").should(
       "have.attr",
       "aria-pressed",
       "true",
