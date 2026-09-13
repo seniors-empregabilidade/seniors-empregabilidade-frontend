@@ -254,7 +254,7 @@ export function ProfessionalRegister() {
 
   async function onSubmit(data: RegisterFormData) {
     try {
-      await apiClient.post("/professionals/register", {
+      await apiClient.post("/users/register", {
         ...data,
         cpf: data.cpf.replace(/\D/g, ""),
         phone: data.phone.replace(/\D/g, ""),

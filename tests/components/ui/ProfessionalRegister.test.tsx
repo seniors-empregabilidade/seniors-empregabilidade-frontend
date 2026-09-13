@@ -11,7 +11,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ProfessionalRegister } from "@/features/professional-register";
 import { apiClient } from "@/lib/api-client";
 
-// Mock do apiClient para testes de submissão do formulário
 vi.mock("@/lib/api-client", () => ({
   apiClient: {
     post: vi.fn(),
@@ -370,7 +369,7 @@ describe("ProfessionalRegister - Testes de Integração, Validação e Cobertura
 
     await waitFor(() => {
       expect(postSpy).toHaveBeenCalledWith(
-        "/professionals/register",
+        "/users/register",
         expect.anything(),
       );
     });
