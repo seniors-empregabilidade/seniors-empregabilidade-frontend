@@ -2,16 +2,19 @@ import { useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 
+type AccountType = "candidate" | "company";
+
 export function RegistrationPage({
   candidate,
   company,
+  initialAccountType = "candidate",
 }: {
   candidate: ReactNode;
   company: ReactNode;
+  initialAccountType?: AccountType;
 }) {
-  const [accountType, setAccountType] = useState<"candidate" | "company">(
-    "candidate",
-  );
+  const [accountType, setAccountType] =
+    useState<AccountType>(initialAccountType);
   return (
     <>
       <nav

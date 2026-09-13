@@ -22,3 +22,19 @@ it("switches between the existing candidate form and the company form", async ()
   await userEvent.click(screen.getByRole("button", { name: "Candidato" }));
   expect(screen.getByText("Candidate form")).toBeInTheDocument();
 });
+
+it("opens on the company form when the landing page asks for it", () => {
+  render(
+    <RegistrationPage
+      initialAccountType="company"
+      candidate={<p>Candidate form</p>}
+      company={<p>Company form</p>}
+    />,
+  );
+  expect(screen.getByRole("main")).toHaveTextContent("Company form");
+  expect(screen.getByRole("button", { name: "Empresa" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  expect(screen.queryByText("Candidate form")).not.toBeInTheDocument();
+});
