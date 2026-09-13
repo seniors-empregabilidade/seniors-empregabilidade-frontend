@@ -15,7 +15,9 @@ import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as CadastroEmpresaRouteImport } from './routes/cadastro-empresa'
 import { Route as CandidatoRouteImport } from './routes/candidato'
 import { Route as EmpresaRouteImport } from './routes/empresa'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as UsersRegisterRouteImport } from './routes/users/register'
 
 const IndexRoute = IndexRouteImport.update({
@@ -48,9 +50,19 @@ const EmpresaRoute = EmpresaRouteImport.update({
   path: '/empresa',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UsersRegisterRoute = UsersRegisterRouteImport.update({
@@ -66,7 +78,9 @@ export interface FileRoutesByFullPath {
   '/cadastro-empresa': typeof CadastroEmpresaRoute
   '/candidato': typeof CandidatoRoute
   '/empresa': typeof EmpresaRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/users/register': typeof UsersRegisterRoute
 }
 export interface FileRoutesByTo {
@@ -76,7 +90,9 @@ export interface FileRoutesByTo {
   '/cadastro-empresa': typeof CadastroEmpresaRoute
   '/candidato': typeof CandidatoRoute
   '/empresa': typeof EmpresaRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/users/register': typeof UsersRegisterRoute
 }
 export interface FileRoutesById {
@@ -87,7 +103,9 @@ export interface FileRoutesById {
   '/cadastro-empresa': typeof CadastroEmpresaRoute
   '/candidato': typeof CandidatoRoute
   '/empresa': typeof EmpresaRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/users/register': typeof UsersRegisterRoute
 }
 export interface FileRouteTypes {
@@ -99,7 +117,9 @@ export interface FileRouteTypes {
     | '/cadastro-empresa'
     | '/candidato'
     | '/empresa'
+    | '/forgot-password'
     | '/login'
+    | '/reset-password'
     | '/users/register'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -109,7 +129,9 @@ export interface FileRouteTypes {
     | '/cadastro-empresa'
     | '/candidato'
     | '/empresa'
+    | '/forgot-password'
     | '/login'
+    | '/reset-password'
     | '/users/register'
   id:
     | '__root__'
@@ -119,7 +141,9 @@ export interface FileRouteTypes {
     | '/cadastro-empresa'
     | '/candidato'
     | '/empresa'
+    | '/forgot-password'
     | '/login'
+    | '/reset-password'
     | '/users/register'
   fileRoutesById: FileRoutesById
 }
@@ -130,7 +154,9 @@ export interface RootRouteChildren {
   CadastroEmpresaRoute: typeof CadastroEmpresaRoute
   CandidatoRoute: typeof CandidatoRoute
   EmpresaRoute: typeof EmpresaRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   UsersRegisterRoute: typeof UsersRegisterRoute
 }
 
@@ -178,11 +204,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmpresaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/users/register': {
@@ -202,7 +242,9 @@ const rootRouteChildren: RootRouteChildren = {
   CadastroEmpresaRoute: CadastroEmpresaRoute,
   CandidatoRoute: CandidatoRoute,
   EmpresaRoute: EmpresaRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   UsersRegisterRoute: UsersRegisterRoute,
 }
 export const routeTree = rootRouteImport

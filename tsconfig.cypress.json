@@ -5,7 +5,7 @@
     "lib": ["ES2023", "DOM"],
     "module": "esnext",
     "moduleResolution": "bundler",
-    "types": ["cypress", "node"],
+    "types": ["cypress", "cypress-real-events", "node"],
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
