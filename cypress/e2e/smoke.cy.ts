@@ -14,7 +14,7 @@ describe("landing page", () => {
       .and("have.attr", "href", "/login");
   });
 
-  it("navigates candidates, companies, and returning visitors to their placeholder pages and back", () => {
+  it("navigates candidates and companies to their placeholder pages and back, and returning visitors to the login page", () => {
     cy.visit("/");
 
     cy.contains("a", "Criar minha conta").click();
@@ -33,9 +33,7 @@ describe("landing page", () => {
 
     cy.contains("a", "Entrar").click();
     cy.location("pathname").should("eq", "/login");
-    cy.contains("p", "Entrar").should("be.visible");
-    cy.contains("a", "Voltar para a página inicial").click();
-    cy.location("pathname").should("eq", "/");
+    cy.get("h1").should("contain.text", "Entrar");
   });
 
   it("has no detectable WCAG 2.2 AA violations on the landing page", () => {
