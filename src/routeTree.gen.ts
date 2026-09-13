@@ -16,6 +16,7 @@ import { Route as CadastroEmpresaRouteImport } from "./routes/cadastro-empresa";
 import { Route as CandidatoRouteImport } from "./routes/candidato";
 import { Route as EmpresaRouteImport } from "./routes/empresa";
 import { Route as LoginRouteImport } from "./routes/login";
+import { Route as UsersRegisterRouteImport } from "./routes/users/register";
 
 const IndexRoute = IndexRouteImport.update({
   id: "/",
@@ -52,6 +53,11 @@ const LoginRoute = LoginRouteImport.update({
   path: "/login",
   getParentRoute: () => rootRouteImport,
 } as any);
+const UsersRegisterRoute = UsersRegisterRouteImport.update({
+  id: "/users/register",
+  path: "/users/register",
+  getParentRoute: () => rootRouteImport,
+} as any);
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
@@ -61,6 +67,7 @@ export interface FileRoutesByFullPath {
   "/candidato": typeof CandidatoRoute;
   "/empresa": typeof EmpresaRoute;
   "/login": typeof LoginRoute;
+  "/users/register": typeof UsersRegisterRoute;
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
@@ -70,6 +77,7 @@ export interface FileRoutesByTo {
   "/candidato": typeof CandidatoRoute;
   "/empresa": typeof EmpresaRoute;
   "/login": typeof LoginRoute;
+  "/users/register": typeof UsersRegisterRoute;
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport;
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   "/candidato": typeof CandidatoRoute;
   "/empresa": typeof EmpresaRoute;
   "/login": typeof LoginRoute;
+  "/users/register": typeof UsersRegisterRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
@@ -90,7 +99,8 @@ export interface FileRouteTypes {
     | "/cadastro-empresa"
     | "/candidato"
     | "/empresa"
-    | "/login";
+    | "/login"
+    | "/users/register";
   fileRoutesByTo: FileRoutesByTo;
   to:
     | "/"
@@ -99,7 +109,8 @@ export interface FileRouteTypes {
     | "/cadastro-empresa"
     | "/candidato"
     | "/empresa"
-    | "/login";
+    | "/login"
+    | "/users/register";
   id:
     | "__root__"
     | "/"
@@ -108,7 +119,8 @@ export interface FileRouteTypes {
     | "/cadastro-empresa"
     | "/candidato"
     | "/empresa"
-    | "/login";
+    | "/login"
+    | "/users/register";
   fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
@@ -119,6 +131,7 @@ export interface RootRouteChildren {
   CandidatoRoute: typeof CandidatoRoute;
   EmpresaRoute: typeof EmpresaRoute;
   LoginRoute: typeof LoginRoute;
+  UsersRegisterRoute: typeof UsersRegisterRoute;
 }
 
 declare module "@tanstack/react-router" {
@@ -172,6 +185,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof LoginRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/users/register": {
+      id: "/users/register";
+      path: "/users/register";
+      fullPath: "/users/register";
+      preLoaderRoute: typeof UsersRegisterRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
   }
 }
 
@@ -183,6 +203,7 @@ const rootRouteChildren: RootRouteChildren = {
   CandidatoRoute: CandidatoRoute,
   EmpresaRoute: EmpresaRoute,
   LoginRoute: LoginRoute,
+  UsersRegisterRoute: UsersRegisterRoute,
 };
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
