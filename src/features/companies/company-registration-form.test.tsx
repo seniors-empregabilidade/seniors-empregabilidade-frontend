@@ -433,3 +433,43 @@ it("keeps the caret in place while editing the middle of the zip code", async ()
   await waitFor(() => expect(input).toHaveValue("90439-00"));
   await waitFor(() => expect(input.selectionStart).toBe(5));
 });
+
+it("announces the address the zip code lookup filled in", async () => {
+  mount();
+  const status = screen.getAllByRole("status");
+  expect(status.length).toBeGreaterThan(0);
+
+  fireEvent.change(screen.getByLabelText("CEP *"), {
+    target: { value: "12345678" },
+  });
+  await waitFor(() =>
+    expect(
+      screen.getByText(
+        "Endereço preenchido: Synthetic Street, Synthetic District, Synthetic City - RS.",
+      ),
+    ).toBeVisible(),
+  );
+});
+
+it("announces the company the CNPJ lookup found", async () => {
+  mount();
+  fireEvent.change(screen.getByLabelText("CNPJ *"), {
+    target: { value: "11222333000181" },
+  });
+  await waitFor(() =>
+    expect(
+      screen.getByText(
+        "Empresa encontrada: Synthetic Registry SA. Ramo de atividade 6201501.",
+      ),
+    ).toBeVisible(),
+  );
+});
+
+it("keeps the status regions in the document before any lookup runs", () => {
+  mount();
+  const live = screen
+    .getAllByRole("status")
+    .filter((node) => node.getAttribute("aria-live") === "polite");
+  expect(live.length).toBe(2);
+  for (const node of live) expect(node).toHaveTextContent("");
+});

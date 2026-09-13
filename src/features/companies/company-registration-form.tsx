@@ -127,6 +127,16 @@ export function CompanyRegistrationForm() {
   });
   const busy = mutation.isPending || formState.isSubmitting;
   const submitting = useRef(false);
+  const registryAnnouncement = record.isFetching
+    ? "Consultando CNPJ…"
+    : record.isSuccess
+      ? `Empresa encontrada: ${record.data.legal_name}. Ramo de atividade ${record.data.primary_cnae}.`
+      : "";
+  const postalAnnouncement = postalAddress.isFetching
+    ? "Consultando CEP…"
+    : postalAddress.isSuccess
+      ? `Endereço preenchido: ${postalAddress.data.logradouro}, ${postalAddress.data.bairro}, ${postalAddress.data.localidade} - ${postalAddress.data.uf}.`
+      : "";
   const cnpjIsComplete = cnpj.length === 14;
   const cnpjFailsCheckDigit = cnpjIsComplete && !isValidCnpj(cnpj);
 
@@ -327,7 +337,9 @@ export function CompanyRegistrationForm() {
                     </p>
                   )
                 )}
-                {record.isFetching && <p role="status">Consultando CNPJ…</p>}
+                <p role="status" aria-live="polite">
+                  {registryAnnouncement}
+                </p>
                 {record.isError && (
                   <>
                     <p role="alert" className="text-destructive">
@@ -423,9 +435,9 @@ export function CompanyRegistrationForm() {
                   {formState.errors.address.zip_code.message}
                 </p>
               )}
-              {postalAddress.isFetching && (
-                <p role="status">Consultando CEP…</p>
-              )}
+              <p role="status" aria-live="polite">
+                {postalAnnouncement}
+              </p>
               {postalAddress.isError && (
                 <>
                   <p role="alert" className="text-destructive">
