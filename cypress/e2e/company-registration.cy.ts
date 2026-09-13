@@ -14,7 +14,7 @@ describe("company registration", () => {
       uf: "RS",
     }).as("postal");
     cy.visit("/users/register");
-    cy.contains("button", "Empresa").click();
+    cy.contains("button", "Sou uma empresa").click();
   });
 
   function completeForm() {
