@@ -187,19 +187,33 @@ export function LoginPage() {
 
           <Separator className="my-10" />
 
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-lg text-foreground">Não tenho uma conta</p>
+          <div className="flex items-end justify-between gap-4">
             <Button
               type="button"
               variant="outline"
-              className="w-full sm:w-auto"
+              className="flex-1"
               disabled={isSubmitting}
               onClick={() => {
-                void router.navigate({ href: "/users/register" });
+                void router.navigate({ href: "/" });
               }}
             >
-              Criar conta
+              Voltar
             </Button>
+
+            <div className="flex flex-1 flex-col items-end gap-3">
+              <p className="text-lg text-foreground">Não tenho uma conta</p>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                disabled={isSubmitting}
+                onClick={() => {
+                  void router.navigate({ href: "/users/register" });
+                }}
+              >
+                Criar conta
+              </Button>
+            </div>
           </div>
         </div>
       </main>
