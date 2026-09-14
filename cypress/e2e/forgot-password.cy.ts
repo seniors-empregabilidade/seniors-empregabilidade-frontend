@@ -108,6 +108,9 @@ describe("forgot password screen", () => {
     cy.get("#email").type(EMAIL);
     cy.contains("button", "Enviar").click();
     cy.get('[role="dialog"]').should("be.visible");
+    // The dialog animates in, and auditing mid-transition reports a transient
+    // contrast violation. Focus lands only once the transition finishes.
+    cy.contains("button", "Inserir código").should("be.focused");
 
     cy.injectAxe();
     cy.checkA11y(undefined, WCAG);
