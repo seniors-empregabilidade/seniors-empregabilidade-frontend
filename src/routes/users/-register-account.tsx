@@ -4,8 +4,8 @@ import {
   RegistrationPage,
   type AccountType,
 } from "@/components/registration/registration-page";
+import { ProfessionalRegister } from "@/features/candidates/professional-register";
 import { CompanyRegistrationForm } from "@/features/companies/company-registration-form";
-import { ProfessionalRegister } from "@/features/professional-register";
 
 import { registerSearchSchema } from "./-register-search";
 
@@ -24,7 +24,13 @@ export function RegisterAccount() {
           replace: true,
         });
       }}
-      candidate={<ProfessionalRegister />}
+      candidate={
+        <ProfessionalRegister
+          onEmailVerificationRequired={() =>
+            navigate({ to: "/email-verification" })
+          }
+        />
+      }
       company={<CompanyRegistrationForm />}
     />
   );
