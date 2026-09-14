@@ -14,6 +14,7 @@ import { Route as AdministradorRouteImport } from './routes/administrador'
 import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as CadastroEmpresaRouteImport } from './routes/cadastro-empresa'
 import { Route as CandidatoRouteImport } from './routes/candidato'
+import { Route as EmailVerificationRouteImport } from './routes/email-verification'
 import { Route as EmpresaRouteImport } from './routes/empresa'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
@@ -43,6 +44,11 @@ const CadastroEmpresaRoute = CadastroEmpresaRouteImport.update({
 const CandidatoRoute = CandidatoRouteImport.update({
   id: '/candidato',
   path: '/candidato',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmailVerificationRoute = EmailVerificationRouteImport.update({
+  id: '/email-verification',
+  path: '/email-verification',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EmpresaRoute = EmpresaRouteImport.update({
@@ -77,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/cadastro': typeof CadastroRoute
   '/cadastro-empresa': typeof CadastroEmpresaRoute
   '/candidato': typeof CandidatoRoute
+  '/email-verification': typeof EmailVerificationRoute
   '/empresa': typeof EmpresaRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
@@ -89,6 +96,7 @@ export interface FileRoutesByTo {
   '/cadastro': typeof CadastroRoute
   '/cadastro-empresa': typeof CadastroEmpresaRoute
   '/candidato': typeof CandidatoRoute
+  '/email-verification': typeof EmailVerificationRoute
   '/empresa': typeof EmpresaRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
@@ -102,6 +110,7 @@ export interface FileRoutesById {
   '/cadastro': typeof CadastroRoute
   '/cadastro-empresa': typeof CadastroEmpresaRoute
   '/candidato': typeof CandidatoRoute
+  '/email-verification': typeof EmailVerificationRoute
   '/empresa': typeof EmpresaRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/cadastro'
     | '/cadastro-empresa'
     | '/candidato'
+    | '/email-verification'
     | '/empresa'
     | '/forgot-password'
     | '/login'
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/cadastro'
     | '/cadastro-empresa'
     | '/candidato'
+    | '/email-verification'
     | '/empresa'
     | '/forgot-password'
     | '/login'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/cadastro'
     | '/cadastro-empresa'
     | '/candidato'
+    | '/email-verification'
     | '/empresa'
     | '/forgot-password'
     | '/login'
@@ -153,6 +165,7 @@ export interface RootRouteChildren {
   CadastroRoute: typeof CadastroRoute
   CadastroEmpresaRoute: typeof CadastroEmpresaRoute
   CandidatoRoute: typeof CandidatoRoute
+  EmailVerificationRoute: typeof EmailVerificationRoute
   EmpresaRoute: typeof EmpresaRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
@@ -195,6 +208,13 @@ declare module '@tanstack/react-router' {
       path: '/candidato'
       fullPath: '/candidato'
       preLoaderRoute: typeof CandidatoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/email-verification': {
+      id: '/email-verification'
+      path: '/email-verification'
+      fullPath: '/email-verification'
+      preLoaderRoute: typeof EmailVerificationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/empresa': {
@@ -241,6 +261,7 @@ const rootRouteChildren: RootRouteChildren = {
   CadastroRoute: CadastroRoute,
   CadastroEmpresaRoute: CadastroEmpresaRoute,
   CandidatoRoute: CandidatoRoute,
+  EmailVerificationRoute: EmailVerificationRoute,
   EmpresaRoute: EmpresaRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,

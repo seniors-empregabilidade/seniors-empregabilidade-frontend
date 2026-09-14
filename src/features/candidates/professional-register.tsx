@@ -1,13 +1,20 @@
-import { useState, useRef } from "react";
+import { passwordHint, passwordSchema } from "./password-schema";
+import { useMutation } from "@tanstack/react-query";
+import { useState, useRef, useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
-import { apiClient } from "@/lib/api-client";
+import { registerProfessional, registrationError } from "./registration";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { writePendingEmail } from "@/lib/pending-email";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+
+interface ProfessionalRegisterProps {
+  onEmailVerificationRequired?: (email: string) => void | Promise<void>;
+}
 
 type ViaCepResponse = {
   cep?: string;
@@ -103,11 +110,7 @@ const registerSchema = z
     neighborhood: z.string().optional(),
     city: z.string().optional(),
     state: z.string().optional(),
-    password: z
-      .string()
-      .min(8, "A senha deve ter no mínimo 8 caracteres.")
-      .regex(/[A-Za-z]/, "A senha deve conter pelo menos uma letra.")
-      .regex(/\d/, "A senha deve conter pelo menos um número."),
+    password: passwordSchema,
     confirmPassword: z.string().min(1, "Confirme sua senha."),
     acceptedTerms: z
       .boolean()
@@ -145,7 +148,21 @@ function formatCEP(value: string) {
   return numbers.replace(/(\d{5})(\d)/, "$1-$2");
 }
 
-export function ProfessionalRegister() {
+export function ProfessionalRegister({
+  onEmailVerificationRequired,
+}: ProfessionalRegisterProps = {}) {
+  const registration = useMutation({
+    mutationFn: registerProfessional,
+    retry: false,
+  });
+  const [verificationRequired, setVerificationRequired] = useState(true);
+  const [confirmation, setConfirmation] = useState<string | null>(null);
+  const [offerLogin, setOfferLogin] = useState(false);
+  const confirmationRef = useRef<HTMLHeadingElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (confirmation) confirmationRef.current?.focus();
+  }, [confirmation]);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isFetchingCep, setIsFetchingCep] = useState(false);
@@ -159,6 +176,7 @@ export function ProfessionalRegister() {
     setValue,
     setError,
     clearErrors,
+    setFocus,
     control,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>({
@@ -253,29 +271,61 @@ export function ProfessionalRegister() {
   }
 
   async function onSubmit(data: RegisterFormData) {
+    clearErrors("root");
+    setOfferLogin(false);
+    let result;
     try {
-      await apiClient.post("/users/register", {
-        ...data,
-        cpf: data.cpf.replace(/\D/g, ""),
-        phone: data.phone.replace(/\D/g, ""),
-        address: {
-          cep: data.cep.replace(/\D/g, ""),
-          street: data.street,
-          neighborhood: data.neighborhood,
-          city: data.city,
-          state: data.state,
-        },
-      });
-
-      window.location.href = "/login";
+      result = await registration.mutateAsync(data);
     } catch (error: unknown) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Erro ao cadastrar profissional.";
-      setError("root", { type: "manual", message });
+      const failure = registrationError(error);
+      setOfferLogin(failure.offerLogin);
+      setError("root", { type: "server", message: failure.message });
+      for (const field of failure.fields) {
+        setError(field, { type: "server", message: failure.message });
+      }
+      if (failure.fields[0]) setFocus(failure.fields[0]);
+      else requestAnimationFrame(() => errorRef.current?.focus());
+      return;
     }
+
+    setVerificationRequired(result.email_verification_required);
+    if (result.email_verification_required) {
+      writePendingEmail(result.email, Date.now() + 60_000);
+      setConfirmation(
+        "Sua conta foi criada. Ainda é necessário verificar seu e-mail antes de entrar. Confira sua caixa de entrada.",
+      );
+      if (onEmailVerificationRequired) {
+        void onEmailVerificationRequired(result.email);
+      }
+      return;
+    }
+
+    setConfirmation(
+      "Sua conta foi criada. Você já pode entrar com seu e-mail e senha.",
+    );
   }
+
+  if (confirmation)
+    return (
+      <main className="mx-auto max-w-2xl px-6 py-12 text-lg">
+        <h1
+          ref={confirmationRef}
+          tabIndex={-1}
+          className="text-3xl font-semibold"
+        >
+          Conta criada
+        </h1>
+        <p className="my-6">{confirmation}</p>
+        {!verificationRequired && (
+          <a
+            href="/login"
+            className="inline-flex min-h-11 items-center underline"
+          >
+            Ir para o login
+          </a>
+        )}
+      </main>
+    );
 
   return (
     <main className="mx-auto flex min-h-svh max-w-2xl flex-col justify-center px-6 py-12">
@@ -294,10 +344,17 @@ export function ProfessionalRegister() {
 
         {errors.root && (
           <div
-            className="mb-6 rounded-md bg-destructive/15 p-4 text-sm text-destructive"
+            className="mb-6 rounded-md bg-destructive/15 p-4 text-base text-destructive"
             role="alert"
+            ref={errorRef}
+            tabIndex={-1}
           >
             {errors.root.message}
+            {offerLogin && (
+              <a href="/login" className="flex min-h-11 items-center underline">
+                Entrar na minha conta
+              </a>
+            )}
           </div>
         )}
 
@@ -316,13 +373,22 @@ export function ProfessionalRegister() {
               autoComplete="name"
               {...register("name")}
               aria-invalid={Boolean(errors.name)}
-              aria-describedby="name-description"
+              aria-describedby={
+                errors.name ? "name-description name-error" : "name-description"
+              }
             />
-            <p id="name-description" className="text-sm text-muted-foreground">
+            <p
+              id="name-description"
+              className="text-base text-muted-foreground"
+            >
               Este é o nome que as empresas irão ver no seu currículo.
             </p>
             {errors.name && (
-              <p className="text-sm text-destructive" role="alert">
+              <p
+                id="name-error"
+                className="text-base text-destructive"
+                role="alert"
+              >
                 {errors.name.message}
               </p>
             )}
@@ -335,6 +401,7 @@ export function ProfessionalRegister() {
               </Label>
               <Input
                 id="cpf"
+                aria-describedby={errors.cpf ? "cpf-error" : undefined}
                 type="text"
                 inputMode="numeric"
                 placeholder="000.000.000-00"
@@ -347,7 +414,11 @@ export function ProfessionalRegister() {
                 })}
               />
               {errors.cpf && (
-                <p className="text-sm text-destructive" role="alert">
+                <p
+                  id="cpf-error"
+                  className="text-base text-destructive"
+                  role="alert"
+                >
                   {errors.cpf.message}
                 </p>
               )}
@@ -359,6 +430,9 @@ export function ProfessionalRegister() {
               </Label>
               <Input
                 id="birthDate"
+                aria-describedby={
+                  errors.birthDate ? "birthDate-error" : undefined
+                }
                 type="date"
                 min="1900-01-01"
                 max={maxDateString}
@@ -367,7 +441,11 @@ export function ProfessionalRegister() {
                 aria-invalid={Boolean(errors.birthDate)}
               />
               {errors.birthDate && (
-                <p className="text-sm text-destructive" role="alert">
+                <p
+                  id="birthDate-error"
+                  className="text-base text-destructive"
+                  role="alert"
+                >
                   {errors.birthDate.message}
                 </p>
               )}
@@ -380,6 +458,7 @@ export function ProfessionalRegister() {
             </Label>
             <Input
               id="phone"
+              aria-describedby={errors.phone ? "phone-error" : undefined}
               type="text"
               inputMode="tel"
               placeholder="(00) 00000-0000"
@@ -392,7 +471,11 @@ export function ProfessionalRegister() {
               })}
             />
             {errors.phone && (
-              <p className="text-sm text-destructive" role="alert">
+              <p
+                id="phone-error"
+                className="text-base text-destructive"
+                role="alert"
+              >
                 {errors.phone.message}
               </p>
             )}
@@ -404,13 +487,18 @@ export function ProfessionalRegister() {
             </Label>
             <Input
               id="email"
+              aria-describedby={errors.email ? "email-error" : undefined}
               type="email"
               autoComplete="email"
               {...register("email")}
               aria-invalid={Boolean(errors.email)}
             />
             {errors.email && (
-              <p className="text-sm text-destructive" role="alert">
+              <p
+                id="email-error"
+                className="text-base text-destructive"
+                role="alert"
+              >
                 {errors.email.message}
               </p>
             )}
@@ -425,6 +513,7 @@ export function ProfessionalRegister() {
               </Label>
               <Input
                 id="cep"
+                aria-describedby={errors.cep ? "cep-error" : undefined}
                 type="text"
                 inputMode="numeric"
                 placeholder="00000-000"
@@ -448,28 +537,29 @@ export function ProfessionalRegister() {
                   }
                 }}
               />
-              <p className="text-sm text-muted-foreground">
+              <p className="text-base text-muted-foreground">
                 Digite seu CEP para preencher o endereço automaticamente.
               </p>
 
               <div aria-live="polite">
                 {isFetchingCep && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-base text-muted-foreground">
                     Consultando CEP...
                   </p>
                 )}
                 {isCepValid && !isFetchingCep && (
-                  <p
-                    className="text-sm text-green-600 dark:text-green-500"
-                    role="status"
-                  >
+                  <p className="text-base text-success" role="status">
                     Endereço encontrado.
                   </p>
                 )}
               </div>
 
               {errors.cep && (
-                <p className="text-sm text-destructive" role="alert">
+                <p
+                  id="cep-error"
+                  className="text-base text-destructive"
+                  role="alert"
+                >
                   {errors.cep.message}
                 </p>
               )}
@@ -501,7 +591,18 @@ export function ProfessionalRegister() {
                 <Label htmlFor="city" className="text-base font-semibold">
                   Cidade
                 </Label>
-                <Input id="city" type="text" {...register("city")} />
+                <Input
+                  id="city"
+                  type="text"
+                  {...register("city")}
+                  aria-invalid={Boolean(errors.city)}
+                  aria-describedby={errors.city ? "city-error" : undefined}
+                />
+                {errors.city && (
+                  <p id="city-error" className="text-base text-destructive">
+                    {errors.city.message}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -509,7 +610,18 @@ export function ProfessionalRegister() {
               <Label htmlFor="state" className="text-base font-semibold">
                 Estado
               </Label>
-              <Input id="state" type="text" {...register("state")} />
+              <Input
+                id="state"
+                type="text"
+                {...register("state")}
+                aria-invalid={Boolean(errors.state)}
+                aria-describedby={errors.state ? "state-error" : undefined}
+              />
+              {errors.state && (
+                <p id="state-error" className="text-base text-destructive">
+                  {errors.state.message}
+                </p>
+              )}
             </div>
           </fieldset>
 
@@ -520,6 +632,11 @@ export function ProfessionalRegister() {
             <div className="relative">
               <Input
                 id="password"
+                aria-describedby={
+                  errors.password
+                    ? "password-hint password-error"
+                    : "password-hint"
+                }
                 type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
                 {...register("password")}
@@ -539,12 +656,15 @@ export function ProfessionalRegister() {
                 )}
               </button>
             </div>
-            <p className="text-sm text-muted-foreground">
-              A senha deve ter no mínimo 8 caracteres, incluindo pelo menos uma
-              letra e um número.
+            <p id="password-hint" className="text-base text-muted-foreground">
+              {passwordHint}
             </p>
             {errors.password && (
-              <p className="text-sm text-destructive" role="alert">
+              <p
+                id="password-error"
+                className="text-base text-destructive"
+                role="alert"
+              >
                 {errors.password.message}
               </p>
             )}
@@ -560,6 +680,9 @@ export function ProfessionalRegister() {
             <div className="relative">
               <Input
                 id="confirmPassword"
+                aria-describedby={
+                  errors.confirmPassword ? "confirmPassword-error" : undefined
+                }
                 type={showConfirmPassword ? "text" : "password"}
                 autoComplete="new-password"
                 {...register("confirmPassword")}
@@ -582,7 +705,11 @@ export function ProfessionalRegister() {
               </button>
             </div>
             {errors.confirmPassword && (
-              <p className="text-sm text-destructive" role="alert">
+              <p
+                id="confirmPassword-error"
+                className="text-base text-destructive"
+                role="alert"
+              >
                 {errors.confirmPassword.message}
               </p>
             )}
@@ -592,6 +719,9 @@ export function ProfessionalRegister() {
             <div className="flex items-start gap-3">
               <input
                 id="acceptedTerms"
+                aria-describedby={
+                  errors.acceptedTerms ? "acceptedTerms-error" : undefined
+                }
                 type="checkbox"
                 {...register("acceptedTerms")}
                 className="mt-1 h-5 w-5 accent-primary"
@@ -604,7 +734,11 @@ export function ProfessionalRegister() {
               </Label>
             </div>
             {errors.acceptedTerms && (
-              <p className="text-sm text-destructive" role="alert">
+              <p
+                id="acceptedTerms-error"
+                className="text-base text-destructive"
+                role="alert"
+              >
                 {errors.acceptedTerms.message}
               </p>
             )}
