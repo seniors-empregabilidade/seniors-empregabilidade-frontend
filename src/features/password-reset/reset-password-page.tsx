@@ -27,7 +27,7 @@ import {
 } from "./schema";
 
 const linkClassName =
-  "text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline";
+  "text-base font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline disabled:text-disabled-foreground";
 
 export function ResetPasswordPage({ email = "" }: { email?: string }) {
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -93,7 +93,7 @@ export function ResetPasswordPage({ email = "" }: { email?: string }) {
             Código inválido ou expirado
           </h1>
 
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+          <p className="mt-3 text-lg leading-7 text-foreground-2">
             Esse código de redefinição não é mais válido. Solicite um novo para
             continuar.
           </p>
@@ -117,7 +117,7 @@ export function ResetPasswordPage({ email = "" }: { email?: string }) {
             Senha redefinida!
           </h1>
 
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+          <p className="mt-3 text-lg leading-7 text-foreground-2">
             Sua senha foi alterada com sucesso. Você já pode entrar com a nova
             senha.
           </p>
@@ -140,7 +140,7 @@ export function ResetPasswordPage({ email = "" }: { email?: string }) {
             Redefinir senha
           </h1>
 
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+          <p className="mt-3 text-lg leading-7 text-foreground-2">
             Informe o código que enviamos por e-mail e crie uma nova senha.
           </p>
         </div>
@@ -223,9 +223,11 @@ export function ResetPasswordPage({ email = "" }: { email?: string }) {
             </Field>
 
             <div className="rounded-lg bg-muted p-4">
-              <p className="mb-3 text-sm font-medium">Sua senha deve conter:</p>
+              <p className="mb-3 text-base font-medium">
+                Sua senha deve conter:
+              </p>
 
-              <ul className="space-y-2 text-sm">
+              <ul className="space-y-2 text-base">
                 {passwordRules.map((rule) => {
                   const valid = rule.isMet(password);
 
@@ -233,7 +235,7 @@ export function ResetPasswordPage({ email = "" }: { email?: string }) {
                     <li
                       key={rule.id}
                       className={
-                        valid ? "text-green-600" : "text-muted-foreground"
+                        valid ? "text-success" : "text-muted-foreground"
                       }
                     >
                       <span className="mr-2">{valid ? "✓" : "○"}</span>

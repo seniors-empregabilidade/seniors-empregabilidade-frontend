@@ -76,7 +76,7 @@ export function RequestPasswordResetPage() {
             Esqueci minha senha
           </h1>
 
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+          <p className="mt-3 text-lg leading-7 text-foreground-2">
             Informe o e-mail associado à sua conta para receber o código de
             verificação e redefinir sua senha.
           </p>
@@ -134,7 +134,7 @@ export function RequestPasswordResetPage() {
         <div className="mt-6 text-center">
           <a
             href="/login"
-            className="text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            className="text-base font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
           >
             Voltar para o login
           </a>

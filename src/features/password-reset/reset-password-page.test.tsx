@@ -177,7 +177,7 @@ describe("ResetPasswordPage", () => {
     await user.type(screen.getByLabelText("Nova senha"), NEW_PASSWORD);
 
     expect(screen.getByText("Pelo menos 8 caracteres")).toHaveClass(
-      "text-green-600",
+      "text-success",
     );
   });
 });
