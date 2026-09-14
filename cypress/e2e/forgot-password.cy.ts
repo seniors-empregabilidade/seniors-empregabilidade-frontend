@@ -109,8 +109,10 @@ describe("forgot password screen", () => {
     cy.contains("button", "Enviar").click();
     cy.get('[role="dialog"]').should("be.visible");
     // The dialog animates in, and auditing mid-transition reports a transient
-    // contrast violation. Focus lands only once the transition finishes.
+    // contrast violation. Focus can land before the transition finishes, so
+    // wait for the computed opacity instead of relying on focus as the signal.
     cy.contains("button", "Inserir código").should("be.focused");
+    cy.get('[role="dialog"]').should("have.css", "opacity", "1");
 
     cy.injectAxe();
     cy.checkA11y(undefined, WCAG);
