@@ -3,17 +3,19 @@ import { z } from "zod";
 export const experienceSchema = z.object({
   id: z.string(),
   role: z.string(),
-  company: z.string(),
-  start_date: z.string(),
-  end_date: z.string().nullable(),
-  description: z.string(),
+  company_name: z.string(),
+  start_date: z.string(), // "YYYY-MM-DD"
+  end_date: z.string().nullable(), // null = atual
+  description: z.string().nullable(),
 });
 
 export const educationSchema = z.object({
   id: z.string(),
-  course: z.string(),
   institution: z.string(),
-  year: z.number(),
+  degree: z.string().nullable(),
+  field: z.string().nullable(),
+  start_date: z.string().nullable(),
+  end_date: z.string().nullable(),
 });
 
 export const professionalProfileSchema = z.object({
@@ -21,10 +23,11 @@ export const professionalProfileSchema = z.object({
   full_name: z.string(),
   age: z.number(),
   email: z.string(),
-  city: z.string(),
-  state: z.string(),
-  photo_url: z.string().nullable().optional(),
-  summary: z.string(),
+  phone: z.string(),
+  city: z.string().nullable(),
+  state: z.string().nullable(),
+  summary: z.string().nullable(),
+  photo_url: z.string().nullable(),
   experiences: z.array(experienceSchema),
   education: z.array(educationSchema),
   skills: z.array(z.string()),

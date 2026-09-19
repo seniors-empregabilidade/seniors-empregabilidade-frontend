@@ -1,31 +1,36 @@
 import { useQuery } from "@tanstack/react-query";
 
+import { Button } from "@/components/ui/button";
+
 import { professionalProfileQueryOptions } from "./professional-profile";
+import { formatExperiencePeriod, getYear } from "./profile-date-utils";
 import type {
   Education,
   Experience,
   ProfessionalProfile,
 } from "./professional-profile-schema";
 
-const TOKENS = {
-  minTextSize: "text-[17px]",
-  touchTarget: "min-h-[52px]",
-};
-
 interface ProfileViewProps {
-  onEditProfile: () => void;
+  /**
+   * Abre o modal de edição de perfil (US-09-T03). Ainda não existe:
+   * enquanto não for passado, o botão "Editar perfil" fica desabilitado.
+   */
+  onEditProfile?: () => void;
 }
 
 export function ProfileView({ onEditProfile }: ProfileViewProps) {
   const {
     data: profile,
-    isLoading,
+    isPending,
     isError,
     error,
     refetch,
   } = useQuery(professionalProfileQueryOptions);
 
-  if (isLoading) {
+  // isPending cobre tanto "carregando" quanto "sem dados ainda porque a
+  // query está pausada" (ex.: offline, com networkMode padrão) — usar
+  // isLoading aqui deixava a tela em branco nesse segundo caso.
+  if (isPending) {
     return <ProfileSkeleton />;
   }
 
@@ -42,46 +47,43 @@ export function ProfileView({ onEditProfile }: ProfileViewProps) {
     );
   }
 
-  if (!profile) {
-    return null;
-  }
-
   return (
-    <div className="min-h-full bg-[#F1F2EE] p-4 md:p-8">
+    <main className="min-h-full bg-muted p-4 md:p-8">
       <div className="mb-6 flex items-start justify-between">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          Meu perfil
-        </h1>
-        <button
+        <h1 className="text-3xl font-bold text-foreground">Meu perfil</h1>
+        <Button
           type="button"
           onClick={onEditProfile}
-          className={`${TOKENS.touchTarget} rounded-md border border-[#1D5B8F] px-4 font-medium text-[#1D5B8F] hover:bg-[#1D5B8F]/5`}
+          disabled={!onEditProfile}
+          title={!onEditProfile ? "Disponível em breve" : undefined}
         >
           Editar perfil
-        </button>
+        </Button>
       </div>
 
       <div className="flex flex-col gap-6 lg:flex-row">
+        {/* Coluna principal */}
         <div className="flex flex-2 flex-col gap-6">
-          <section className="rounded-lg bg-white p-6 shadow-sm">
+          <section className="rounded-lg border border-border bg-background p-6">
             <ProfileHeader profile={profile} />
-            <hr className="my-6 border-border" />
+            <hr className="my-6 border-rule" />
             <SummarySection summary={profile.summary} />
-            <hr className="my-6 border-border" />
+            <hr className="my-6 border-rule" />
             <ExperienceSection experiences={profile.experiences} />
           </section>
         </div>
 
+        {/* Coluna lateral */}
         <div className="flex flex-1 flex-col gap-6">
-          <section className="rounded-lg bg-white p-6 shadow-sm">
+          <section className="rounded-lg border border-border bg-background p-6">
             <EducationSection education={profile.education} />
           </section>
-          <section className="rounded-lg bg-white p-6 shadow-sm">
+          <section className="rounded-lg border border-border bg-background p-6">
             <SkillsSection skills={profile.skills} />
           </section>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -91,9 +93,11 @@ type ProfileHeaderData = Pick<
 >;
 
 function ProfileHeader({ profile }: { profile: ProfileHeaderData }) {
+  const location = formatLocation(profile.city, profile.state);
+
   return (
     <div className="flex items-center gap-6">
-      <div className="flex h-22 w-22 items-center justify-center rounded-full bg-muted text-xs text-muted-foreground">
+      <div className="flex h-26 w-26 items-center justify-center rounded-full bg-accent text-base text-foreground-2">
         {profile.photo_url ? (
           <img
             src={profile.photo_url}
@@ -104,28 +108,42 @@ function ProfileHeader({ profile }: { profile: ProfileHeaderData }) {
           "FOTO"
         )}
       </div>
-      <div className="flex flex-col gap-0.5">
-        <h2 className="text-xl font-bold">{profile.full_name}</h2>
-        <p className={TOKENS.minTextSize}>
+      <div className="flex flex-col gap-1">
+        <h2 className="text-[26px] font-bold text-foreground">
+          {profile.full_name}
+        </h2>
+        <p className="text-lg text-foreground-2">
           <strong>Idade:</strong> {profile.age} anos
         </p>
-        <p className={TOKENS.minTextSize}>
+        <p className="text-lg text-foreground-2">
           <strong>E-mail:</strong> {profile.email}
         </p>
-        <p className={TOKENS.minTextSize}>
-          <strong>Cidade:</strong> {profile.city}, {profile.state}
-        </p>
+        {location ? (
+          <p className="text-lg text-foreground-2">
+            <strong>Cidade:</strong> {location}
+          </p>
+        ) : null}
       </div>
     </div>
   );
 }
 
-function SummarySection({ summary }: { summary: string }) {
+function formatLocation(
+  city: string | null,
+  state: string | null,
+): string | null {
+  if (city && state) return `${city}, ${state}`;
+  if (city) return city;
+  if (state) return state;
+  return null;
+}
+
+function SummarySection({ summary }: { summary: string | null }) {
   return (
     <div>
       <SectionTitle>Resumo</SectionTitle>
       {summary ? (
-        <p className={TOKENS.minTextSize}>{summary}</p>
+        <p className="text-lg text-foreground">{summary}</p>
       ) : (
         <EmptyState message="Nenhum resumo cadastrado ainda." />
       )}
@@ -151,22 +169,23 @@ function ExperienceSection({ experiences }: { experiences: Experience[] }) {
 }
 
 function ExperienceItem({ experience }: { experience: Experience }) {
-  const period = formatPeriod(experience.start_date, experience.end_date);
+  const period = formatExperiencePeriod(
+    experience.start_date,
+    experience.end_date,
+  );
   return (
     <div className="flex gap-4">
       <div className="min-w-24">
-        <p className={`${TOKENS.minTextSize} text-muted-foreground`}>
-          {period.label}
-        </p>
-        <p className={`${TOKENS.minTextSize} text-muted-foreground`}>
-          {period.duration}
-        </p>
+        <p className="text-base text-muted-foreground">{period.label}</p>
+        <p className="text-base text-muted-foreground">{period.duration}</p>
       </div>
       <div>
-        <p className={`${TOKENS.minTextSize} font-bold`}>
-          {experience.role} · {experience.company}
+        <p className="text-lg font-bold text-foreground">
+          {experience.role} · {experience.company_name}
         </p>
-        <p className={TOKENS.minTextSize}>{experience.description}</p>
+        {experience.description ? (
+          <p className="text-lg text-foreground">{experience.description}</p>
+        ) : null}
       </div>
     </div>
   );
@@ -181,15 +200,31 @@ function EducationSection({ education }: { education: Education[] }) {
       ) : (
         <div className="flex flex-col gap-4">
           {education.map((item) => (
-            <div key={item.id}>
-              <p className={`${TOKENS.minTextSize} font-bold`}>{item.course}</p>
-              <p className={`${TOKENS.minTextSize} text-muted-foreground`}>
-                {item.institution} · {item.year}
-              </p>
-            </div>
+            <EducationItem key={item.id} education={item} />
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function EducationItem({ education }: { education: Education }) {
+  const title = [education.degree, education.field]
+    .filter(Boolean)
+    .join(" em ");
+  const dateForYear = education.end_date ?? education.start_date;
+  const year = dateForYear ? getYear(dateForYear) : null;
+
+  return (
+    <div>
+      <p className="text-lg font-bold text-foreground">
+        {title || education.institution}
+      </p>
+      <p className="text-base text-muted-foreground">
+        {title ? education.institution : null}
+        {title && year ? " · " : null}
+        {year}
+      </p>
     </div>
   );
 }
@@ -202,10 +237,10 @@ function SkillsSection({ skills }: { skills: string[] }) {
         <EmptyState message="Nenhuma habilidade cadastrada ainda." />
       ) : (
         <div className="flex flex-wrap gap-2">
-          {skills.map((skill) => (
+          {skills.map((skill, index) => (
             <span
-              key={skill}
-              className="rounded-full border border-border px-3 py-1.5 text-sm"
+              key={`${skill}-${index}`}
+              className="rounded-full border border-border bg-accent px-3 py-1.5 text-base text-foreground"
             >
               {skill}
             </span>
@@ -217,29 +252,27 @@ function SkillsSection({ skills }: { skills: string[] }) {
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <h3 className="mb-3 text-lg font-bold">{children}</h3>;
+  return <h3 className="mb-3 text-xl font-bold text-foreground">{children}</h3>;
 }
 
 function EmptyState({ message }: { message: string }) {
-  return (
-    <p className={`${TOKENS.minTextSize} text-muted-foreground`}>{message}</p>
-  );
+  return <p className="text-lg text-muted-foreground">{message}</p>;
 }
 
 function ProfileSkeleton() {
   return (
-    <div className="min-h-full animate-pulse bg-[#F1F2EE] p-8">
+    <main className="min-h-full animate-pulse bg-muted p-8 motion-reduce:animate-none">
       <div className="mb-8 flex items-center gap-6">
-        <div className="h-22 w-22 rounded-full bg-muted" />
+        <div className="h-26 w-26 rounded-full bg-accent" />
         <div className="flex flex-1 flex-col gap-2">
-          <div className="h-8 w-1/3 rounded bg-muted" />
-          <div className="h-4 w-1/5 rounded bg-muted" />
-          <div className="h-4 w-2/5 rounded bg-muted" />
+          <div className="h-8 w-1/3 rounded bg-accent" />
+          <div className="h-4 w-1/5 rounded bg-accent" />
+          <div className="h-4 w-2/5 rounded bg-accent" />
         </div>
       </div>
-      <div className="mb-4 h-30 rounded bg-muted" />
-      <div className="h-50 rounded bg-muted" />
-    </div>
+      <div className="mb-4 h-30 rounded-lg bg-accent" />
+      <div className="h-50 rounded-lg bg-accent" />
+    </main>
   );
 }
 
@@ -251,37 +284,19 @@ function ProfileErrorState({
   onRetry: () => void;
 }) {
   return (
-    <div className="flex min-h-full items-center justify-center bg-[#F1F2EE] p-8">
-      <div className="flex max-w-md items-center gap-4 rounded-md border border-destructive/30 bg-destructive/10 p-4">
-        <p className={`${TOKENS.minTextSize} flex-1 text-destructive`}>
-          {message}
-        </p>
-        <button
-          type="button"
-          onClick={onRetry}
-          className={`${TOKENS.touchTarget} shrink-0 rounded-md border border-destructive px-3 text-sm font-medium text-destructive`}
-        >
+    <main className="flex min-h-full items-center justify-center bg-muted p-8">
+      <div
+        role="alert"
+        className="flex max-w-md flex-col gap-4 rounded-lg border border-destructive bg-background p-6"
+      >
+        <span className="font-mono text-[13px] font-semibold tracking-wide text-destructive uppercase">
+          Erro
+        </span>
+        <p className="text-lg text-foreground">{message}</p>
+        <Button type="button" variant="outline" onClick={onRetry}>
           Tentar novamente
-        </button>
+        </Button>
       </div>
-    </div>
+    </main>
   );
-}
-
-function formatPeriod(startDate: string, endDate: string | null) {
-  const start = new Date(startDate);
-  const end = endDate ? new Date(endDate) : new Date();
-  const startYear = start.getFullYear();
-  const endYear = endDate ? end.getFullYear() : "atual";
-
-  const months =
-    (end.getFullYear() - start.getFullYear()) * 12 +
-    (end.getMonth() - start.getMonth());
-  const years = Math.round(months / 12);
-
-  return {
-    label: `${startYear} – ${endYear}`,
-    duration:
-      years > 0 ? `${years} ano${years > 1 ? "s" : ""}` : "menos de 1 ano",
-  };
 }

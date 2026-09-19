@@ -7,6 +7,7 @@ const validProfile = {
   full_name: "Marcos Silveira",
   age: 58,
   email: "marcos@example.com",
+  phone: "11988887777",
   city: "São Paulo",
   state: "SP",
   photo_url: null,
@@ -15,7 +16,7 @@ const validProfile = {
     {
       id: "1",
       role: "Gerente de Operações",
-      company: "Log Brasil",
+      company_name: "Log Brasil",
       start_date: "2012-01-01",
       end_date: "2023-01-01",
       description: "Equipe de 40 pessoas em 3 centros de distribuição.",
@@ -24,9 +25,11 @@ const validProfile = {
   education: [
     {
       id: "1",
-      course: "MBA em Gestão Empresarial",
       institution: "FGV",
-      year: 2011,
+      degree: "MBA",
+      field: "Gestão Empresarial",
+      start_date: "2010-01-01",
+      end_date: "2011-12-01",
     },
   ],
   skills: ["Liderança", "Logística"],
@@ -37,12 +40,34 @@ describe("professionalProfileSchema", () => {
     expect(professionalProfileSchema.parse(validProfile)).toEqual(validProfile);
   });
 
-  it("accepts an omitted photo_url", () => {
-    const withoutPhoto: Partial<typeof validProfile> = { ...validProfile };
-    delete withoutPhoto.photo_url;
+  it("accepts null for photo_url, summary, city and state", () => {
+    const nullable = {
+      ...validProfile,
+      photo_url: null,
+      summary: null,
+      city: null,
+      state: null,
+    };
+    expect(professionalProfileSchema.parse(nullable)).toEqual(nullable);
+  });
 
-    expect(professionalProfileSchema.parse(withoutPhoto)).toMatchObject(
-      withoutPhoto,
+  it("accepts null for an experience's description", () => {
+    const nullDescription = {
+      ...validProfile,
+      experiences: [{ ...validProfile.experiences[0]!, description: null }],
+    };
+    expect(professionalProfileSchema.parse(nullDescription)).toEqual(
+      nullDescription,
+    );
+  });
+
+  it("accepts null for an education's degree and field", () => {
+    const nullDegreeField = {
+      ...validProfile,
+      education: [{ ...validProfile.education[0]!, degree: null, field: null }],
+    };
+    expect(professionalProfileSchema.parse(nullDegreeField)).toEqual(
+      nullDegreeField,
     );
   });
 
@@ -69,12 +94,7 @@ describe("professionalProfileSchema", () => {
     ["full_name", undefined],
     ["age", "58"],
     ["email", undefined],
-    ["city", undefined],
-    ["state", undefined],
-    ["summary", undefined],
-    ["experiences", undefined],
-    ["education", undefined],
-    ["skills", undefined],
+    ["phone", undefined],
   ])("rejects a missing or invalid %s", (field, value) => {
     const invalid = { ...validProfile, [field]: value };
     expect(professionalProfileSchema.safeParse(invalid).success).toBe(false);

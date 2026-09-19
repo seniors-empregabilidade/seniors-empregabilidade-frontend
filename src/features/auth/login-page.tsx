@@ -13,7 +13,6 @@ import { ApiError } from "@/lib/api-error";
 import { writeAccessToken } from "@/lib/session-storage";
 import { cn } from "@/lib/utils";
 
-import { currentUserQueryKey } from "./current-user";
 import { login } from "./login";
 import { getRoleHomePath } from "./role-routes";
 import { type LoginFormValues, loginSchema } from "./schema";
@@ -52,8 +51,10 @@ export function LoginPage() {
     mutationFn: login,
     onSuccess: (session) => {
       writeAccessToken(session.access_token);
-      // A previous account’s /auth/me answer must not outlive a new sign-in.
-      queryClient.removeQueries({ queryKey: currentUserQueryKey });
+      // A previous account’s cached queries (/auth/me AND anything else,
+      // e.g. a candidate's profile) must not outlive a new sign-in in this
+      // same tab — clearing just one key isn't enough to guarantee that.
+      queryClient.clear();
       void router.navigate({ href: getRoleHomePath(session.user_type) });
     },
     onError: (error) => {

@@ -14,6 +14,7 @@ const validProfile = {
   full_name: "Marcos Silveira",
   age: 58,
   email: "marcos@example.com",
+  phone: "11988887777",
   city: "São Paulo",
   state: "SP",
   photo_url: null,
@@ -30,7 +31,7 @@ describe("fetchProfessionalProfile", () => {
       .mockResolvedValueOnce({ data: validProfile });
 
     await expect(fetchProfessionalProfile()).resolves.toEqual(validProfile);
-    expect(get).toHaveBeenCalledWith("/professionals/me");
+    expect(get).toHaveBeenCalledWith("/professionals/me", {});
   });
 
   it("rejects when the response does not match the expected shape", async () => {

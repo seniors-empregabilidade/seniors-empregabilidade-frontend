@@ -5,11 +5,7 @@ import { ProfileView } from "@/features/candidates/profile-view";
 
 export const Route = createFileRoute("/candidato/perfil")({
   beforeLoad: () => requireRole("candidate"),
-  component: () => (
-    <ProfileView
-      onEditProfile={() => {
-        //modal de edição de perfil (US-09-T03)
-      }}
-    />
-  ),
+  // onEditProfile fica de fora até a US-09-T03 existir de verdade —
+  // o ProfileView desabilita o botão sozinho quando não recebe a prop.
+  component: () => <ProfileView />,
 });

@@ -19,6 +19,7 @@ const validProfile = {
   full_name: "Marcos Silveira",
   age: 58,
   email: "marcos@example.com",
+  phone: "11988887777",
   city: "São Paulo",
   state: "SP",
   photo_url: null,
@@ -27,7 +28,7 @@ const validProfile = {
     {
       id: "1",
       role: "Gerente de Operações",
-      company: "Log Brasil",
+      company_name: "Log Brasil",
       start_date: "2012-01-01",
       end_date: "2023-01-01",
       description: "Equipe de 40 pessoas em 3 centros de distribuição.",
@@ -36,9 +37,11 @@ const validProfile = {
   education: [
     {
       id: "1",
-      course: "MBA em Gestão Empresarial",
       institution: "FGV",
-      year: 2011,
+      degree: "MBA",
+      field: "Gestão Empresarial",
+      start_date: "2010-01-01",
+      end_date: "2011-12-01",
     },
   ],
   skills: ["Liderança", "Logística"],
@@ -67,7 +70,9 @@ describe("ProfileView", () => {
     expect(await screen.findByText("Marcos Silveira")).toBeVisible();
     expect(screen.getByText(/58 anos/)).toBeVisible();
     expect(screen.getByText("Gerente de Operações · Log Brasil")).toBeVisible();
+    expect(screen.getByText("2012 – 2023")).toBeVisible();
     expect(screen.getByText("MBA em Gestão Empresarial")).toBeVisible();
+    expect(screen.getByText("FGV · 2011")).toBeVisible();
     expect(screen.getByText("Liderança")).toBeVisible();
   });
 
@@ -89,24 +94,45 @@ describe("ProfileView", () => {
       screen.getByText("Nenhuma habilidade cadastrada ainda."),
     ).toBeVisible();
   });
+
+  it("shows an empty state for summary and omits the location line when both are null", async () => {
+    vi.spyOn(apiClient, "get").mockResolvedValueOnce({
+      data: { ...validProfile, summary: null, city: null, state: null },
+    });
+
+    render(<ProfileView onEditProfile={vi.fn()} />);
+
+    await screen.findByText("Marcos Silveira");
+    expect(screen.getByText("Nenhum resumo cadastrado ainda.")).toBeVisible();
+    expect(screen.queryByText(/^Cidade:/)).not.toBeInTheDocument();
+  });
+
+  it("disables the edit button when no onEditProfile handler is provided", async () => {
+    vi.spyOn(apiClient, "get").mockResolvedValueOnce({ data: validProfile });
+
+    render(<ProfileView />);
+
+    await screen.findByText("Marcos Silveira");
+    expect(
+      screen.getByRole("button", { name: /editar perfil/i }),
+    ).toBeDisabled();
+  });
+
   it("shows an error state with a retry action when the request fails", async () => {
     const user = userEvent.setup();
     const get = vi
       .spyOn(apiClient, "get")
       .mockRejectedValueOnce(new Error("Not Found"))
-      .mockRejectedValueOnce(new Error("Not Found"))
       .mockResolvedValueOnce({ data: validProfile });
 
     render(<ProfileView onEditProfile={vi.fn()} />);
 
-    expect(
-      await screen.findByText("Not Found", {}, { timeout: 3000 }),
-    ).toBeVisible();
+    expect(await screen.findByRole("alert")).toHaveTextContent("Not Found");
 
     await user.click(screen.getByRole("button", { name: /tentar novamente/i }));
 
     expect(await screen.findByText("Marcos Silveira")).toBeVisible();
-    expect(get).toHaveBeenCalledTimes(3);
+    expect(get).toHaveBeenCalledTimes(2);
   });
 
   it("calls onEditProfile when the edit button is clicked", async () => {
