@@ -28,6 +28,11 @@
     "validate:push": "pnpm validate && pnpm e2e:ci",
     "prepare": "husky"
   },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,css,md}": [
+      "prettier --write"
+    ]
+  },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
     "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
@@ -39,6 +44,7 @@
     "axios": "^1.20.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cn": "^0.3.0",
     "lucide-react": "^1.41.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
