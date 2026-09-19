@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  calculateAge,
-  formatExperiencePeriod,
-  getYear,
-} from "./profile-date-utils";
+import { formatExperiencePeriod, getYear } from "./profile-date-utils";
 
 describe("getYear", () => {
   it("reads the year directly from the ISO string, avoiding timezone shifts", () => {
@@ -39,14 +35,5 @@ describe("formatExperiencePeriod", () => {
   it("shows 'menos de 1 ano' for a short experience", () => {
     const { duration } = formatExperiencePeriod("2024-01-01", "2024-06-01");
     expect(duration).toBe("menos de 1 ano");
-  });
-});
-
-describe("calculateAge", () => {
-  it("calculates age correctly regardless of timezone", () => {
-    // Se a pessoa nasceu em 2000-01-01, hoje ela tem pelo menos 25 anos,
-    // independente de qual fuso horário rodou o teste.
-    const age = calculateAge("2000-01-01");
-    expect(age).toBeGreaterThanOrEqual(25);
   });
 });

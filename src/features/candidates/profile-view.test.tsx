@@ -9,6 +9,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { apiClient } from "@/lib/api-client";
+import { ApiError } from "@/lib/api-error";
 
 import { ProfileView } from "./profile-view";
 
@@ -44,7 +45,10 @@ const validProfile = {
       end_date: "2011-12-01",
     },
   ],
-  skills: ["Liderança", "Logística"],
+  skills: [
+    { id: "s1", name: "Liderança", type: "soft" },
+    { id: "s2", name: "Logística", type: "hard" },
+  ],
 };
 
 function render(element: ReactElement) {
@@ -113,21 +117,32 @@ describe("ProfileView", () => {
     render(<ProfileView />);
 
     await screen.findByText("Marcos Silveira");
-    expect(
-      screen.getByRole("button", { name: /editar perfil/i }),
-    ).toBeDisabled();
+    const editButton = screen.getByRole("button", { name: /editar perfil/i });
+
+    expect(editButton).toBeDisabled();
+
+    const explanation = screen.getByText("Disponível em breve");
+    expect(explanation).toBeVisible();
+    expect(editButton).toHaveAttribute("aria-describedby", explanation.id);
   });
 
   it("shows an error state with a retry action when the request fails", async () => {
     const user = userEvent.setup();
     const get = vi
       .spyOn(apiClient, "get")
-      .mockRejectedValueOnce(new Error("Not Found"))
+      .mockRejectedValueOnce(
+        new ApiError({
+          message: "The professional profile was not found.",
+          code: "profile_not_found",
+        }),
+      )
       .mockResolvedValueOnce({ data: validProfile });
 
     render(<ProfileView onEditProfile={vi.fn()} />);
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Not Found");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Não encontramos seu perfil de candidato.",
+    );
 
     await user.click(screen.getByRole("button", { name: /tentar novamente/i }));
 

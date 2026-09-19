@@ -18,6 +18,12 @@ export const educationSchema = z.object({
   end_date: z.string().nullable(),
 });
 
+export const skillSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.enum(["hard", "soft"]),
+});
+
 export const professionalProfileSchema = z.object({
   id: z.string(),
   full_name: z.string(),
@@ -27,12 +33,13 @@ export const professionalProfileSchema = z.object({
   city: z.string().nullable(),
   state: z.string().nullable(),
   summary: z.string().nullable(),
-  photo_url: z.string().nullable(),
+  photo_url: z.string().nullish(),
   experiences: z.array(experienceSchema),
   education: z.array(educationSchema),
-  skills: z.array(z.string()),
+  skills: z.array(skillSchema),
 });
 
 export type Experience = z.infer<typeof experienceSchema>;
 export type Education = z.infer<typeof educationSchema>;
+export type Skill = z.infer<typeof skillSchema>;
 export type ProfessionalProfile = z.infer<typeof professionalProfileSchema>;

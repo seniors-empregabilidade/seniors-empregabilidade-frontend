@@ -3,11 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 
 import { professionalProfileQueryOptions } from "./professional-profile";
+import { profileErrorMessage } from "./professional-profile-errors";
 import { formatExperiencePeriod, getYear } from "./profile-date-utils";
 import type {
   Education,
   Experience,
   ProfessionalProfile,
+  Skill,
 } from "./professional-profile-schema";
 
 interface ProfileViewProps {
@@ -37,11 +39,7 @@ export function ProfileView({ onEditProfile }: ProfileViewProps) {
   if (isError) {
     return (
       <ProfileErrorState
-        message={
-          error instanceof Error
-            ? error.message
-            : "Não foi possível carregar seu perfil."
-        }
+        message={profileErrorMessage(error)}
         onRetry={() => void refetch()}
       />
     );
@@ -49,16 +47,28 @@ export function ProfileView({ onEditProfile }: ProfileViewProps) {
 
   return (
     <main className="min-h-full bg-muted p-4 md:p-8">
-      <div className="mb-6 flex items-start justify-between">
+      <div className="mb-6 flex items-start justify-between gap-3">
         <h1 className="text-3xl font-bold text-foreground">Meu perfil</h1>
-        <Button
-          type="button"
-          onClick={onEditProfile}
-          disabled={!onEditProfile}
-          title={!onEditProfile ? "Disponível em breve" : undefined}
-        >
-          Editar perfil
-        </Button>
+        <div className="flex flex-col items-end gap-1">
+          <Button
+            type="button"
+            onClick={onEditProfile}
+            disabled={!onEditProfile}
+            aria-describedby={
+              !onEditProfile ? "edit-profile-unavailable" : undefined
+            }
+          >
+            Editar perfil
+          </Button>
+          {!onEditProfile ? (
+            <span
+              id="edit-profile-unavailable"
+              className="text-base text-muted-foreground"
+            >
+              Disponível em breve
+            </span>
+          ) : null}
+        </div>
       </div>
 
       <div className="flex flex-col gap-6 lg:flex-row">
@@ -97,7 +107,10 @@ function ProfileHeader({ profile }: { profile: ProfileHeaderData }) {
 
   return (
     <div className="flex items-center gap-6">
-      <div className="flex h-26 w-26 items-center justify-center rounded-full bg-accent text-base text-foreground-2">
+      <div
+        aria-hidden={!profile.photo_url ? true : undefined}
+        className="flex h-26 w-26 items-center justify-center rounded-full bg-accent text-base text-foreground-2"
+      >
         {profile.photo_url ? (
           <img
             src={profile.photo_url}
@@ -229,7 +242,7 @@ function EducationItem({ education }: { education: Education }) {
   );
 }
 
-function SkillsSection({ skills }: { skills: string[] }) {
+function SkillsSection({ skills }: { skills: Skill[] }) {
   return (
     <div>
       <SectionTitle>Habilidades</SectionTitle>
@@ -237,12 +250,12 @@ function SkillsSection({ skills }: { skills: string[] }) {
         <EmptyState message="Nenhuma habilidade cadastrada ainda." />
       ) : (
         <div className="flex flex-wrap gap-2">
-          {skills.map((skill, index) => (
+          {skills.map((skill) => (
             <span
-              key={`${skill}-${index}`}
+              key={skill.id}
               className="rounded-full border border-border bg-accent px-3 py-1.5 text-base text-foreground"
             >
-              {skill}
+              {skill.name}
             </span>
           ))}
         </div>

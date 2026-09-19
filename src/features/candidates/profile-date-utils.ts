@@ -17,22 +17,6 @@ export function getYear(isoDate: string): number {
   return parseIsoDate(isoDate).year;
 }
 
-export function calculateAge(birthDate: string): number {
-  const { year, month, day } = parseIsoDate(birthDate);
-  const today = new Date();
-
-  let age = today.getFullYear() - year;
-  const hasHadBirthdayThisYear =
-    today.getMonth() > month ||
-    (today.getMonth() === month && today.getDate() >= day);
-
-  if (!hasHadBirthdayThisYear) {
-    age -= 1;
-  }
-
-  return age;
-}
-
 export function formatExperiencePeriod(
   startDate: string,
   endDate: string | null,

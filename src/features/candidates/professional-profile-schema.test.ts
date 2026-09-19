@@ -32,12 +32,24 @@ const validProfile = {
       end_date: "2011-12-01",
     },
   ],
-  skills: ["Liderança", "Logística"],
+  skills: [
+    { id: "s1", name: "Liderança", type: "soft" },
+    { id: "s2", name: "Logística", type: "hard" },
+  ],
 };
 
 describe("professionalProfileSchema", () => {
   it("parses a complete valid profile", () => {
     expect(professionalProfileSchema.parse(validProfile)).toEqual(validProfile);
+  });
+
+  it("accepts photo_url entirely absent from the response (not just null)", () => {
+    const withoutPhoto: Partial<typeof validProfile> = { ...validProfile };
+    delete withoutPhoto.photo_url;
+
+    expect(professionalProfileSchema.safeParse(withoutPhoto).success).toBe(
+      true,
+    );
   });
 
   it("accepts null for photo_url, summary, city and state", () => {
@@ -87,6 +99,16 @@ describe("professionalProfileSchema", () => {
       experiences: [{ ...validProfile.experiences[0]!, end_date: null }],
     };
     expect(professionalProfileSchema.parse(ongoing)).toEqual(ongoing);
+  });
+
+  it("rejects a skill with a type outside hard/soft", () => {
+    const invalidSkillType = {
+      ...validProfile,
+      skills: [{ id: "s1", name: "Liderança", type: "outra-coisa" }],
+    };
+    expect(professionalProfileSchema.safeParse(invalidSkillType).success).toBe(
+      false,
+    );
   });
 
   it.each([
