@@ -75,6 +75,65 @@ export default tseslint.config(
       "jsx-a11y/label-has-associated-control": "off",
     },
   },
+  {
+    files: ["**/*.{ts,tsx}"],
+    rules: {
+      // TanStack Router signals navigation by throwing the Response that
+      // redirect() returns, so route guards cannot throw an Error here. Only
+      // that one type is allowed; throwing anything else stays an error.
+      "@typescript-eslint/only-throw-error": [
+        "error",
+        {
+          allow: [
+            {
+              from: "package",
+              package: "@tanstack/router-core",
+              name: "Redirect",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/features/*/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@/features/*/*"],
+              message:
+                "Uma feature nao importa de outra feature. Promova o codigo compartilhado para src/components, src/hooks ou src/lib.",
+            },
+            {
+              group: ["@/routes/*"],
+              message:
+                "Uma feature nao importa de routes. O fluxo e compartilhado -> features -> routes.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/components/**", "src/hooks/**", "src/lib/**", "src/config/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@/features/*", "@/routes/*"],
+              message:
+                "Codigo compartilhado nao depende de feature nem de rota.",
+            },
+          ],
+        },
+      ],
+    },
+  },
   ...query.configs["flat/recommended"],
   ...router.configs["flat/recommended"],
   prettier,

@@ -27,7 +27,11 @@ No authentication, retry, global notification, or telemetry interceptor exists y
 
 ## Structure policy
 
-Only technical folders exist at bootstrap time. Domain or feature folders will be selected after product entities and workflows are confirmed. New structure should reflect real cohesion and ownership rather than hypothetical future modules.
+Code is organized by feature under `src/features`, one folder per feature, named after the matching backend module. `src/routes` holds routing only; the screen it renders lives in its feature. Shared code sits in `src/components`, `src/hooks` and `src/lib`, and is promoted there when a second feature needs it rather than in anticipation. A feature starts as flat files and grows `api`, `components` and `hooks` segments only when it becomes large enough to need them.
+
+Imports flow in one direction: shared code, then features, then routes. A feature must not import from another feature, and ESLint fails the build on violation.
+
+See [ADR 0004](adr/0004-frontend-feature-structure.md) for the decision, the alternative considered, and the full rules.
 
 ## Quality and accessibility
 
