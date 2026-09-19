@@ -75,7 +75,7 @@ export default function ApplicationsPage() {
       <div>
         <h1 className="mb-6 text-2xl text-foreground">Candidaturas</h1>
         <div className="max-w-md space-y-1.5">
-          <label htmlFor="search" className="text-sm text-muted-foreground">
+          <label htmlFor="search" className="text-base text-muted-foreground">
             Buscar por nome da empresa
           </label>
           <Input
@@ -90,7 +90,7 @@ export default function ApplicationsPage() {
           />
 
           {errors.search?.message && (
-            <p className="pt-1 text-xs text-destructive">
+            <p className="pt-1 text-base text-destructive">
               {errors.search.message}
             </p>
           )}
@@ -106,7 +106,7 @@ export default function ApplicationsPage() {
         )}
 
         {isError && (
-          <div className="rounded-md border border-destructive bg-background p-4 text-sm text-destructive">
+          <div className="rounded-md border border-destructive bg-background p-4 text-base text-destructive">
             Ocorreu um erro ao carregar suas candidaturas. Tente novamente mais
             tarde.
           </div>
@@ -168,17 +168,17 @@ function ApplicationCard({ application, onQuitProcess }: ApplicationCardProps) {
     <Card
       className={`overflow-hidden rounded-lg border border-border transition-colors ${isClosed ? "bg-muted" : "bg-background"}`}
     >
-      <CardContent className="flex flex-col justify-between gap-6 p-5 md:flex-row md:gap-4">
+      <CardContent className="flex flex-col justify-between gap-6 p-[22px] md:flex-row md:gap-4">
         <div className="flex gap-4">
-          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-md border border-input bg-accent font-semibold text-foreground">
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-md border border-input bg-accent font-semibold text-foreground-2">
             {application.companyInitials}
           </div>
 
           <div className="space-y-1">
-            <h3 className="text-base font-bold text-foreground">
+            <h3 className="text-xl font-bold text-foreground">
               {application.role} · {application.company}
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-base text-muted-foreground">
               {isClosed ? (
                 <>
                   Encerrada em {application.closedDate} · você não foi
@@ -191,7 +191,7 @@ function ApplicationCard({ application, onQuitProcess }: ApplicationCardProps) {
                 </>
               )}
             </p>
-            <div className="pt-2 text-sm text-foreground-2">
+            <div className="pt-2 text-base text-foreground-2">
               {isClosed ? (
                 <p>
                   {application.closedReason} Há{" "}
