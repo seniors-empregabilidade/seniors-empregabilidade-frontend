@@ -1,0 +1,35 @@
+import { z } from "zod";
+
+export const experienceSchema = z.object({
+  id: z.string(),
+  role: z.string(),
+  company: z.string(),
+  start_date: z.string(),
+  end_date: z.string().nullable(),
+  description: z.string(),
+});
+
+export const educationSchema = z.object({
+  id: z.string(),
+  course: z.string(),
+  institution: z.string(),
+  year: z.number(),
+});
+
+export const professionalProfileSchema = z.object({
+  id: z.string(),
+  full_name: z.string(),
+  age: z.number(),
+  email: z.string(),
+  city: z.string(),
+  state: z.string(),
+  photo_url: z.string().nullable().optional(),
+  summary: z.string(),
+  experiences: z.array(experienceSchema),
+  education: z.array(educationSchema),
+  skills: z.array(z.string()),
+});
+
+export type Experience = z.infer<typeof experienceSchema>;
+export type Education = z.infer<typeof educationSchema>;
+export type ProfessionalProfile = z.infer<typeof professionalProfileSchema>;
