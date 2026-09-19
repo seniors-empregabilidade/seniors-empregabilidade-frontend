@@ -19,6 +19,7 @@ import { Route as EmpresaRouteImport } from './routes/empresa'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as UsersApplicationsRouteImport } from './routes/users/applications'
 import { Route as UsersRegisterRouteImport } from './routes/users/register'
 
 const IndexRoute = IndexRouteImport.update({
@@ -71,6 +72,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UsersApplicationsRoute = UsersApplicationsRouteImport.update({
+  id: '/users/applications',
+  path: '/users/applications',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UsersRegisterRoute = UsersRegisterRouteImport.update({
   id: '/users/register',
   path: '/users/register',
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/users/applications': typeof UsersApplicationsRoute
   '/users/register': typeof UsersRegisterRoute
 }
 export interface FileRoutesByTo {
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/users/applications': typeof UsersApplicationsRoute
   '/users/register': typeof UsersRegisterRoute
 }
 export interface FileRoutesById {
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/users/applications': typeof UsersApplicationsRoute
   '/users/register': typeof UsersRegisterRoute
 }
 export interface FileRouteTypes {
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/reset-password'
+    | '/users/applications'
     | '/users/register'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/reset-password'
+    | '/users/applications'
     | '/users/register'
   id:
     | '__root__'
@@ -156,6 +167,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/reset-password'
+    | '/users/applications'
     | '/users/register'
   fileRoutesById: FileRoutesById
 }
@@ -170,6 +182,7 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  UsersApplicationsRoute: typeof UsersApplicationsRoute
   UsersRegisterRoute: typeof UsersRegisterRoute
 }
 
@@ -245,6 +258,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/users/applications': {
+      id: '/users/applications'
+      path: '/users/applications'
+      fullPath: '/users/applications'
+      preLoaderRoute: typeof UsersApplicationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/users/register': {
       id: '/users/register'
       path: '/users/register'
@@ -266,6 +286,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  UsersApplicationsRoute: UsersApplicationsRoute,
   UsersRegisterRoute: UsersRegisterRoute,
 }
 export const routeTree = rootRouteImport
