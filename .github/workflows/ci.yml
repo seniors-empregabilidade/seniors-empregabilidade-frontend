@@ -63,3 +63,70 @@ jobs:
 
       - name: Run browser smoke tests
         run: pnpm e2e:ci
+
+  deploy:
+    name: Deploy
+    needs: frontend
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      AWS_REGION: us-east-2
+      AMPLIFY_APP_ID: d25fn01fvkutq4
+      VITE_API_URL: https://dabxepmbyqwfz.cloudfront.net/api/v1
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build for production
+        run: pnpm build
+
+      - name: Fail when the API address is missing from the bundle
+        run: grep -rqF "$VITE_API_URL" dist/assets/
+
+      - name: Assume the deployment role
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: arn:aws:iam::951614974043:role/ages-seniors-frontend-deploy-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Publish to Amplify
+        run: |
+          set -euo pipefail
+          (cd dist && zip -qr ../dist.zip .)
+          deployment=$(aws amplify create-deployment \
+            --app-id "$AMPLIFY_APP_ID" --branch-name main --output json)
+          job=$(jq -r .jobId <<<"$deployment")
+          curl -fsS -X PUT -H 'Content-Type: application/zip' \
+            --upload-file dist.zip "$(jq -r .zipUploadUrl <<<"$deployment")"
+          aws amplify start-deployment \
+            --app-id "$AMPLIFY_APP_ID" --branch-name main --job-id "$job" >/dev/null
+          for _ in $(seq 1 40); do
+            status=$(aws amplify get-job --app-id "$AMPLIFY_APP_ID" \
+              --branch-name main --job-id "$job" --query job.summary.status --output text)
+            case "$status" in
+              SUCCEED) echo "deployed job $job"; exit 0 ;;
+              FAILED|CANCELLED) echo "deployment $status"; exit 1 ;;
+            esac
+            sleep 10
+          done
+          echo 'deployment timed out'
+          exit 1
