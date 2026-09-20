@@ -13,7 +13,9 @@ import { ApiError } from "@/lib/api-error";
 
 import { ProfileView } from "./profile-view";
 
-vi.mock("@/lib/api-client", () => ({ apiClient: { get: vi.fn() } }));
+vi.mock("@/lib/api-client", () => ({
+  apiClient: { get: vi.fn(), patch: vi.fn() },
+}));
 
 const validProfile = {
   id: "00000000-0000-4000-8000-000000000001",
@@ -69,7 +71,7 @@ describe("ProfileView", () => {
   it("shows the profile once it loads", async () => {
     vi.spyOn(apiClient, "get").mockResolvedValueOnce({ data: validProfile });
 
-    render(<ProfileView onEditProfile={vi.fn()} />);
+    render(<ProfileView />);
 
     expect(await screen.findByText("Marcos Silveira")).toBeVisible();
     expect(screen.getByText(/58 anos/)).toBeVisible();
@@ -85,7 +87,7 @@ describe("ProfileView", () => {
       data: { ...validProfile, experiences: [], education: [], skills: [] },
     });
 
-    render(<ProfileView onEditProfile={vi.fn()} />);
+    render(<ProfileView />);
 
     await screen.findByText("Marcos Silveira");
     expect(
@@ -104,26 +106,11 @@ describe("ProfileView", () => {
       data: { ...validProfile, summary: null, city: null, state: null },
     });
 
-    render(<ProfileView onEditProfile={vi.fn()} />);
+    render(<ProfileView />);
 
     await screen.findByText("Marcos Silveira");
     expect(screen.getByText("Nenhum resumo cadastrado ainda.")).toBeVisible();
     expect(screen.queryByText(/^Cidade:/)).not.toBeInTheDocument();
-  });
-
-  it("disables the edit button when no onEditProfile handler is provided", async () => {
-    vi.spyOn(apiClient, "get").mockResolvedValueOnce({ data: validProfile });
-
-    render(<ProfileView />);
-
-    await screen.findByText("Marcos Silveira");
-    const editButton = screen.getByRole("button", { name: /editar perfil/i });
-
-    expect(editButton).toBeDisabled();
-
-    const explanation = screen.getByText("Disponível em breve");
-    expect(explanation).toBeVisible();
-    expect(editButton).toHaveAttribute("aria-describedby", explanation.id);
   });
 
   it("shows an error state with a retry action when the request fails", async () => {
@@ -138,7 +125,7 @@ describe("ProfileView", () => {
       )
       .mockResolvedValueOnce({ data: validProfile });
 
-    render(<ProfileView onEditProfile={vi.fn()} />);
+    render(<ProfileView />);
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Não encontramos seu perfil de candidato.",
@@ -150,16 +137,22 @@ describe("ProfileView", () => {
     expect(get).toHaveBeenCalledTimes(2);
   });
 
-  it("calls onEditProfile when the edit button is clicked", async () => {
+  it("opens the edit profile modal, pre-filled, when the edit button is clicked", async () => {
     const user = userEvent.setup();
-    const onEditProfile = vi.fn();
     vi.spyOn(apiClient, "get").mockResolvedValueOnce({ data: validProfile });
 
-    render(<ProfileView onEditProfile={onEditProfile} />);
+    render(<ProfileView />);
 
     await screen.findByText("Marcos Silveira");
     await user.click(screen.getByRole("button", { name: /editar perfil/i }));
 
-    expect(onEditProfile).toHaveBeenCalledTimes(1);
+    expect(
+      await screen.findByRole("dialog", { name: /editar perfil/i }),
+    ).toBeVisible();
+    expect(screen.getByLabelText(/nome completo/i)).toHaveValue(
+      "Marcos Silveira",
+    );
+    expect(screen.getByLabelText(/^idade$/i)).toBeDisabled();
+    expect(screen.getByLabelText(/^e-mail$/i)).toBeDisabled();
   });
 });
