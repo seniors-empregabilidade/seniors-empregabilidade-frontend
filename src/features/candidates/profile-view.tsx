@@ -106,10 +106,10 @@ function ProfileHeader({ profile }: { profile: ProfileHeaderData }) {
   const location = formatLocation(profile.city, profile.state);
 
   return (
-    <div className="flex items-center gap-6">
+    <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-6">
       <div
         aria-hidden={!profile.photo_url ? true : undefined}
-        className="flex h-26 w-26 items-center justify-center rounded-full bg-accent text-base text-foreground-2"
+        className="flex h-26 w-26 shrink-0 items-center justify-center rounded-full bg-accent text-base text-foreground-2"
       >
         {profile.photo_url ? (
           <img
@@ -121,7 +121,7 @@ function ProfileHeader({ profile }: { profile: ProfileHeaderData }) {
           "FOTO"
         )}
       </div>
-      <div className="flex flex-col gap-1">
+      <div className="flex min-w-0 flex-col gap-1 break-words">
         <h2 className="text-[26px] font-bold text-foreground">
           {profile.full_name}
         </h2>
@@ -187,8 +187,8 @@ function ExperienceItem({ experience }: { experience: Experience }) {
     experience.end_date,
   );
   return (
-    <div className="flex gap-4">
-      <div className="min-w-24">
+    <div className="flex flex-col gap-1 sm:flex-row sm:gap-4">
+      <div className="sm:min-w-24">
         <p className="text-base text-muted-foreground">{period.label}</p>
         <p className="text-base text-muted-foreground">{period.duration}</p>
       </div>
