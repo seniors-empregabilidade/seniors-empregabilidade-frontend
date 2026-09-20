@@ -1,0 +1,38 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        # A imagem do Amplify nem sempre traz a versão do .nvmrc (Node 24).
+        - nvm install $(cat .nvmrc)
+        - nvm use $(cat .nvmrc)
+        - corepack enable
+        - corepack prepare pnpm@$(node -p "require('./package.json').packageManager.split('@')[1]") --activate
+        - pnpm install --frozen-lockfile
+    build:
+      commands:
+        - pnpm build
+        # VITE_API_URL é build-time, e o build NÃO a valida: parseEnv roda no
+        # navegador. Sem esta checagem, uma variável ausente só apareceria como
+        # SPA quebrada na tela de quem estiver avaliando.
+        #
+        # A verificação é pela PRESENÇA do host esperado, não pela ausência de
+        # "localhost": a string do valor padrão continua no bundle mesmo sem
+        # ser usada, então procurá-la daria falso positivo.
+        - |
+          if [ -z "$VITE_API_URL" ]; then
+            echo "ERRO: VITE_API_URL nao esta definida nas variaveis do app Amplify"
+            exit 1
+          fi
+          HOST=$(printf '%s' "$VITE_API_URL" | sed -E 's#^https?://##; s#/.*##')
+          if ! grep -rq "$HOST" dist/assets/*.js; then
+            echo "ERRO: a SPA construida nao aponta para $HOST"
+            exit 1
+          fi
+  artifacts:
+    baseDirectory: dist
+    files:
+      - "**/*"
+  cache:
+    paths:
+      - node_modules/**/*
