@@ -9,6 +9,19 @@ vi.mock("@tanstack/react-router", () => ({
   useRouter: () => ({
     navigate: navigateMock,
   }),
+  useLocation: () => ({ pathname: "/candidato" }),
+  Link: ({
+    to,
+    children,
+    ...props
+  }: {
+    to: string;
+    children: React.ReactNode;
+  }) => (
+    <a href={to} {...props}>
+      {children}
+    </a>
+  ),
 }));
 
 describe("RoleShell", () => {

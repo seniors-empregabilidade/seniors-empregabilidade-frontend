@@ -10,11 +10,15 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { SiteHeader } from "@/components/site-header";
 import { ApplicationErrorPage, NotFoundPage } from "@/error-pages";
 
-const roleAreaPaths = new Set(["/candidato", "/empresa", "/administrador"]);
+const roleAreaRoots = ["/candidato", "/empresa", "/administrador"];
 
 export function RootLayout() {
   const { pathname } = useLocation();
-  const isRoleArea = roleAreaPaths.has(pathname);
+  // Matches the role root itself and any of its child routes (e.g.
+  // /candidato/perfil), which also render inside RoleShell.
+  const isRoleArea = roleAreaRoots.some(
+    (root) => pathname === root || pathname.startsWith(`${root}/`),
+  );
 
   return (
     <>

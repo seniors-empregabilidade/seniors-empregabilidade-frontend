@@ -49,6 +49,26 @@ describe("role area shell", () => {
     cy.contains("Suporte no WhatsApp").should("be.visible");
   });
 
+  it("navigates from Relatórios to Meu perfil, staying inside the shell", () => {
+    signIn("candidate");
+
+    cy.contains("a", "Relatórios").should("have.attr", "aria-current", "page");
+    cy.contains("a", "Página inicial").should("not.exist");
+    cy.contains("a", "Entrar").should("not.exist");
+
+    cy.contains("a", "Meu perfil").click();
+    cy.location("pathname").should("eq", "/candidato/perfil");
+    cy.contains("a", "Meu perfil").should("have.attr", "aria-current", "page");
+    // A child route (not the role root itself) must still hide the public
+    // SiteHeader — it renders per exact pathname, so a naive check would
+    // miss this.
+    cy.contains("a", "Página inicial").should("not.exist");
+    cy.contains("a", "Entrar").should("not.exist");
+
+    cy.contains("a", "Relatórios").click();
+    cy.location("pathname").should("eq", "/candidato");
+  });
+
   it("shows the company sidebar without the greeting header", () => {
     signIn("company");
 

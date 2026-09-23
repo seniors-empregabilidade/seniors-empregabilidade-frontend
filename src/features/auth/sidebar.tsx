@@ -1,10 +1,9 @@
-import { useRouter } from "@tanstack/react-router";
+import { Link, useLocation, useRouter } from "@tanstack/react-router";
 import { LogOut } from "lucide-react";
 
 import { queryClient } from "@/lib/query-client";
 import { clearSession } from "@/lib/session-storage";
 
-import { currentUserQueryKey } from "./current-user";
 import type { UserType } from "./schema";
 
 const sidebarSubtitle: Record<UserType, string> = {
@@ -13,21 +12,41 @@ const sidebarSubtitle: Record<UserType, string> = {
   administrator: "Administração",
 };
 
-// Labels only, matching the confirmed screens for each role. None of these
-// have a screen behind them yet, so the items are static text, not controls —
-// turn them into real links once their pages ship.
-const roleNavItems: Record<UserType, string[]> = {
+interface NavItem {
+  label: string;
+  to?: string;
+}
+
+// Only an item with a real page behind it gets a destination — the rest
+// stay static text (no aria-current, not focusable) until their pages ship.
+const roleNavItems: Record<UserType, NavItem[]> = {
   candidate: [
-    "Relatórios",
-    "Vagas",
-    "Candidaturas",
-    "Capacitação",
-    "Como usar",
-    "Meu perfil",
+    { label: "Relatórios", to: "/candidato" },
+    { label: "Vagas" },
+    { label: "Candidaturas" },
+    { label: "Capacitação" },
+    { label: "Como usar" },
+    { label: "Meu perfil", to: "/candidato/perfil" },
   ],
-  company: ["Relatórios", "Minhas vagas", "Perfil"],
-  administrator: ["Relatórios", "Empresas", "Candidatos", "Capacitação"],
+  company: [
+    { label: "Relatórios" },
+    { label: "Minhas vagas" },
+    { label: "Perfil" },
+  ],
+  administrator: [
+    { label: "Relatórios" },
+    { label: "Empresas" },
+    { label: "Candidatos" },
+    { label: "Capacitação" },
+  ],
 };
+
+const activeItemClassName =
+  "flex min-h-11 w-full items-center rounded-md bg-background px-3 text-base font-medium text-foreground";
+const inactiveItemClassName =
+  "flex min-h-11 w-full items-center rounded-md px-3 text-base font-medium text-on-dark-subtle";
+const linkItemClassName =
+  "transition-colors hover:bg-white/5 hover:text-on-dark focus-visible:ring-3 focus-visible:ring-on-dark focus-visible:outline-none";
 
 interface SidebarProps {
   userType: UserType;
@@ -35,10 +54,14 @@ interface SidebarProps {
 
 export function Sidebar({ userType }: SidebarProps) {
   const router = useRouter();
+  const { pathname } = useLocation();
 
   function handleSignOut() {
     clearSession();
-    queryClient.removeQueries({ queryKey: currentUserQueryKey });
+    // Clears the whole cache, not just the current-user key, so a previous
+    // account's data (profile, job postings, …) can't leak into whoever
+    // signs in next in this same tab.
+    queryClient.clear();
     void router.navigate({ href: "/login" });
   }
 
@@ -54,24 +77,33 @@ export function Sidebar({ userType }: SidebarProps) {
 
         <nav aria-label="Principal" className="mt-8">
           <ul className="flex flex-col gap-1">
-            {navItems.map((label, index) => {
-              const isActive = index === 0;
+            {navItems.map((item) => {
+              const isActive = item.to !== undefined && pathname === item.to;
+
+              if (item.to === undefined) {
+                // Static for now: no page behind this label yet, so it is
+                // not a focusable control and carries no aria-current —
+                // turn it into a real link once its route ships.
+                return (
+                  <li key={item.label}>
+                    <span className={inactiveItemClassName}>{item.label}</span>
+                  </li>
+                );
+              }
 
               return (
-                <li key={label}>
-                  {/* Static for now: none of these labels has a page behind it
-                      yet, so they are not focusable controls and carry no
-                      aria-current — wire them up as real links once their
-                      routes ship. */}
-                  <span
+                <li key={item.label}>
+                  <Link
+                    to={item.to}
+                    aria-current={isActive ? "page" : undefined}
                     className={
                       isActive
-                        ? "flex min-h-11 w-full items-center rounded-md bg-background px-3 text-base font-medium text-foreground"
-                        : "flex min-h-11 w-full items-center rounded-md px-3 text-base font-medium text-on-dark-subtle"
+                        ? activeItemClassName
+                        : `${inactiveItemClassName} ${linkItemClassName}`
                     }
                   >
-                    {label}
-                  </span>
+                    {item.label}
+                  </Link>
                 </li>
               );
             })}
