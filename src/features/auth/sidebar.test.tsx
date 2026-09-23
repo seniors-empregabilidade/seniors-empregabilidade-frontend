@@ -99,10 +99,19 @@ describe("Sidebar", () => {
     });
   });
 
-  it("shows the company nav items as static text", () => {
+  it("links Minhas vagas to the company job list", () => {
+    pathname = "/empresa/vagas";
     render(<Sidebar userType="company" />);
 
-    ["Relatórios", "Minhas vagas", "Perfil"].forEach((label) => {
+    const myJobs = screen.getByRole("link", { name: "Minhas vagas" });
+    expect(myJobs).toHaveAttribute("href", "/empresa/vagas");
+    expect(myJobs).toHaveAttribute("aria-current", "page");
+  });
+
+  it("shows the remaining company nav items as static text", () => {
+    render(<Sidebar userType="company" />);
+
+    ["Relatórios", "Perfil"].forEach((label) => {
       expect(screen.getByText(label)).toBeVisible();
       expect(
         screen.queryByRole("link", { name: label }),
