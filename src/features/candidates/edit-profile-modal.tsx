@@ -122,6 +122,7 @@ function EditProfileForm({
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(
     profile.photo_url ?? null,
   );
+  const [justSaved, setJustSaved] = useState(false);
 
   const mutation = useMutation({
     mutationFn: updateProfessionalProfile,
@@ -139,7 +140,12 @@ function EditProfileForm({
         skills,
         photo_url: photoPreviewUrl,
       });
-      onOpenChange(false);
+      // Feedback explícito de sucesso (pedido pela task), não só o
+      // fechamento silencioso do modal: mostra a confirmação por um
+      // instante antes de fechar, dando tempo de ser percebida (inclusive
+      // por leitor de tela, via role="status").
+      setJustSaved(true);
+      window.setTimeout(() => onOpenChange(false), 900);
     },
   });
 
@@ -155,6 +161,14 @@ function EditProfileForm({
         void handleSubmit(onSubmit)(event);
       }}
     >
+      {justSaved ? (
+        <p
+          role="status"
+          className="rounded-lg border border-success/30 bg-success/5 px-4 py-3 text-lg text-success"
+        >
+          Perfil atualizado com sucesso.
+        </p>
+      ) : null}
       {mutation.isError ? (
         <p
           role="alert"
@@ -310,7 +324,7 @@ function PhotoField({
     <Field>
       <FieldLabel>Foto de perfil</FieldLabel>
       <div className="flex items-center gap-4">
-        <div className="h-24 w-24 shrink-0 overflow-hidden rounded-full border border-dashed border-input bg-accent/40">
+        <div className="h-18 w-18 shrink-0 overflow-hidden rounded-full border border-dashed border-input bg-accent/40">
           {previewUrl ? (
             <img
               src={previewUrl}

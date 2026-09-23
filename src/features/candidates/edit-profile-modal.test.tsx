@@ -174,4 +174,21 @@ describe("EditProfileModal", () => {
       summary: baseProfile.summary,
     });
   });
+
+  it("shows an explicit success message after saving", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(apiClient, "patch").mockResolvedValueOnce({ data: baseProfile });
+
+    render(
+      <EditProfileModal open onOpenChange={vi.fn()} profile={baseProfile} />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: /salvar alterações/i }),
+    );
+
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Perfil atualizado com sucesso.",
+    );
+  });
 });
