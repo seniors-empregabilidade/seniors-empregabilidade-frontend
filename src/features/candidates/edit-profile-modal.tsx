@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,17 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 
 import { profileErrorMessage } from "./professional-profile-errors";
-import { professionalProfileQueryKey } from "./professional-profile";
+import {
+  createEducation,
+  createExperience,
+  deleteEducationById,
+  deleteExperienceById,
+  educationValuesSchema,
+  experienceValuesSchema,
+  professionalProfileQueryKey,
+  updateEducationById,
+  updateExperienceById,
+} from "./professional-profile";
 import { CompanyBadge } from "@/components/ui/company-badge";
 import { formatExperiencePeriod, getYear } from "./profile-date-utils";
 import type {
@@ -110,10 +120,6 @@ function EditProfileForm({
     defaultValues: defaultValuesFrom(profile),
   });
 
-  // Experiência, formação, habilidades e foto ainda não têm endpoint no
-  // backend (só o GET e o PATCH dos 5 campos abaixo existem). Ficam em
-  // estado local só pra tela ser funcional de ponta a ponta no front —
-  // quem for integrar troca esses `set...` por chamadas reais de API.
   const [experiences, setExperiences] = useState<Experience[]>(
     profile.experiences,
   );
@@ -123,29 +129,30 @@ function EditProfileForm({
     profile.photo_url ?? null,
   );
   const [justSaved, setJustSaved] = useState(false);
+  const closeTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current !== null) {
+        window.clearTimeout(closeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const mutation = useMutation({
     mutationFn: updateProfessionalProfile,
     onSuccess: (updated) => {
-      // O backend só devolve os 5 campos do formulário atualizados. Pra
-      // você conseguir VER como a tela fica com experiência/formação/
-      // habilidade/foto — mesmo sem existir endpoint pra salvar isso de
-      // verdade ainda —, mesclamos aqui o que já veio do servidor com o
-      // que ficou em estado local. TODO: quando os endpoints existirem,
-      // isso deixa de ser necessário (o `updated` já vem completo).
       queryClient.setQueryData(professionalProfileQueryKey, {
         ...updated,
-        experiences,
-        education,
         skills,
         photo_url: photoPreviewUrl,
       });
-      // Feedback explícito de sucesso (pedido pela task), não só o
-      // fechamento silencioso do modal: mostra a confirmação por um
-      // instante antes de fechar, dando tempo de ser percebida (inclusive
-      // por leitor de tela, via role="status").
+
       setJustSaved(true);
-      window.setTimeout(() => onOpenChange(false), 900);
+      closeTimeoutRef.current = window.setTimeout(
+        () => onOpenChange(false),
+        900,
+      );
     },
   });
 
@@ -269,12 +276,12 @@ function EditProfileForm({
         <Button
           type="button"
           variant="outline"
-          disabled={mutation.isPending}
+          disabled={mutation.isPending || justSaved}
           onClick={() => onOpenChange(false)}
         >
           Cancelar
         </Button>
-        <Button type="submit" disabled={mutation.isPending}>
+        <Button type="submit" disabled={mutation.isPending || justSaved}>
           {mutation.isPending ? "Salvando..." : "Salvar alterações"}
         </Button>
       </DialogFooter>
@@ -392,6 +399,16 @@ function draftFromExperience(exp?: Experience): ExperienceDraft {
   };
 }
 
+function draftToValues(draft: ExperienceDraft) {
+  return {
+    role: draft.role.trim(),
+    company_name: draft.company_name.trim(),
+    start_date: draft.start_date,
+    end_date: draft.end_date || null,
+    description: draft.description.trim() || null,
+  };
+}
+
 function ExperienceFieldset({
   experiences,
   onChange,
@@ -399,174 +416,190 @@ function ExperienceFieldset({
   experiences: Experience[];
   onChange: (experiences: Experience[]) => void;
 }) {
+  // "new" é um id sentinela pro rascunho de um item ainda não criado no
+  // servidor — só entra na lista `experiences` depois que o POST volta
+  // com sucesso (com o id real).
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<ExperienceDraft>(draftFromExperience());
+  const [itemError, setItemError] = useState<string | null>(null);
+
+  const createMutation = useMutation({ mutationFn: createExperience });
+  const updateMutation = useMutation({
+    mutationFn: ({
+      id,
+      values,
+    }: {
+      id: string;
+      values: ReturnType<typeof draftToValues>;
+    }) => updateExperienceById(id, values),
+  });
+  const deleteMutation = useMutation({ mutationFn: deleteExperienceById });
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   function startAdd() {
-    const id = createLocalId();
     setDraft(draftFromExperience());
-    setEditingId(id);
-    onChange([
-      ...experiences,
-      {
-        id,
-        role: "",
-        company_name: "",
-        start_date: "",
-        end_date: null,
-        description: null,
-      },
-    ]);
+    setEditingId("new");
+    setItemError(null);
   }
 
   function startEdit(exp: Experience) {
     setDraft(draftFromExperience(exp));
     setEditingId(exp.id);
+    setItemError(null);
   }
 
-  function cancelEdit(id: string, isNew: boolean) {
+  function cancelEdit() {
     setEditingId(null);
-    if (isNew) {
-      onChange(experiences.filter((exp) => exp.id !== id));
+    setItemError(null);
+  }
+
+  async function saveEdit(id: string) {
+    setItemError(null);
+    const parsed = experienceValuesSchema.safeParse(draftToValues(draft));
+    if (!parsed.success) {
+      setItemError(parsed.error.issues[0]?.message ?? "Dados inválidos.");
+      return;
     }
-  }
-
-  function saveEdit(id: string) {
-    onChange(
-      experiences.map((exp) =>
-        exp.id === id
-          ? {
-              ...exp,
-              role: draft.role,
-              company_name: draft.company_name,
-              start_date: draft.start_date,
-              end_date: draft.end_date || null,
-              description: draft.description || null,
-            }
-          : exp,
-      ),
-    );
-    setEditingId(null);
-  }
-
-  function remove(id: string) {
-    onChange(experiences.filter((exp) => exp.id !== id));
-    if (editingId === id) {
+    const values = parsed.data;
+    try {
+      if (id === "new") {
+        const created = await createMutation.mutateAsync(values);
+        onChange([...experiences, created]);
+      } else {
+        const updated = await updateMutation.mutateAsync({ id, values });
+        onChange(experiences.map((exp) => (exp.id === id ? updated : exp)));
+      }
       setEditingId(null);
+    } catch (error) {
+      setItemError(profileErrorMessage(error));
     }
+  }
+
+  async function remove(id: string) {
+    setItemError(null);
+    try {
+      await deleteMutation.mutateAsync(id);
+      onChange(experiences.filter((exp) => exp.id !== id));
+      if (editingId === id) {
+        setEditingId(null);
+      }
+    } catch (error) {
+      setItemError(profileErrorMessage(error));
+    }
+  }
+
+  function renderEditForm(id: string) {
+    return (
+      <div className="flex flex-col gap-3 rounded-lg border border-ring p-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor={`exp-role-${id}`}>Cargo</FieldLabel>
+            <Input
+              id={`exp-role-${id}`}
+              value={draft.role}
+              onChange={(event) =>
+                setDraft({ ...draft, role: event.target.value })
+              }
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor={`exp-company-${id}`}>Empresa</FieldLabel>
+            <Input
+              id={`exp-company-${id}`}
+              value={draft.company_name}
+              onChange={(event) =>
+                setDraft({ ...draft, company_name: event.target.value })
+              }
+            />
+          </Field>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor={`exp-start-${id}`}>Início</FieldLabel>
+            <Input
+              id={`exp-start-${id}`}
+              type="date"
+              value={draft.start_date}
+              onChange={(event) =>
+                setDraft({ ...draft, start_date: event.target.value })
+              }
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor={`exp-end-${id}`}>
+              Fim (deixe em branco se atual)
+            </FieldLabel>
+            <Input
+              id={`exp-end-${id}`}
+              type="date"
+              value={draft.end_date}
+              onChange={(event) =>
+                setDraft({ ...draft, end_date: event.target.value })
+              }
+            />
+          </Field>
+        </div>
+        <Field>
+          <FieldLabel htmlFor={`exp-desc-${id}`}>Descrição</FieldLabel>
+          <Textarea
+            id={`exp-desc-${id}`}
+            rows={3}
+            value={draft.description}
+            onChange={(event) =>
+              setDraft({ ...draft, description: event.target.value })
+            }
+          />
+        </Field>
+        {itemError ? (
+          <p role="alert" className="text-base text-destructive">
+            {itemError}
+          </p>
+        ) : null}
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isSaving}
+            onClick={cancelEdit}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            disabled={isSaving}
+            onClick={() => void saveEdit(id)}
+          >
+            {isSaving ? "Salvando..." : "Concluir"}
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div>
       <div className="mb-3 flex items-center justify-between gap-3">
         <SectionHeading>Experiência</SectionHeading>
-        <Button type="button" variant="outline" onClick={startAdd}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={startAdd}
+          disabled={editingId !== null}
+        >
           Adicionar experiência
         </Button>
       </div>
-      {experiences.length === 0 ? (
+      {experiences.length === 0 && editingId !== "new" ? (
         <p className="text-lg text-muted-foreground">
           Nenhuma experiência cadastrada ainda.
         </p>
       ) : (
         <div className="flex flex-col gap-3">
           {experiences.map((exp) => {
-            const period = exp.start_date
-              ? formatExperiencePeriod(exp.start_date, exp.end_date)
-              : null;
+            const period = formatExperiencePeriod(exp.start_date, exp.end_date);
             return editingId === exp.id ? (
-              <div
-                key={exp.id}
-                className="flex flex-col gap-3 rounded-lg border border-ring p-4"
-              >
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <Field>
-                    <FieldLabel htmlFor={`exp-role-${exp.id}`}>
-                      Cargo
-                    </FieldLabel>
-                    <Input
-                      id={`exp-role-${exp.id}`}
-                      value={draft.role}
-                      onChange={(event) =>
-                        setDraft({ ...draft, role: event.target.value })
-                      }
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor={`exp-company-${exp.id}`}>
-                      Empresa
-                    </FieldLabel>
-                    <Input
-                      id={`exp-company-${exp.id}`}
-                      value={draft.company_name}
-                      onChange={(event) =>
-                        setDraft({
-                          ...draft,
-                          company_name: event.target.value,
-                        })
-                      }
-                    />
-                  </Field>
-                </div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <Field>
-                    <FieldLabel htmlFor={`exp-start-${exp.id}`}>
-                      Início
-                    </FieldLabel>
-                    <Input
-                      id={`exp-start-${exp.id}`}
-                      type="date"
-                      value={draft.start_date}
-                      onChange={(event) =>
-                        setDraft({ ...draft, start_date: event.target.value })
-                      }
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor={`exp-end-${exp.id}`}>
-                      Fim (deixe em branco se atual)
-                    </FieldLabel>
-                    <Input
-                      id={`exp-end-${exp.id}`}
-                      type="date"
-                      value={draft.end_date}
-                      onChange={(event) =>
-                        setDraft({ ...draft, end_date: event.target.value })
-                      }
-                    />
-                  </Field>
-                </div>
-                <Field>
-                  <FieldLabel htmlFor={`exp-desc-${exp.id}`}>
-                    Descrição
-                  </FieldLabel>
-                  <Textarea
-                    id={`exp-desc-${exp.id}`}
-                    rows={3}
-                    value={draft.description}
-                    onChange={(event) =>
-                      setDraft({ ...draft, description: event.target.value })
-                    }
-                  />
-                </Field>
-                <div className="flex justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() =>
-                      cancelEdit(
-                        exp.id,
-                        exp.role === "" && exp.company_name === "",
-                      )
-                    }
-                  >
-                    Cancelar
-                  </Button>
-                  <Button type="button" onClick={() => saveEdit(exp.id)}>
-                    Concluir
-                  </Button>
-                </div>
-              </div>
+              <div key={exp.id}>{renderEditForm(exp.id)}</div>
             ) : (
               <div
                 key={exp.id}
@@ -576,19 +609,18 @@ function ExperienceFieldset({
                   <CompanyBadge companyName={exp.company_name} />
                   <div>
                     <p className="text-lg font-bold text-foreground">
-                      {exp.role || "(sem cargo)"} · {exp.company_name || "—"}
+                      {exp.role} · {exp.company_name}
                     </p>
-                    {period ? (
-                      <p className="text-base text-muted-foreground">
-                        {period.label} · {period.duration}
-                      </p>
-                    ) : null}
+                    <p className="text-base text-muted-foreground">
+                      {period.label} · {period.duration}
+                    </p>
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-2">
                   <Button
                     type="button"
                     variant="outline"
+                    disabled={editingId !== null || deleteMutation.isPending}
                     onClick={() => startEdit(exp)}
                   >
                     Editar
@@ -596,7 +628,8 @@ function ExperienceFieldset({
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => remove(exp.id)}
+                    disabled={editingId !== null || deleteMutation.isPending}
+                    onClick={() => void remove(exp.id)}
                   >
                     Remover
                   </Button>
@@ -604,6 +637,7 @@ function ExperienceFieldset({
               </div>
             );
           })}
+          {editingId === "new" ? renderEditForm("new") : null}
         </div>
       )}
     </div>
@@ -630,6 +664,16 @@ function draftFromEducation(item?: Education): EducationDraft {
   };
 }
 
+function educationDraftToValues(draft: EducationDraft) {
+  return {
+    institution: draft.institution.trim(),
+    degree: draft.degree.trim() || null,
+    field: draft.field.trim() || null,
+    start_date: draft.start_date || null,
+    end_date: draft.end_date || null,
+  };
+}
+
 function EducationFieldset({
   education,
   onChange,
@@ -639,70 +683,177 @@ function EducationFieldset({
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<EducationDraft>(draftFromEducation());
+  const [itemError, setItemError] = useState<string | null>(null);
+
+  const createMutation = useMutation({ mutationFn: createEducation });
+  const updateMutation = useMutation({
+    mutationFn: ({
+      id,
+      values,
+    }: {
+      id: string;
+      values: ReturnType<typeof educationDraftToValues>;
+    }) => updateEducationById(id, values),
+  });
+  const deleteMutation = useMutation({ mutationFn: deleteEducationById });
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   function startAdd() {
-    const id = createLocalId();
     setDraft(draftFromEducation());
-    setEditingId(id);
-    onChange([
-      ...education,
-      {
-        id,
-        institution: "",
-        degree: null,
-        field: null,
-        start_date: null,
-        end_date: null,
-      },
-    ]);
+    setEditingId("new");
+    setItemError(null);
   }
 
   function startEdit(item: Education) {
     setDraft(draftFromEducation(item));
     setEditingId(item.id);
+    setItemError(null);
   }
 
-  function cancelEdit(id: string, isNew: boolean) {
+  function cancelEdit() {
     setEditingId(null);
-    if (isNew) {
-      onChange(education.filter((item) => item.id !== id));
-    }
+    setItemError(null);
   }
 
-  function saveEdit(id: string) {
-    onChange(
-      education.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              institution: draft.institution,
-              degree: draft.degree || null,
-              field: draft.field || null,
-              start_date: draft.start_date || null,
-              end_date: draft.end_date || null,
-            }
-          : item,
-      ),
+  async function saveEdit(id: string) {
+    setItemError(null);
+    const parsed = educationValuesSchema.safeParse(
+      educationDraftToValues(draft),
     );
-    setEditingId(null);
+    if (!parsed.success) {
+      setItemError(parsed.error.issues[0]?.message ?? "Dados inválidos.");
+      return;
+    }
+    const values = parsed.data;
+    try {
+      if (id === "new") {
+        const created = await createMutation.mutateAsync(values);
+        onChange([...education, created]);
+      } else {
+        const updated = await updateMutation.mutateAsync({ id, values });
+        onChange(education.map((item) => (item.id === id ? updated : item)));
+      }
+      setEditingId(null);
+    } catch (error) {
+      setItemError(profileErrorMessage(error));
+    }
   }
 
-  function remove(id: string) {
-    onChange(education.filter((item) => item.id !== id));
-    if (editingId === id) {
-      setEditingId(null);
+  async function remove(id: string) {
+    setItemError(null);
+    try {
+      await deleteMutation.mutateAsync(id);
+      onChange(education.filter((item) => item.id !== id));
+      if (editingId === id) {
+        setEditingId(null);
+      }
+    } catch (error) {
+      setItemError(profileErrorMessage(error));
     }
+  }
+
+  function renderEditForm(id: string) {
+    return (
+      <div className="flex flex-col gap-3 rounded-lg border border-ring p-4">
+        <Field>
+          <FieldLabel htmlFor={`edu-institution-${id}`}>Instituição</FieldLabel>
+          <Input
+            id={`edu-institution-${id}`}
+            value={draft.institution}
+            onChange={(event) =>
+              setDraft({ ...draft, institution: event.target.value })
+            }
+          />
+        </Field>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor={`edu-degree-${id}`}>
+              Curso/grau (ex: MBA)
+            </FieldLabel>
+            <Input
+              id={`edu-degree-${id}`}
+              value={draft.degree}
+              onChange={(event) =>
+                setDraft({ ...draft, degree: event.target.value })
+              }
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor={`edu-field-${id}`}>Área</FieldLabel>
+            <Input
+              id={`edu-field-${id}`}
+              value={draft.field}
+              onChange={(event) =>
+                setDraft({ ...draft, field: event.target.value })
+              }
+            />
+          </Field>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor={`edu-start-${id}`}>Início</FieldLabel>
+            <Input
+              id={`edu-start-${id}`}
+              type="date"
+              value={draft.start_date}
+              onChange={(event) =>
+                setDraft({ ...draft, start_date: event.target.value })
+              }
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor={`edu-end-${id}`}>Conclusão</FieldLabel>
+            <Input
+              id={`edu-end-${id}`}
+              type="date"
+              value={draft.end_date}
+              onChange={(event) =>
+                setDraft({ ...draft, end_date: event.target.value })
+              }
+            />
+          </Field>
+        </div>
+        {itemError ? (
+          <p role="alert" className="text-base text-destructive">
+            {itemError}
+          </p>
+        ) : null}
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isSaving}
+            onClick={cancelEdit}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            disabled={isSaving}
+            onClick={() => void saveEdit(id)}
+          >
+            {isSaving ? "Salvando..." : "Concluir"}
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div>
       <div className="mb-3 flex items-center justify-between gap-3">
         <SectionHeading>Formação e certificação</SectionHeading>
-        <Button type="button" variant="outline" onClick={startAdd}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={startAdd}
+          disabled={editingId !== null}
+        >
           Adicionar formação
         </Button>
       </div>
-      {education.length === 0 ? (
+      {education.length === 0 && editingId !== "new" ? (
         <p className="text-lg text-muted-foreground">
           Nenhuma formação cadastrada ainda.
         </p>
@@ -715,89 +866,7 @@ function EducationFieldset({
             const dateForYear = item.end_date ?? item.start_date;
             const year = dateForYear ? getYear(dateForYear) : null;
             return editingId === item.id ? (
-              <div
-                key={item.id}
-                className="flex flex-col gap-3 rounded-lg border border-ring p-4"
-              >
-                <Field>
-                  <FieldLabel htmlFor={`edu-institution-${item.id}`}>
-                    Instituição
-                  </FieldLabel>
-                  <Input
-                    id={`edu-institution-${item.id}`}
-                    value={draft.institution}
-                    onChange={(event) =>
-                      setDraft({ ...draft, institution: event.target.value })
-                    }
-                  />
-                </Field>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <Field>
-                    <FieldLabel htmlFor={`edu-degree-${item.id}`}>
-                      Curso/grau (ex: MBA)
-                    </FieldLabel>
-                    <Input
-                      id={`edu-degree-${item.id}`}
-                      value={draft.degree}
-                      onChange={(event) =>
-                        setDraft({ ...draft, degree: event.target.value })
-                      }
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor={`edu-field-${item.id}`}>
-                      Área
-                    </FieldLabel>
-                    <Input
-                      id={`edu-field-${item.id}`}
-                      value={draft.field}
-                      onChange={(event) =>
-                        setDraft({ ...draft, field: event.target.value })
-                      }
-                    />
-                  </Field>
-                </div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <Field>
-                    <FieldLabel htmlFor={`edu-start-${item.id}`}>
-                      Início
-                    </FieldLabel>
-                    <Input
-                      id={`edu-start-${item.id}`}
-                      type="date"
-                      value={draft.start_date}
-                      onChange={(event) =>
-                        setDraft({ ...draft, start_date: event.target.value })
-                      }
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor={`edu-end-${item.id}`}>
-                      Conclusão
-                    </FieldLabel>
-                    <Input
-                      id={`edu-end-${item.id}`}
-                      type="date"
-                      value={draft.end_date}
-                      onChange={(event) =>
-                        setDraft({ ...draft, end_date: event.target.value })
-                      }
-                    />
-                  </Field>
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => cancelEdit(item.id, item.institution === "")}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button type="button" onClick={() => saveEdit(item.id)}>
-                    Concluir
-                  </Button>
-                </div>
-              </div>
+              <div key={item.id}>{renderEditForm(item.id)}</div>
             ) : (
               <div
                 key={item.id}
@@ -805,7 +874,7 @@ function EducationFieldset({
               >
                 <div>
                   <p className="text-lg font-bold text-foreground">
-                    {title || item.institution || "(sem título)"}
+                    {title || item.institution}
                   </p>
                   <p className="text-base text-muted-foreground">
                     {title ? item.institution : null}
@@ -817,6 +886,7 @@ function EducationFieldset({
                   <Button
                     type="button"
                     variant="outline"
+                    disabled={editingId !== null || deleteMutation.isPending}
                     onClick={() => startEdit(item)}
                   >
                     Editar
@@ -824,7 +894,8 @@ function EducationFieldset({
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => remove(item.id)}
+                    disabled={editingId !== null || deleteMutation.isPending}
+                    onClick={() => void remove(item.id)}
                   >
                     Remover
                   </Button>
@@ -832,6 +903,7 @@ function EducationFieldset({
               </div>
             );
           })}
+          {editingId === "new" ? renderEditForm("new") : null}
         </div>
       )}
     </div>

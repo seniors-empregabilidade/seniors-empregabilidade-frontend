@@ -15,7 +15,7 @@ import { EditProfileModal } from "./edit-profile-modal";
 import type { ProfessionalProfile } from "./professional-profile-schema";
 
 vi.mock("@/lib/api-client", () => ({
-  apiClient: { get: vi.fn(), patch: vi.fn() },
+  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
 }));
 
 const baseProfile: ProfessionalProfile = {
@@ -50,6 +50,18 @@ afterEach(() => {
 describe("EditProfileModal", () => {
   it("adds a new experience inline and shows it in the list", async () => {
     const user = userEvent.setup();
+    const createdExperience = {
+      id: "exp-1",
+      role: "Analista",
+      company_name: "Empresa X",
+      start_date: "2020-01-01",
+      end_date: null,
+      description: null,
+    };
+    vi.spyOn(apiClient, "post").mockResolvedValueOnce({
+      data: createdExperience,
+    });
+
     render(
       <EditProfileModal open onOpenChange={vi.fn()} profile={baseProfile} />,
     );
@@ -60,9 +72,12 @@ describe("EditProfileModal", () => {
 
     await user.type(screen.getByLabelText(/^cargo$/i), "Analista");
     await user.type(screen.getByLabelText(/^empresa$/i), "Empresa X");
+    fireEvent.change(screen.getByLabelText(/^início$/i), {
+      target: { value: "2020-01-01" },
+    });
     await user.click(screen.getByRole("button", { name: /concluir/i }));
 
-    expect(screen.getByText("Analista · Empresa X")).toBeVisible();
+    expect(await screen.findByText("Analista · Empresa X")).toBeVisible();
   });
 
   it("cancels a new (empty) experience without leaving a blank card behind", async () => {
