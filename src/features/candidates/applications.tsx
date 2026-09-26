@@ -3,16 +3,18 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { searchSchema, fetchApplications } from "./applications-schema";
+
 import type {
-  SearchForm,
   Application,
   ApplicationStatus,
+  SearchForm,
 } from "./applications-schema";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { apiClient } from "@/lib/api-client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,36 +46,40 @@ export default function ApplicationsPage() {
     defaultValue: "",
   });
 
-  const searchTerm = searchValue?.toLowerCase() || "";
+  const searchTerm = searchValue?.trim() ?? "";
 
   const {
     data: applications,
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["applications"],
-    queryFn: () => fetchApplications(),
+    queryKey: ["applications", searchTerm],
+    queryFn: ({ signal }) =>
+      fetchApplications({
+        ...(searchTerm ? { companyName: searchTerm } : {}),
+        signal,
+      }),
   });
 
-  const quitProcessMutation = useMutation<void, Error, string>({
-    mutationFn: async (id: string) => {
-      console.log("Saindo do processo:", id);
-      await new Promise((resolve) => setTimeout(resolve, 500));
+  const quitProcessMutation = useMutation({
+    mutationFn: async (applicationId: string) => {
+      await apiClient.post(`/applications/${applicationId}/withdraw`);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["applications"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["applications"],
+      });
+
       setAppToQuit(null);
     },
   });
 
-  const filteredApplications = applications?.filter((app) =>
-    app.company.toLowerCase().includes(searchTerm),
-  );
-
   return (
-    <div className="mx-auto max-w-4xl space-y-8 bg-background p-6">
+    <main className="mx-auto max-w-4xl space-y-8 bg-background p-6">
       <div>
-        <h1 className="mb-6 text-2xl text-foreground">Candidaturas</h1>
+        <h1 className="mb-6 text-3xl font-bold text-foreground">
+          Candidaturas
+        </h1>
         <div className="max-w-md space-y-1.5">
           <label htmlFor="search" className="text-base text-muted-foreground">
             Buscar por nome da empresa
@@ -82,15 +88,16 @@ export default function ApplicationsPage() {
             id="search"
             placeholder="Ex.: LogiBrás"
             {...register("search")}
-            className={`h-11 rounded-md border-[1.5px] text-[18px] text-foreground transition-all focus-visible:ring-3 focus-visible:ring-primary focus-visible:ring-offset-2 ${
-              errors.search
-                ? "border-[2px] border-destructive"
-                : "border-[var(--input,#border)] focus-visible:border-primary"
-            }`}
+            aria-invalid={!!errors.search}
+            aria-describedby={errors.search ? "search-error" : undefined}
           />
 
           {errors.search?.message && (
-            <p className="pt-1 text-base text-destructive">
+            <p
+              id="search-error"
+              role="alert"
+              className="pt-1 text-base text-destructive"
+            >
               {errors.search.message}
             </p>
           )}
@@ -99,37 +106,48 @@ export default function ApplicationsPage() {
 
       <div className="space-y-4">
         {isLoading && (
-          <>
-            <Skeleton className="h-36 w-full rounded-lg bg-accent" />
-            <Skeleton className="h-36 w-full rounded-lg bg-accent" />
-          </>
+          <div role="status" aria-label="Carregando candidaturas">
+            <Skeleton className="h-36 w-full rounded-lg" />
+            <Skeleton className="mt-4 h-36 w-full rounded-lg" />
+          </div>
         )}
 
         {isError && (
-          <div className="rounded-md border border-destructive bg-background p-4 text-base text-destructive">
+          <div
+            role="alert"
+            className="rounded-md border border-destructive bg-background p-4 text-base text-destructive"
+          >
             Ocorreu um erro ao carregar suas candidaturas. Tente novamente mais
             tarde.
           </div>
         )}
 
-        {!isLoading && !isError && filteredApplications?.length === 0 && (
+        {!isLoading && !isError && applications?.length === 0 && (
           <div className="rounded-lg border border-dashed border-border p-8 text-center text-muted-foreground">
             Nenhuma candidatura encontrada.
           </div>
         )}
 
-        {filteredApplications?.map((app) => (
+        {applications?.map((application) => (
           <ApplicationCard
-            key={app.id}
-            application={app}
-            onQuitProcess={() => setAppToQuit(app.id)}
+            key={application.id}
+            application={application}
+            onQuitProcess={() => setAppToQuit(application.id)}
+            isQuitPending={quitProcessMutation.isPending}
           />
         ))}
       </div>
-      <AlertDialog open={!!appToQuit} onOpenChange={() => setAppToQuit(null)}>
+      <AlertDialog
+        open={!!appToQuit}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAppToQuit(null);
+          }
+        }}
+      >
         <AlertDialogContent className="rounded-xl border-border bg-background">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-foreground">
+            <AlertDialogTitle className="text-base text-foreground">
               Você tem certeza?
             </AlertDialogTitle>
             <AlertDialogDescription>
@@ -138,97 +156,96 @@ export default function ApplicationsPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-md border-[1.5px] border-input bg-background text-foreground hover:bg-accent">
-              Cancelar
-            </AlertDialogCancel>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => appToQuit && quitProcessMutation.mutate(appToQuit)}
+              variant="destructive"
+              onClick={() => {
+                if (appToQuit) {
+                  quitProcessMutation.mutate(appToQuit);
+                }
+              }}
               disabled={quitProcessMutation.isPending}
-              className="rounded-md bg-[var(--destructive,#8C1D18)] text-white hover:opacity-90"
             >
               {quitProcessMutation.isPending ? "Saindo..." : "Sair do processo"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </main>
   );
 }
 
 interface ApplicationCardProps {
   application: Application;
   onQuitProcess: () => void;
+  isQuitPending: boolean;
 }
 
-function ApplicationCard({ application, onQuitProcess }: ApplicationCardProps) {
-  const closedStatus: ApplicationStatus = "CLOSED";
-  const isClosed = application.status === closedStatus;
+function ApplicationCard({
+  application,
+  onQuitProcess,
+  isQuitPending,
+}: ApplicationCardProps) {
+  const isClosed =
+    application.status === "hired" ||
+    application.status === "not_selected" ||
+    application.status === "withdrawn" ||
+    application.status === "expired";
 
   return (
     <Card
       className={`overflow-hidden rounded-lg border border-border transition-colors ${isClosed ? "bg-muted" : "bg-background"}`}
     >
-      <CardContent className="flex flex-col justify-between gap-6 p-[22px] md:flex-row md:gap-4">
+      <CardContent className="flex flex-col justify-between gap-6 p-6 md:flex-row md:gap-4">
         <div className="flex gap-4">
-          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-md border border-input bg-accent font-semibold text-foreground-2">
-            {application.companyInitials}
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-input bg-accent text-base font-semibold text-foreground-2">
+            {getCompanyInitials(application.company_name)}
           </div>
 
           <div className="space-y-1">
-            <h3 className="text-xl font-bold text-foreground">
-              {application.role} · {application.company}
-            </h3>
+            <h2 className="text-xl font-bold text-foreground">
+              {application.job_title} · {application.company_name}
+            </h2>
             <p className="text-base text-muted-foreground">
-              {isClosed ? (
-                <>
-                  Encerrada em {application.closedDate} · você não foi
-                  selecionado
-                </>
-              ) : (
-                <>
-                  Enviada em {application.appliedDate} ·{" "}
-                  {application.daysInProcess} dias em processo
-                </>
-              )}
+              {getApplicationStatusLabel(application.status)}
             </p>
-            <div className="pt-2 text-base text-foreground-2">
-              {isClosed ? (
-                <p>
-                  {application.closedReason} Há{" "}
-                  <strong className="text-foreground">
-                    {application.similarJobs} vagas parecidas
-                  </strong>{" "}
-                  abertas agora.
-                </p>
-              ) : (
-                <p>
-                  Em análise. A {application.company} costuma responder em até{" "}
-                  {application.expectedResponseDays} dias.
-                </p>
-              )}
+
+            <div className="pt-2 text-base text-foreground">
+              <p>{getApplicationDescription(application)}</p>
             </div>
+
+            {application.similar_jobs.length > 0 && (
+              <p className="pt-2 text-base text-foreground">
+                Há{" "}
+                <strong>
+                  {application.similar_jobs.length}{" "}
+                  {application.similar_jobs.length === 1
+                    ? "vaga parecida"
+                    : "vagas parecidas"}
+                </strong>{" "}
+                abertas agora.
+              </p>
+            )}
           </div>
         </div>
 
         <div className="flex min-w-[200px] flex-col justify-start gap-2">
           {isClosed ? (
-            <Button className="w-full rounded-md border-0 bg-primary hover:bg-primary-hover active:bg-primary">
+            <Button disabled className="w-full">
               Ver vagas parecidas
             </Button>
           ) : (
             <>
-              <Button
-                variant="outline"
-                className="w-full rounded-md border-[1.5px] border-input bg-background text-foreground hover:bg-accent"
-              >
+              <Button variant="outline" disabled className="w-full">
                 Ver a vaga
               </Button>
               <Button
                 variant="outline"
-                className="w-full rounded-md border-[1.5px] border-input bg-background text-foreground hover:bg-accent"
+                className="w-full"
                 onClick={onQuitProcess}
+                disabled={isQuitPending}
               >
-                Sair do processo
+                {isQuitPending ? "Saindo..." : "Sair do processo"}
               </Button>
             </>
           )}
@@ -236,4 +253,79 @@ function ApplicationCard({ application, onQuitProcess }: ApplicationCardProps) {
       </CardContent>
     </Card>
   );
+}
+function getCompanyInitials(companyName: string): string {
+  const words = companyName.trim().split(/\s+/);
+
+  if (words.length === 0 || !words[0]) {
+    return "";
+  }
+
+  if (words.length === 1) {
+    return words[0].slice(0, 2).toUpperCase();
+  }
+
+  const firstInitial = words[0][0] ?? "";
+  const secondInitial = words[1]?.[0] ?? "";
+
+  return `${firstInitial}${secondInitial}`.toUpperCase();
+}
+
+function getApplicationStatusLabel(status: ApplicationStatus): string {
+  switch (status) {
+    case "applied":
+      return "Candidatura enviada";
+
+    case "under_review":
+      return "Em análise";
+
+    case "in_selection_process":
+      return "Em processo seletivo";
+
+    case "hired":
+      return "Você foi selecionado";
+
+    case "not_selected":
+      return "Você não foi selecionado";
+
+    case "withdrawn":
+      return "Você saiu do processo seletivo";
+
+    case "expired":
+      return "Candidatura expirada";
+  }
+}
+
+function getApplicationDescription(application: Application): string {
+  const submittedDate = formatDate(application.submitted_at);
+
+  switch (application.status) {
+    case "applied":
+      return `Enviada em ${submittedDate} · ${application.days_in_process} dias em processo.`;
+
+    case "under_review":
+      return `Enviada em ${submittedDate} · ${application.days_in_process} dias em processo.`;
+
+    case "in_selection_process":
+      return `Enviada em ${submittedDate} · ${application.days_in_process} dias em processo.`;
+
+    case "hired":
+      return `Enviada em ${submittedDate}. A empresa selecionou você para a oportunidade.`;
+
+    case "not_selected":
+      return `Enviada em ${submittedDate}. A empresa seguiu com outro candidato.`;
+
+    case "withdrawn":
+      return `Enviada em ${submittedDate}. Você optou por sair deste processo seletivo.`;
+
+    case "expired":
+      return `Enviada em ${submittedDate}. Esta candidatura não está mais ativa.`;
+  }
+}
+
+function formatDate(date: string): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "numeric",
+    month: "long",
+  }).format(new Date(date));
 }

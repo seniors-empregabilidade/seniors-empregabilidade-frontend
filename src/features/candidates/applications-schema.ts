@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { apiClient } from "@/lib/api-client";
+
 export const searchSchema = z.object({
   search: z
     .string()
@@ -9,59 +11,52 @@ export const searchSchema = z.object({
 
 export type SearchForm = z.infer<typeof searchSchema>;
 
-export type ApplicationStatus = "ANALYSIS" | "CLOSED";
+export const applicationStatusSchema = z.enum([
+  "applied",
+  "under_review",
+  "in_selection_process",
+  "hired",
+  "not_selected",
+  "withdrawn",
+  "expired",
+]);
 
-export interface Application {
-  id: string;
-  company: string;
-  companyInitials: string;
-  role: string;
-  appliedDate: string;
-  daysInProcess?: number;
-  status: ApplicationStatus;
-  expectedResponseDays?: number;
-  closedDate?: string;
-  closedReason?: string;
-  similarJobs?: number;
+export type ApplicationStatus = z.infer<typeof applicationStatusSchema>;
+
+const similarJobSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string(),
+  company_name: z.string(),
+});
+
+const applicationSchema = z.object({
+  id: z.string().uuid(),
+  job_id: z.string().uuid(),
+  job_title: z.string(),
+  company_name: z.string(),
+  submitted_at: z.string().datetime(),
+  days_in_process: z.number(),
+  status: applicationStatusSchema,
+  similar_jobs: z.array(similarJobSchema),
+});
+
+export const applicationsResponseSchema = z.array(applicationSchema);
+
+export type Application = z.infer<typeof applicationSchema>;
+
+interface FetchApplicationsParams {
+  companyName?: string;
+  signal?: AbortSignal;
 }
 
-export const mockApplications: Application[] = [
-  {
-    id: "1",
-    company: "LogiBrás",
-    companyInitials: "LB",
-    role: "Analista Administrativo",
-    appliedDate: "4 de agosto",
-    daysInProcess: 15,
-    status: "ANALYSIS",
-    expectedResponseDays: 20,
-  },
-  {
-    id: "2",
-    company: "TechCorp",
-    companyInitials: "TC",
-    role: "Gerente de Operações",
-    appliedDate: "28 de julho",
-    daysInProcess: 22,
-    status: "ANALYSIS",
-    expectedResponseDays: 30,
-  },
-  {
-    id: "3",
-    company: "Vitalis",
-    companyInitials: "VT",
-    role: "Coordenador de Projetos",
-    appliedDate: "22 de julho",
-    closedDate: "12 de agosto",
-    status: "CLOSED",
-    closedReason:
-      "A empresa seguiu com alguém que já atuava no setor de saúde.",
-    similarJobs: 3,
-  },
-];
+export async function fetchApplications({
+  companyName,
+  signal,
+}: FetchApplicationsParams = {}): Promise<Application[]> {
+  const response = await apiClient.get<unknown>("/applications/me", {
+    ...(companyName ? { params: { company_name: companyName } } : {}),
+    ...(signal ? { signal } : {}),
+  });
 
-export const fetchApplications = async (): Promise<Application[]> => {
-  return new Promise((resolve) =>
-    setTimeout(() => resolve(mockApplications), 800),
-  );
-};
+  return applicationsResponseSchema.parse(response.data);
+}
