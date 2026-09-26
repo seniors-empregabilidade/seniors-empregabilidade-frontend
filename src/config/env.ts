@@ -1,11 +1,20 @@
 import { z } from "zod";
 
 const envSchema = z.object({
-  VITE_API_URL: z
-    .string()
-    .url()
-    .default("http://localhost:8000/api/v1")
-    .transform((value) => value.replace(/\/$/, "")),
+  // O valor padrão serve ao desenvolvimento local. Em produção ele é uma
+  // armadilha: se a variável não chegar ao build, o zod aceitaria o padrão em
+  // silêncio e a SPA publicada chamaria localhost. Exigir a variável faz a
+  // aplicação falhar alto ao carregar, em vez de falhar calada em cada request.
+  VITE_API_URL: import.meta.env.PROD
+    ? z
+        .string()
+        .url()
+        .transform((value) => value.replace(/\/$/, ""))
+    : z
+        .string()
+        .url()
+        .default("http://localhost:8000/api/v1")
+        .transform((value) => value.replace(/\/$/, "")),
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

@@ -3,7 +3,7 @@ import { redirect } from "@tanstack/react-router";
 import { queryClient } from "@/lib/query-client";
 import { clearSession, readAccessToken } from "@/lib/session-storage";
 
-import { currentUserQueryKey, currentUserQueryOptions } from "./current-user";
+import { currentUserQueryOptions } from "./current-user";
 import { getRoleHomePath } from "./role-routes";
 import type { CurrentUser, UserType } from "./schema";
 
@@ -26,9 +26,12 @@ export async function requireRole(expected: UserType): Promise<CurrentUser> {
     user = await queryClient.ensureQueryData(currentUserQueryOptions);
   } catch {
     // Expired, revoked or refused: keeping the token would only repeat the
-    // failure on the next route.
+    // failure on the next route. Clearing the WHOLE cache (not just the
+    // current-user key) prevents a stale query from a previous session
+    // (e.g. a candidate's profile) from leaking into whoever logs in next
+    // in this same tab.
     clearSession();
-    queryClient.removeQueries({ queryKey: currentUserQueryKey });
+    queryClient.clear();
     throw redirect({ href: "/login" });
   }
 
