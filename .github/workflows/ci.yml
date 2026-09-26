@@ -103,7 +103,7 @@ jobs:
         run: grep -rqF "$VITE_API_URL" dist/assets/
 
       - name: Assume the deployment role
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: arn:aws:iam::951614974043:role/ages-seniors-frontend-deploy-role
           aws-region: ${{ env.AWS_REGION }}
