@@ -1,10 +1,15 @@
 import { queryOptions } from "@tanstack/react-query";
+import { z } from "zod";
 
 import { apiClient } from "@/lib/api-client";
 import { ApiError } from "@/lib/api-error";
 
 import {
+  experienceSchema,
+  educationSchema,
   professionalProfileSchema,
+  type Education,
+  type Experience,
   type ProfessionalProfile,
 } from "./professional-profile-schema";
 
@@ -42,3 +47,140 @@ export const professionalProfileQueryOptions = queryOptions({
   // retry especulativo só atrasa o feedback pro usuário (ver AGENTS.md).
   retry: false,
 });
+
+// ---------- Experiência ----------
+// Espelha ExperienceCreateRequest/ExperienceUpdateRequest do backend
+// (app/candidates/schemas/experience.py). O modal sempre reenvia o item
+// inteiro ao concluir a edição, então create e update usam o mesmo
+// shape — desde que company_name/role/start_date nunca sejam mandados
+// como null explícito (o backend rejeita isso).
+
+const experienceText = z
+  .string()
+  .trim()
+  .min(1, "Campo obrigatório.")
+  .max(150, "Máximo de 150 caracteres.");
+
+const experienceDescriptionText = z
+  .string()
+  .trim()
+  .max(2000, "Máximo de 2000 caracteres.");
+
+export const experienceValuesSchema = z.object({
+  company_name: experienceText,
+  role: experienceText,
+  start_date: z.string().min(1, "Informe a data de início."),
+  end_date: z.string().nullable(),
+  description: experienceDescriptionText.nullable(),
+});
+
+export type ExperienceValues = z.infer<typeof experienceValuesSchema>;
+
+export async function createExperience(
+  values: ExperienceValues,
+): Promise<Experience> {
+  const response = await apiClient.post<unknown>(
+    `${PROFILE_ENDPOINT}/experiences`,
+    values,
+  );
+  const parsed = experienceSchema.safeParse(response.data);
+  if (!parsed.success) {
+    throw new ApiError({
+      message: "Não foi possível validar a experiência criada.",
+      code: "invalid_experience_response",
+    });
+  }
+  return parsed.data;
+}
+
+export async function updateExperienceById(
+  id: string,
+  values: ExperienceValues,
+): Promise<Experience> {
+  const response = await apiClient.patch<unknown>(
+    `${PROFILE_ENDPOINT}/experiences/${id}`,
+    values,
+  );
+  const parsed = experienceSchema.safeParse(response.data);
+  if (!parsed.success) {
+    throw new ApiError({
+      message: "Não foi possível validar a experiência atualizada.",
+      code: "invalid_experience_response",
+    });
+  }
+  return parsed.data;
+}
+
+export async function deleteExperienceById(id: string): Promise<void> {
+  // TODO: confirmar se apiClient expõe .delete (o padrão do projeto até
+  // agora só usava .get/.post/.patch).
+  await apiClient.delete(`${PROFILE_ENDPOINT}/experiences/${id}`);
+}
+
+// ---------- Formação ----------
+// Espelha EducationCreateRequest/EducationUpdateRequest do backend
+// (app/candidates/schemas/education.py). Só `institution` é obrigatório
+// e não pode ser mandado como null explícito.
+
+const institutionName = z
+  .string()
+  .trim()
+  .min(1, "Campo obrigatório.")
+  .max(150, "Máximo de 150 caracteres.");
+
+const educationDetail = z
+  .string()
+  .trim()
+  .min(1, "Campo obrigatório.")
+  .max(100, "Máximo de 100 caracteres.");
+
+export const educationValuesSchema = z.object({
+  institution: institutionName,
+  degree: educationDetail.nullable(),
+  field: educationDetail.nullable(),
+  start_date: z.string().nullable(),
+  end_date: z.string().nullable(),
+});
+
+export type EducationValues = z.infer<typeof educationValuesSchema>;
+
+export async function createEducation(
+  values: EducationValues,
+): Promise<Education> {
+  const response = await apiClient.post<unknown>(
+    `${PROFILE_ENDPOINT}/education`,
+    values,
+  );
+  const parsed = educationSchema.safeParse(response.data);
+  if (!parsed.success) {
+    throw new ApiError({
+      message: "Não foi possível validar a formação criada.",
+      code: "invalid_education_response",
+    });
+  }
+  return parsed.data;
+}
+
+export async function updateEducationById(
+  id: string,
+  values: EducationValues,
+): Promise<Education> {
+  const response = await apiClient.patch<unknown>(
+    `${PROFILE_ENDPOINT}/education/${id}`,
+    values,
+  );
+  const parsed = educationSchema.safeParse(response.data);
+  if (!parsed.success) {
+    throw new ApiError({
+      message: "Não foi possível validar a formação atualizada.",
+      code: "invalid_education_response",
+    });
+  }
+  return parsed.data;
+}
+
+export async function deleteEducationById(id: string): Promise<void> {
+  // TODO: confirmar se apiClient expõe .delete — mesmo ponto do
+  // deleteExperienceById acima.
+  await apiClient.delete(`${PROFILE_ENDPOINT}/education/${id}`);
+}
