@@ -24,7 +24,7 @@ describe("ApplicationsPage", () => {
     vi.clearAllMocks();
   });
 
-  it("deve exibir os skeletons enquanto está carregando as candidaturas", () => {
+  it("must display skeletons while loading the applications.", () => {
     vi.spyOn(api, "fetchApplications").mockImplementation(
       () => new Promise(() => {}),
     );
@@ -32,16 +32,16 @@ describe("ApplicationsPage", () => {
     const { container } = renderWithClient(<ApplicationsPage />);
 
     expect(
-      screen.getByRole("heading", { name: /candidaturas/i }),
+      screen.getByRole("heading", { name: /applications/i }),
     ).toBeInTheDocument();
 
     const skeletons = container.querySelectorAll(".animate-pulse");
     expect(skeletons.length).toBeGreaterThan(0);
   });
 
-  it("deve exibir mensagem de erro quando a busca falhar", async () => {
+  it("must display an error message when the search fails", async () => {
     vi.spyOn(api, "fetchApplications").mockRejectedValue(
-      new Error("Erro de rede"),
+      new Error("Network Error"),
     );
 
     renderWithClient(<ApplicationsPage />);
@@ -55,12 +55,11 @@ describe("ApplicationsPage", () => {
     });
   });
 
-  it("deve listar as candidaturas recebidas com sucesso", async () => {
+  it("must list the successfully received applications", async () => {
     vi.spyOn(api, "fetchApplications").mockResolvedValue(api.mockApplications);
 
     renderWithClient(<ApplicationsPage />);
 
-    // Aguarda o carregamento das vagas
     await waitFor(() => {
       expect(
         screen.getByText(/Analista Administrativo · LogiBrás/i),
@@ -76,7 +75,6 @@ describe("ApplicationsPage", () => {
       ),
     ).toBeInTheDocument();
 
-    // Vaga com status CLOSED
     expect(
       screen.getByText(/Coordenador de Projetos · Vitalis/i),
     ).toBeInTheDocument();
@@ -86,7 +84,7 @@ describe("ApplicationsPage", () => {
     expect(screen.getByText(/3 vagas parecidas/i)).toBeInTheDocument();
   });
 
-  it("deve filtrar a lista de candidaturas com base na busca por empresa", async () => {
+  it("must filter the list of applications based on the company search", async () => {
     const user = userEvent.setup();
     vi.spyOn(api, "fetchApplications").mockResolvedValue(api.mockApplications);
 
@@ -99,7 +97,7 @@ describe("ApplicationsPage", () => {
     });
 
     const searchInput = screen.getByRole("textbox", {
-      name: /buscar por nome da empresa/i,
+      name: /search for comany name/i,
     });
 
     await user.type(searchInput, "Tech");
@@ -111,11 +109,11 @@ describe("ApplicationsPage", () => {
       screen.queryByText(/Analista Administrativo · LogiBrás/i),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByText(/Coordenador de Projetos · Vitalis/i),
+      screen.queryByText(/Project Coordinator · Vitalis/i),
     ).not.toBeInTheDocument();
   });
 
-  it("deve exibir a mensagem de lista vazia se a busca não encontrar resultados", async () => {
+  it("must show the message of empty list if the search don't find any results", async () => {
     const user = userEvent.setup();
     vi.spyOn(api, "fetchApplications").mockResolvedValue(api.mockApplications);
 
@@ -128,24 +126,24 @@ describe("ApplicationsPage", () => {
     });
 
     const searchInput = screen.getByRole("textbox", {
-      name: /buscar por nome da empresa/i,
+      name: /search for company name/i,
     });
 
-    await user.type(searchInput, "EmpresaInexistente");
+    await user.type(searchInput, "NonExistentCompany");
 
     expect(
       screen.getByText(/Nenhuma candidatura encontrada./i),
     ).toBeInTheDocument();
   });
 
-  it("deve exibir erro de validação do Zod quando o input passar de 50 caracteres", async () => {
+  it("must show Zod validation error when the input exceeds 50 characters", async () => {
     const user = userEvent.setup();
     vi.spyOn(api, "fetchApplications").mockResolvedValue(api.mockApplications);
 
     renderWithClient(<ApplicationsPage />);
 
     const searchInput = screen.getByRole("textbox", {
-      name: /buscar por nome da empresa/i,
+      name: /search for company name/i,
     });
 
     const longText = "a".repeat(51);
@@ -160,7 +158,7 @@ describe("ApplicationsPage", () => {
     });
   });
 
-  it("deve abrir o modal ao clicar em 'Sair do processo' e permitir cancelar", async () => {
+  it("must open modal by clicking at 'Get out of the process' and enable to cancel", async () => {
     const user = userEvent.setup();
     vi.spyOn(api, "fetchApplications").mockResolvedValue(api.mockApplications);
 
@@ -168,35 +166,35 @@ describe("ApplicationsPage", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/Analista Administrativo · LogiBrás/i),
+        screen.getByText(/Administrative Analist · LogiBrás/i),
       ).toBeInTheDocument();
     });
 
     const quitButtons = screen.getAllByRole("button", {
-      name: /sair do processo/i,
+      name: /get out of process/i,
     });
     await user.click(quitButtons[0]!);
 
     expect(
-      screen.getByRole("heading", { name: /você tem certeza\?/i }),
+      screen.getByRole("heading", { name: /are you certain about this\?/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Essa ação não pode ser desfeita./i),
+      screen.getByText(/This action cannot be undone./i),
     ).toBeInTheDocument();
 
-    // Clica em Cancelar
-    const cancelButton = screen.getByRole("button", { name: /cancelar/i });
+    const cancelButton = screen.getByRole("button", { name: /cancel/i });
     await user.click(cancelButton);
 
-    // Modal deve sumir
     await waitFor(() => {
       expect(
-        screen.queryByRole("heading", { name: /você tem certeza\?/i }),
+        screen.queryByRole("heading", {
+          name: /are you certain about that\?/i,
+        }),
       ).not.toBeInTheDocument();
     });
   });
 
-  it("deve submeter a confirmação de desistência do processo ao clicar no botão de confirmação do modal", async () => {
+  it("must submit the withdrawal confirmation by clicking the confirmation button in the modal", async () => {
     const user = userEvent.setup();
     vi.spyOn(api, "fetchApplications").mockResolvedValue(api.mockApplications);
 
@@ -204,17 +202,17 @@ describe("ApplicationsPage", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/Analista Administrativo · LogiBrás/i),
+        screen.getByText(/Administrative Analist · LogiBrás/i),
       ).toBeInTheDocument();
     });
 
     const quitButtons = screen.getAllByRole("button", {
-      name: /sair do processo/i,
+      name: /get out of process/i,
     });
     await user.click(quitButtons[0]!);
 
     const confirmButton = screen.getByRole("button", {
-      name: /^sair do processo$/i,
+      name: /^get out of process$/i,
     });
 
     await user.click(confirmButton);
@@ -225,7 +223,9 @@ describe("ApplicationsPage", () => {
 
     await waitFor(() => {
       expect(
-        screen.queryByRole("heading", { name: /você tem certeza\?/i }),
+        screen.queryByRole("heading", {
+          name: /are you certain about that\?/i,
+        }),
       ).not.toBeInTheDocument();
     });
   });
