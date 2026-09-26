@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useId, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
@@ -21,8 +21,9 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 
-import { profileErrorMessage } from "./professional-profile-errors";
+import { profileSaveErrorMessage } from "./professional-profile-errors";
 import {
+  addProfileSkill,
   createEducation,
   createExperience,
   deleteEducationById,
@@ -30,6 +31,9 @@ import {
   educationValuesSchema,
   experienceValuesSchema,
   professionalProfileQueryKey,
+  removeProfileSkill,
+  searchSkillCatalog,
+  skillCatalogQueryKey,
   updateEducationById,
   updateExperienceById,
 } from "./professional-profile";
@@ -65,22 +69,28 @@ function defaultValuesFrom(
   };
 }
 
-// IDs client-side pra itens novos (experiência/formação/habilidade) que
-// ainda não existem no backend. Prefixo "local-" deixa óbvio, pra quem for
-// integrar, que esses IDs não devem ser mandados como se fossem reais.
-let localIdCounter = 0;
-function createLocalId(): string {
-  localIdCounter += 1;
-  return `local-${Date.now()}-${localIdCounter}`;
-}
-
 export function EditProfileModal({
   open,
   onOpenChange,
   profile,
 }: EditProfileModalProps) {
+  const queryClient = useQueryClient();
+
+  // Experiences, education and skills are saved one item at a time, before
+  // (or even without) "Salvar alterações". Refetching whenever the modal
+  // closes, including "Cancelar" and Esc, keeps "Meu perfil" in step with
+  // what the server actually stored.
+  function handleOpenChange(nextOpen: boolean) {
+    onOpenChange(nextOpen);
+    if (!nextOpen) {
+      void queryClient.invalidateQueries({
+        queryKey: professionalProfileQueryKey,
+      });
+    }
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">Editar perfil</DialogTitle>
@@ -95,7 +105,7 @@ export function EditProfileModal({
             dentro de um effect) e sem precisar mexer em quem usa esse
             componente (o ProfileView não muda nada). */}
         {open ? (
-          <EditProfileForm profile={profile} onOpenChange={onOpenChange} />
+          <EditProfileForm profile={profile} onOpenChange={handleOpenChange} />
         ) : null}
       </DialogContent>
     </Dialog>
@@ -125,9 +135,6 @@ function EditProfileForm({
   );
   const [education, setEducation] = useState<Education[]>(profile.education);
   const [skills, setSkills] = useState<Skill[]>(profile.skills);
-  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(
-    profile.photo_url ?? null,
-  );
   const [justSaved, setJustSaved] = useState(false);
   const closeTimeoutRef = useRef<number | null>(null);
 
@@ -142,11 +149,9 @@ function EditProfileForm({
   const mutation = useMutation({
     mutationFn: updateProfessionalProfile,
     onSuccess: (updated) => {
-      queryClient.setQueryData(professionalProfileQueryKey, {
-        ...updated,
-        skills,
-        photo_url: photoPreviewUrl,
-      });
+      // The PATCH answers with the whole stored profile, including the
+      // items already saved one by one, so it can replace the cache as is.
+      queryClient.setQueryData(professionalProfileQueryKey, updated);
 
       setJustSaved(true);
       closeTimeoutRef.current = window.setTimeout(
@@ -181,14 +186,11 @@ function EditProfileForm({
           role="alert"
           className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-lg text-destructive"
         >
-          {profileErrorMessage(mutation.error)}
+          {profileSaveErrorMessage(mutation.error)}
         </p>
       ) : null}
 
-      <PhotoField
-        previewUrl={photoPreviewUrl}
-        onPhotoSelected={setPhotoPreviewUrl}
-      />
+      <PhotoField />
 
       <Field>
         <FieldLabel htmlFor="full_name">Nome completo</FieldLabel>
@@ -289,88 +291,34 @@ function EditProfileForm({
   );
 }
 
-const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
-const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png"];
-
-function PhotoField({
-  previewUrl,
-  onPhotoSelected,
-}: {
-  previewUrl: string | null;
-  onPhotoSelected: (url: string | null) => void;
-}) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = ""; // permite escolher o mesmo arquivo de novo depois
-
-    if (!file) {
-      return;
-    }
-
-    if (!ALLOWED_PHOTO_TYPES.includes(file.type)) {
-      setError("Envie um arquivo JPG ou PNG.");
-      return;
-    }
-
-    if (file.size > MAX_PHOTO_BYTES) {
-      setError("O arquivo não pode passar de 5 MB.");
-      return;
-    }
-
-    setError(null);
-    // TODO: quando o upload de foto tiver endpoint, trocar isso por um
-    // envio de verdade (ex.: multipart/form-data) — por enquanto só mostra
-    // a prévia local da imagem escolhida.
-    onPhotoSelected(URL.createObjectURL(file));
-  }
+// The backend has no photo upload yet, so the control is shown but
+// unavailable instead of pretending a chosen file was saved.
+function PhotoField() {
+  const descriptionId = useId();
 
   return (
     <Field>
       <FieldLabel>Foto de perfil</FieldLabel>
       <div className="flex items-center gap-4">
-        <div className="h-18 w-18 shrink-0 overflow-hidden rounded-full border border-dashed border-input bg-accent/40">
-          {previewUrl ? (
-            <img
-              src={previewUrl}
-              alt=""
-              aria-hidden
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div
-              aria-hidden
-              className="flex h-full w-full items-center justify-center text-base text-foreground-2"
-            >
-              FOTO
-            </div>
-          )}
+        <div
+          aria-hidden
+          className="flex h-18 w-18 shrink-0 items-center justify-center rounded-full border border-dashed border-input bg-accent/40 text-base text-foreground-2"
+        >
+          FOTO
         </div>
         <Button
           type="button"
           variant="outline"
           className="w-fit shrink-0"
-          onClick={() => fileInputRef.current?.click()}
+          disabled
+          aria-describedby={descriptionId}
         >
           Enviar foto
         </Button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png"
-          className="sr-only"
-          aria-label="Selecionar foto de perfil"
-          onChange={handleFileChange}
-        />
-        <FieldDescription>Opcional. JPG ou PNG de até 5 MB.</FieldDescription>
+        <FieldDescription id={descriptionId}>
+          O envio de foto ainda não está disponível.
+        </FieldDescription>
       </div>
-      {error ? (
-        <p role="alert" className="text-base text-destructive">
-          {error}
-        </p>
-      ) : null}
     </Field>
   );
 }
@@ -472,7 +420,7 @@ function ExperienceFieldset({
       }
       setEditingId(null);
     } catch (error) {
-      setItemError(profileErrorMessage(error));
+      setItemError(profileSaveErrorMessage(error));
     }
   }
 
@@ -485,7 +433,7 @@ function ExperienceFieldset({
         setEditingId(null);
       }
     } catch (error) {
-      setItemError(profileErrorMessage(error));
+      setItemError(profileSaveErrorMessage(error));
     }
   }
 
@@ -736,7 +684,7 @@ function EducationFieldset({
       }
       setEditingId(null);
     } catch (error) {
-      setItemError(profileErrorMessage(error));
+      setItemError(profileSaveErrorMessage(error));
     }
   }
 
@@ -749,7 +697,7 @@ function EducationFieldset({
         setEditingId(null);
       }
     } catch (error) {
-      setItemError(profileErrorMessage(error));
+      setItemError(profileSaveErrorMessage(error));
     }
   }
 
@@ -912,6 +860,17 @@ function EducationFieldset({
 
 // ---------- Habilidades ----------
 
+const SKILL_SEARCH_DELAY_MS = 250;
+
+// Case- and accent-insensitive, like the catalog search on the backend.
+function comparableSkillName(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .trim()
+    .toLowerCase();
+}
+
 function SkillsFieldset({
   skills,
   onChange,
@@ -920,29 +879,100 @@ function SkillsFieldset({
   onChange: (skills: Skill[]) => void;
 }) {
   const [draftName, setDraftName] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [itemError, setItemError] = useState<string | null>(null);
+  const inputId = useId();
+  const hintId = useId();
 
-  function addSkill() {
-    const name = draftName.trim();
-    if (!name) {
-      return;
-    }
-    if (
-      skills.some((skill) => skill.name.toLowerCase() === name.toLowerCase())
-    ) {
+  // Waits for a pause in typing so each keystroke does not become a request.
+  useEffect(() => {
+    const timeoutId = window.setTimeout(
+      () => setSearchTerm(draftName.trim()),
+      SKILL_SEARCH_DELAY_MS,
+    );
+    return () => window.clearTimeout(timeoutId);
+  }, [draftName]);
+
+  const catalog = useQuery({
+    queryKey: skillCatalogQueryKey(searchTerm),
+    queryFn: ({ signal }) => searchSkillCatalog(searchTerm, signal),
+    enabled: searchTerm.length > 0,
+    retry: false,
+  });
+
+  const addMutation = useMutation({ mutationFn: addProfileSkill });
+  const removeMutation = useMutation({ mutationFn: removeProfileSkill });
+  const isBusy = addMutation.isPending || removeMutation.isPending;
+
+  const linkedIds = new Set(skills.map((skill) => skill.id));
+  const suggestions =
+    searchTerm.length > 0 && catalog.data
+      ? catalog.data.filter((skill) => !linkedIds.has(skill.id))
+      : [];
+
+  async function addSkill(skill: Skill) {
+    setItemError(null);
+    try {
+      const added = await addMutation.mutateAsync(skill.id);
+      onChange([...skills, added]);
       setDraftName("");
-      return;
+      setSearchTerm("");
+    } catch (error) {
+      setItemError(profileSaveErrorMessage(error));
     }
-    // TODO: quando o catálogo de habilidades (PR #25 do backend,
-    // GET /api/v1/skills?search=) estiver integrado aqui, isso deixa de
-    // criar texto livre e passa a escolher um item existente do catálogo
-    // (com o `type` real vindo de lá, não um chute "soft").
-    onChange([...skills, { id: createLocalId(), name, type: "soft" }]);
-    setDraftName("");
   }
 
-  function removeSkill(id: string) {
-    onChange(skills.filter((skill) => skill.id !== id));
+  async function removeSkill(skill: Skill) {
+    setItemError(null);
+    try {
+      await removeMutation.mutateAsync(skill.id);
+      onChange(skills.filter((item) => item.id !== skill.id));
+    } catch (error) {
+      setItemError(profileSaveErrorMessage(error));
+    }
   }
+
+  // Enter adds the suggestion whose name matches what was typed, or the only
+  // suggestion left; otherwise the person picks one from the list.
+  function addTypedSkill() {
+    const typed = comparableSkillName(draftName);
+    if (!typed) {
+      return;
+    }
+    const alreadyLinked = skills.some(
+      (skill) => comparableSkillName(skill.name) === typed,
+    );
+    if (alreadyLinked) {
+      setItemError("Esta habilidade já está no seu perfil.");
+      return;
+    }
+    const exactMatch = suggestions.find(
+      (skill) => comparableSkillName(skill.name) === typed,
+    );
+    const choice =
+      exactMatch ?? (suggestions.length === 1 ? suggestions[0] : undefined);
+    if (choice) {
+      void addSkill(choice);
+    }
+  }
+
+  function suggestionsStatus(): string | null {
+    if (searchTerm.length === 0) {
+      return null;
+    }
+    if (catalog.isFetching) {
+      return "Buscando habilidades...";
+    }
+    if (catalog.isError) {
+      return "Não foi possível buscar as habilidades. Tente novamente.";
+    }
+    if (suggestions.length === 0) {
+      return "Nenhuma habilidade encontrada no catálogo.";
+    }
+    return null;
+  }
+
+  const status = suggestionsStatus();
 
   return (
     <div>
@@ -956,31 +986,69 @@ function SkillsFieldset({
             {skill.name}
             <button
               type="button"
-              onClick={() => removeSkill(skill.id)}
+              disabled={isBusy}
+              onClick={() => void removeSkill(skill)}
               aria-label={`Remover habilidade ${skill.name}`}
-              className="rounded-full text-foreground-2 hover:text-destructive focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+              className="rounded-full text-foreground-2 hover:text-destructive focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:text-disabled-foreground"
             >
               ×
             </button>
           </span>
         ))}
+        <label htmlFor={inputId} className="sr-only">
+          Adicionar habilidade
+        </label>
         <Input
+          id={inputId}
           value={draftName}
-          onChange={(event) => setDraftName(event.target.value)}
+          disabled={addMutation.isPending}
+          onChange={(event) => {
+            setDraftName(event.target.value);
+            setItemError(null);
+          }}
           onKeyDown={(event) => {
             if (event.key === "Enter") {
               event.preventDefault();
-              addSkill();
+              addTypedSkill();
             }
           }}
-          placeholder="Digite e pressione Enter"
-          aria-label="Adicionar habilidade"
+          placeholder="Busque uma habilidade"
+          aria-describedby={hintId}
           className="h-9 w-56 border-none px-2 shadow-none focus-visible:ring-0"
         />
       </div>
-      <p className="mt-2 text-base text-muted-foreground">
-        São estas habilidades que a vaga compara para dizer quantos requisitos
-        você atende.
+      {suggestions.length > 0 ? (
+        <ul
+          aria-label="Sugestões de habilidades"
+          className="mt-2 flex flex-wrap gap-2"
+        >
+          {suggestions.map((skill) => (
+            <li key={skill.id}>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isBusy}
+                onClick={() => void addSkill(skill)}
+              >
+                {skill.name}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {status ? (
+        <p role="status" className="mt-2 text-base text-muted-foreground">
+          {status}
+        </p>
+      ) : null}
+      {itemError ? (
+        <p role="alert" className="mt-2 text-base text-destructive">
+          {itemError}
+        </p>
+      ) : null}
+      <p id={hintId} className="mt-2 text-base text-muted-foreground">
+        Escolha as habilidades do catálogo. São elas que a vaga compara para
+        dizer quantos requisitos você atende.
       </p>
     </div>
   );

@@ -8,9 +8,11 @@ import {
   experienceSchema,
   educationSchema,
   professionalProfileSchema,
+  skillSchema,
   type Education,
   type Experience,
   type ProfessionalProfile,
+  type Skill,
 } from "./professional-profile-schema";
 
 const PROFILE_ENDPOINT = "/professionals/me";
@@ -112,8 +114,6 @@ export async function updateExperienceById(
 }
 
 export async function deleteExperienceById(id: string): Promise<void> {
-  // TODO: confirmar se apiClient expõe .delete (o padrão do projeto até
-  // agora só usava .get/.post/.patch).
   await apiClient.delete(`${PROFILE_ENDPOINT}/experiences/${id}`);
 }
 
@@ -180,7 +180,52 @@ export async function updateEducationById(
 }
 
 export async function deleteEducationById(id: string): Promise<void> {
-  // TODO: confirmar se apiClient expõe .delete — mesmo ponto do
-  // deleteExperienceById acima.
   await apiClient.delete(`${PROFILE_ENDPOINT}/education/${id}`);
+}
+
+// ---------- Habilidades ----------
+// The profile links skills from the shared catalog (GET /skills) by id; a
+// candidate cannot create a new catalog entry, only pick an existing one.
+
+const SKILL_CATALOG_ENDPOINT = "/skills";
+const SKILL_SUGGESTION_LIMIT = 8;
+
+export function skillCatalogQueryKey(search: string) {
+  return ["skills", "catalog", search] as const;
+}
+
+export async function searchSkillCatalog(
+  search: string,
+  signal?: AbortSignal,
+): Promise<Skill[]> {
+  const response = await apiClient.get<unknown>(SKILL_CATALOG_ENDPOINT, {
+    params: { search, limit: SKILL_SUGGESTION_LIMIT },
+    ...(signal ? { signal } : {}),
+  });
+  const parsed = z.array(skillSchema).safeParse(response.data);
+  if (!parsed.success) {
+    throw new ApiError({
+      message: "Não foi possível carregar as sugestões de habilidades.",
+      code: "invalid_skill_catalog_response",
+    });
+  }
+  return parsed.data;
+}
+
+export async function addProfileSkill(skillId: string): Promise<Skill> {
+  const response = await apiClient.post<unknown>(`${PROFILE_ENDPOINT}/skills`, {
+    skill_id: skillId,
+  });
+  const parsed = skillSchema.safeParse(response.data);
+  if (!parsed.success) {
+    throw new ApiError({
+      message: "Não foi possível validar a habilidade adicionada.",
+      code: "invalid_skill_response",
+    });
+  }
+  return parsed.data;
+}
+
+export async function removeProfileSkill(skillId: string): Promise<void> {
+  await apiClient.delete(`${PROFILE_ENDPOINT}/skills/${skillId}`);
 }
