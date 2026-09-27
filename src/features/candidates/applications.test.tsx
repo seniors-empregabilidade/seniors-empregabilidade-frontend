@@ -139,6 +139,11 @@ describe("ApplicationsPage", () => {
     expect(
       screen.getByText("3 vagas parecidas", { exact: true }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Enviada em 12 de agosto. A candidatura foi encerrada./i,
+      ),
+    ).toBeInTheDocument();
   });
 
   it("must filter the list of applications based on the company search", async () => {
@@ -289,6 +294,105 @@ describe("ApplicationsPage", () => {
           name: /Você tem certeza\?/i,
         }),
       ).not.toBeInTheDocument();
+    });
+  });
+
+  it("must keep the withdrawal dialog open and show an error when withdrawal fails", async () => {
+    const user = userEvent.setup();
+
+    const postSpy = vi
+      .spyOn(apiClient, "post")
+      .mockRejectedValue(new Error("Network Error"));
+
+    renderWithClient(<ApplicationsPage />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Analista Administrativo · LogiBrás/i),
+      ).toBeInTheDocument();
+    });
+
+    const quitButton = screen.getAllByRole("button", {
+      name: /Sair do processo/i,
+    });
+
+    await user.click(quitButton[0]!);
+
+    const dialog = screen.getByRole("alertdialog");
+
+    const confirmButton = within(dialog).getByRole("button", {
+      name: /Sair do processo/i,
+    });
+
+    await user.click(confirmButton);
+
+    expect(postSpy).toHaveBeenCalledWith(
+      "/applications/11111111-1111-1111-1111-111111111111/withdraw",
+    );
+
+    expect(
+      await within(dialog).findByText(
+        /Não foi possível sair do processo seletivo. Tente novamente./i,
+      ),
+    ).toBeInTheDocument();
+
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+
+    const cancelButton = within(dialog).getByRole("button", {
+      name: /Cancelar/i,
+    });
+
+    expect(cancelButton).toBeEnabled();
+  });
+
+  it("must keep the dialog open and disable cancellation while withdrawal is pending", async () => {
+    const user = userEvent.setup();
+
+    let resolvePost!: () => void;
+
+    const postSpy = vi.spyOn(apiClient, "post").mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePost = () => resolve({ data: {} });
+        }),
+    );
+
+    renderWithClient(<ApplicationsPage />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Analista Administrativo · LogiBrás/i),
+      ).toBeInTheDocument();
+    });
+
+    const quitButton = screen.getAllByRole("button", {
+      name: /Sair do processo/i,
+    });
+
+    await user.click(quitButton[0]!);
+
+    const dialog = screen.getByRole("alertdialog");
+
+    const confirmButton = within(dialog).getByRole("button", {
+      name: /Sair do processo/i,
+    });
+
+    await user.click(confirmButton);
+
+    expect(postSpy).toHaveBeenCalledWith(
+      "/applications/11111111-1111-1111-1111-111111111111/withdraw",
+    );
+
+    expect(
+      within(dialog).getByRole("button", { name: /Cancelar/i }),
+    ).toBeDisabled();
+
+    expect(dialog).toBeInTheDocument();
+
+    resolvePost();
+
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     });
   });
 });

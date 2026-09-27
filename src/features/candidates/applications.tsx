@@ -75,7 +75,7 @@ export default function ApplicationsPage() {
   });
 
   return (
-    <main className="mx-auto max-w-4xl space-y-8 bg-background p-6">
+    <div className="mx-auto max-w-4xl space-y-8 bg-background p-6">
       <div>
         <h1 className="mb-6 text-3xl font-bold text-foreground">
           Candidaturas
@@ -140,7 +140,7 @@ export default function ApplicationsPage() {
       <AlertDialog
         open={!!appToQuit}
         onOpenChange={(open) => {
-          if (!open) {
+          if (!open && !quitProcessMutation.isPending) {
             setAppToQuit(null);
           }
         }}
@@ -153,10 +153,18 @@ export default function ApplicationsPage() {
             <AlertDialogDescription>
               Essa ação não pode ser desfeita. Você será removido do processo
               seletivo.
+              {quitProcessMutation.isError && (
+                <span className="mt-2 block text-destructive">
+                  Não foi possível sair do processo seletivo. Tente novamente.
+                </span>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
+
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={quitProcessMutation.isPending}>
+              Cancelar
+            </AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
               onClick={() => {
@@ -171,7 +179,7 @@ export default function ApplicationsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </main>
+    </div>
   );
 }
 
@@ -313,7 +321,7 @@ function getApplicationDescription(application: Application): string {
       return `Enviada em ${submittedDate}. A empresa selecionou você para a oportunidade.`;
 
     case "not_selected":
-      return `Enviada em ${submittedDate}. A empresa seguiu com outro candidato.`;
+      return `Enviada em ${submittedDate}. A candidatura foi encerrada.`;
 
     case "withdrawn":
       return `Enviada em ${submittedDate}. Você optou por sair deste processo seletivo.`;
