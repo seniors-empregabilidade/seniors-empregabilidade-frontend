@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, it, expect, beforeEach, vi } from "vitest";
@@ -73,6 +73,22 @@ const renderWithClient = (ui: React.ReactElement) => {
 describe("ApplicationsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    vi.spyOn(applicationsApi, "fetchApplications").mockImplementation(
+      ({ companyName } = {}) => {
+        if (!companyName) {
+          return Promise.resolve(mockApplications);
+        }
+
+        return Promise.resolve(
+          mockApplications.filter((application) =>
+            application.company_name
+              .toLowerCase()
+              .includes(companyName.toLowerCase()),
+          ),
+        );
+      },
+    );
   });
 
   it("must display the loading state while applications are being fetched.", () => {
@@ -108,37 +124,25 @@ describe("ApplicationsPage", () => {
   });
 
   it("must list the successfully received applications", async () => {
-    vi.spyOn(applicationsApi, "fetchApplications").mockResolvedValue(
-      mockApplications,
-    );
-
     renderWithClient(<ApplicationsPage />);
-
     expect(
       await screen.findByText(/Analista Administrativo · LogiBrás/i),
     ).toBeInTheDocument();
-
     expect(
       screen.getByText(/Enviada em 4 de agosto · 15 dias em processo/i),
     ).toBeInTheDocument();
-
     expect(screen.getByText(/Em análise/i)).toBeInTheDocument();
-
     expect(
       screen.getByText(/Coordenador de Projetos · Vitalis/i),
     ).toBeInTheDocument();
     expect(screen.getByText(/Você não foi selecionado/i)).toBeInTheDocument();
     expect(
-      screen.getByText(/3 vagas parecidas abertas agora/i),
+      screen.getByText("3 vagas parecidas", { exact: true }),
     ).toBeInTheDocument();
   });
 
   it("must filter the list of applications based on the company search", async () => {
     const user = userEvent.setup();
-
-    vi.spyOn(applicationsApi, "fetchApplications").mockResolvedValue(
-      mockApplications,
-    );
 
     renderWithClient(<ApplicationsPage />);
 
@@ -166,9 +170,6 @@ describe("ApplicationsPage", () => {
 
   it("must show the message of empty list if the search don't find any results", async () => {
     const user = userEvent.setup();
-    vi.spyOn(applicationsApi, "fetchApplications").mockResolvedValue(
-      mockApplications,
-    );
 
     renderWithClient(<ApplicationsPage />);
 
@@ -193,10 +194,6 @@ describe("ApplicationsPage", () => {
 
   it("must display a validation error when the search exceeds 50 characters", async () => {
     const user = userEvent.setup();
-    vi.spyOn(applicationsApi, "fetchApplications").mockResolvedValue(
-      mockApplications,
-    );
-
     renderWithClient(<ApplicationsPage />);
 
     const searchInput = screen.getByRole("textbox", {
@@ -219,9 +216,6 @@ describe("ApplicationsPage", () => {
 
   it("must open the withdrawal confirmation dialog and allow cancellation", async () => {
     const user = userEvent.setup();
-    vi.spyOn(applicationsApi, "fetchApplications").mockResolvedValue(
-      mockApplications,
-    );
 
     renderWithClient(<ApplicationsPage />);
 
@@ -259,9 +253,6 @@ describe("ApplicationsPage", () => {
 
   it("must submit the withdrawal confirmation", async () => {
     const user = userEvent.setup();
-    vi.spyOn(applicationsApi, "fetchApplications").mockResolvedValue(
-      mockApplications,
-    );
 
     const postSpy = vi.spyOn(apiClient, "post").mockResolvedValue({
       data: {},
@@ -278,8 +269,10 @@ describe("ApplicationsPage", () => {
     });
     await user.click(quitButton[0]!);
 
-    const confirmButton = screen.getByRole("button", {
-      name: /"Sair do processo"/i,
+    const dialog = screen.getByRole("alertdialog");
+
+    const confirmButton = within(dialog).getByRole("button", {
+      name: /Sair do processo/i,
     });
 
     await user.click(confirmButton);
