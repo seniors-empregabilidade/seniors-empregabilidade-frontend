@@ -402,7 +402,7 @@ export function JobPostingModal({ onPublished }: JobPostingModalProps) {
                         type="button"
                         onClick={() => removeSkill(skill.name)}
                         aria-label={`Remover habilidade ${skill.name}`}
-                        className="inline-flex size-8 items-center justify-center rounded-full outline-none hover:bg-background focus-visible:ring-3 focus-visible:ring-ring/50"
+                        className="inline-flex size-11 shrink-0 items-center justify-center rounded-full outline-none hover:bg-background focus-visible:ring-3 focus-visible:ring-ring/50"
                       >
                         <XIcon className="size-4" aria-hidden="true" />
                       </button>

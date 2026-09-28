@@ -28,7 +28,7 @@ export function MyJobsPage() {
       <div role="status">
         {publishedTitle ? (
           <div className="mb-6 flex flex-col gap-1 rounded-lg border border-success bg-background p-4">
-            <span className="font-mono text-[13px] font-semibold tracking-wide text-success uppercase">
+            <span className="font-mono text-base font-semibold tracking-wide text-success uppercase">
               Sucesso
             </span>
             <p className="text-lg text-foreground">
@@ -45,7 +45,7 @@ export function MyJobsPage() {
           role="alert"
           className="flex max-w-xl flex-col items-start gap-4 rounded-lg border border-destructive bg-background p-6"
         >
-          <span className="font-mono text-[13px] font-semibold tracking-wide text-destructive uppercase">
+          <span className="font-mono text-base font-semibold tracking-wide text-destructive uppercase">
             Erro
           </span>
           <p className="text-lg text-foreground">
@@ -95,7 +95,7 @@ function JobCard({ job }: { job: Job }) {
           {job.title}
         </h2>
         <span
-          className={`font-mono text-[13px] font-semibold tracking-wide uppercase ${
+          className={`font-mono text-base font-semibold tracking-wide uppercase ${
             job.status === "published"
               ? "text-success"
               : "text-muted-foreground"
