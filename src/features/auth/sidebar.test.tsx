@@ -59,12 +59,16 @@ describe("Sidebar", () => {
     expect(screen.getByText("Administração")).toBeVisible();
   });
 
-  it("links Relatórios and Meu perfil to their real pages", () => {
+  it("links candidate nav items to their real pages", () => {
     render(<Sidebar userType="candidate" />);
 
     expect(screen.getByRole("link", { name: "Relatórios" })).toHaveAttribute(
       "href",
       "/candidato",
+    );
+    expect(screen.getByRole("link", { name: "Candidaturas" })).toHaveAttribute(
+      "href",
+      "/candidato/candidaturas",
     );
     expect(screen.getByRole("link", { name: "Meu perfil" })).toHaveAttribute(
       "href",
@@ -88,7 +92,7 @@ describe("Sidebar", () => {
   it("shows the remaining candidate nav items as static text, not as controls", () => {
     render(<Sidebar userType="candidate" />);
 
-    ["Vagas", "Candidaturas", "Capacitação", "Como usar"].forEach((label) => {
+    ["Vagas", "Capacitação", "Como usar"].forEach((label) => {
       expect(screen.getByText(label)).toBeVisible();
       expect(
         screen.queryByRole("button", { name: label }),
