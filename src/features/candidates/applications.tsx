@@ -1,8 +1,12 @@
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { searchSchema, fetchApplications } from "./applications-schema";
+import {
+  searchSchema,
+  fetchApplications,
+  withdrawApplication,
+} from "./applications-schema";
 
 import type {
   Application,
@@ -14,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { apiClient } from "@/lib/api-client";
+import { ApiError } from "@/lib/api-error";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +33,10 @@ import {
 export default function ApplicationsPage() {
   const queryClient = useQueryClient();
   const [appToQuit, setAppToQuit] = useState<string | null>(null);
+  const [notice, setNotice] = useState("");
+  const dialogOpenerRef = useRef<HTMLElement | null>(null);
+  const dialogAppIdRef = useRef<string | null>(null);
+  const pageTitleRef = useRef<HTMLHeadingElement>(null);
 
   const {
     register,
@@ -47,6 +55,7 @@ export default function ApplicationsPage() {
   });
 
   const searchTerm = searchValue?.trim() ?? "";
+  const validSearch = searchSchema.safeParse({ search: searchValue }).success;
 
   const {
     data: applications,
@@ -54,6 +63,8 @@ export default function ApplicationsPage() {
     isError,
   } = useQuery({
     queryKey: ["applications", searchTerm],
+    enabled: validSearch,
+    retry: false,
     queryFn: ({ signal }) =>
       fetchApplications({
         ...(searchTerm ? { companyName: searchTerm } : {}),
@@ -62,22 +73,46 @@ export default function ApplicationsPage() {
   });
 
   const quitProcessMutation = useMutation({
-    mutationFn: async (applicationId: string) => {
-      await apiClient.post(`/applications/${applicationId}/withdraw`);
-    },
-    onSuccess: async () => {
+    mutationFn: withdrawApplication,
+    onSuccess: async (updated) => {
+      await queryClient.cancelQueries({ queryKey: ["applications"] });
+      queryClient.setQueriesData<Application[]>(
+        { queryKey: ["applications"] },
+        (current) =>
+          current?.map((item) => (item.id === updated.id ? updated : item)),
+      );
+      setNotice("Você saiu do processo seletivo.");
+      setAppToQuit(null);
       await queryClient.invalidateQueries({
         queryKey: ["applications"],
       });
-
-      setAppToQuit(null);
+    },
+    onError: async () => {
+      // A response can be lost after the server commits the withdrawal.
+      await queryClient.invalidateQueries({ queryKey: ["applications"] });
     },
   });
 
+  const selected = applications?.find((item) => item.id === appToQuit);
+  const cannotRetry =
+    quitProcessMutation.isError &&
+    ((quitProcessMutation.error instanceof ApiError &&
+      [404, 409].includes(quitProcessMutation.error.status ?? 0)) ||
+      (!isError &&
+        applications !== undefined &&
+        (!selected ||
+          !["applied", "under_review", "in_selection_process"].includes(
+            selected.status,
+          ))));
+
   return (
-    <div className="mx-auto max-w-4xl space-y-8 bg-background p-6">
+    <div className="space-y-8 bg-background p-4 md:p-8">
       <div>
-        <h1 className="mb-6 text-3xl font-bold text-foreground">
+        <h1
+          ref={pageTitleRef}
+          tabIndex={-1}
+          className="mb-6 text-3xl font-bold text-foreground"
+        >
           Candidaturas
         </h1>
         <div className="max-w-md space-y-1.5">
@@ -104,6 +139,9 @@ export default function ApplicationsPage() {
         </div>
       </div>
 
+      <p role="status" className="text-base">
+        {notice}
+      </p>
       <div className="space-y-4">
         {isLoading && (
           <div role="status" aria-label="Carregando candidaturas">
@@ -128,14 +166,21 @@ export default function ApplicationsPage() {
           </div>
         )}
 
-        {applications?.map((application) => (
-          <ApplicationCard
-            key={application.id}
-            application={application}
-            onQuitProcess={() => setAppToQuit(application.id)}
-            isQuitPending={quitProcessMutation.isPending}
-          />
-        ))}
+        {validSearch &&
+          applications?.map((application) => (
+            <ApplicationCard
+              key={application.id}
+              application={application}
+              onQuitProcess={(opener) => {
+                quitProcessMutation.reset();
+                dialogOpenerRef.current = opener;
+                dialogAppIdRef.current = application.id;
+                setNotice("");
+                setAppToQuit(application.id);
+              }}
+              isQuitPending={quitProcessMutation.isPending}
+            />
+          ))}
       </div>
       <AlertDialog
         open={!!appToQuit}
@@ -145,7 +190,21 @@ export default function ApplicationsPage() {
           }
         }}
       >
-        <AlertDialogContent className="rounded-xl border-border bg-background">
+        <AlertDialogContent
+          className="rounded-xl border-border bg-background"
+          finalFocus={() => {
+            // A withdrawal or a refreshed list can remove the button that
+            // opened the dialog; focus then falls back to the card, or to the
+            // page title when the application is no longer listed.
+            const opener = dialogOpenerRef.current;
+            if (opener?.isConnected) return opener;
+            const applicationId = dialogAppIdRef.current;
+            const cardTitle = applicationId
+              ? document.getElementById(applicationTitleId(applicationId))
+              : null;
+            return cardTitle ?? pageTitleRef.current ?? true;
+          }}
+        >
           <AlertDialogHeader>
             <AlertDialogTitle className="text-base text-foreground">
               Você tem certeza?
@@ -154,8 +213,11 @@ export default function ApplicationsPage() {
               Essa ação não pode ser desfeita. Você será removido do processo
               seletivo.
               {quitProcessMutation.isError && (
-                <span className="mt-2 block text-destructive">
-                  Não foi possível sair do processo seletivo. Tente novamente.
+                <span role="alert" className="mt-2 block text-destructive">
+                  {withdrawalErrorMessage(
+                    quitProcessMutation.error,
+                    selected?.status,
+                  )}
                 </span>
               )}
             </AlertDialogDescription>
@@ -172,7 +234,7 @@ export default function ApplicationsPage() {
                   quitProcessMutation.mutate(appToQuit);
                 }
               }}
-              disabled={quitProcessMutation.isPending}
+              disabled={quitProcessMutation.isPending || cannotRetry}
             >
               {quitProcessMutation.isPending ? "Saindo..." : "Sair do processo"}
             </AlertDialogAction>
@@ -185,7 +247,7 @@ export default function ApplicationsPage() {
 
 interface ApplicationCardProps {
   application: Application;
-  onQuitProcess: () => void;
+  onQuitProcess: (opener: HTMLElement) => void;
   isQuitPending: boolean;
 }
 
@@ -194,6 +256,8 @@ function ApplicationCard({
   onQuitProcess,
   isQuitPending,
 }: ApplicationCardProps) {
+  const [showSimilar, setShowSimilar] = useState(false);
+  const similarId = useId();
   const isClosed =
     application.status === "hired" ||
     application.status === "not_selected" ||
@@ -202,6 +266,8 @@ function ApplicationCard({
 
   return (
     <Card
+      role="article"
+      aria-labelledby={applicationTitleId(application.id)}
       className={`overflow-hidden rounded-lg border border-border transition-colors ${isClosed ? "bg-muted" : "bg-background"}`}
     >
       <CardContent className="flex flex-col justify-between gap-6 p-6 md:flex-row md:gap-4">
@@ -211,7 +277,11 @@ function ApplicationCard({
           </div>
 
           <div className="space-y-1">
-            <h2 className="text-xl font-bold text-foreground">
+            <h2
+              id={applicationTitleId(application.id)}
+              tabIndex={-1}
+              className="text-xl font-bold text-foreground"
+            >
               {application.job_title} · {application.company_name}
             </h2>
             <p className="text-base text-muted-foreground">
@@ -222,27 +292,34 @@ function ApplicationCard({
               <p>{getApplicationDescription(application)}</p>
             </div>
 
-            {application.similar_jobs.length > 0 && (
-              <p className="pt-2 text-base text-foreground">
-                Há{" "}
-                <strong>
-                  {application.similar_jobs.length}{" "}
-                  {application.similar_jobs.length === 1
-                    ? "vaga parecida"
-                    : "vagas parecidas"}
-                </strong>{" "}
-                abertas agora.
-              </p>
-            )}
+            {application.status === "not_selected" &&
+              application.similar_jobs.length > 0 && (
+                <p className="pt-2 text-base text-foreground">
+                  Há{" "}
+                  <strong>
+                    {application.similar_jobs.length}{" "}
+                    {application.similar_jobs.length === 1
+                      ? "vaga parecida"
+                      : "vagas parecidas"}
+                  </strong>{" "}
+                  abertas agora.
+                </p>
+              )}
           </div>
         </div>
 
         <div className="flex min-w-[200px] flex-col justify-start gap-2">
-          {isClosed ? (
-            <Button disabled className="w-full">
+          {application.status === "not_selected" ? (
+            <Button
+              variant="outline"
+              className="w-full"
+              aria-expanded={showSimilar}
+              aria-controls={similarId}
+              onClick={() => setShowSimilar(!showSimilar)}
+            >
               Ver vagas parecidas
             </Button>
-          ) : (
+          ) : !isClosed ? (
             <>
               <Button variant="outline" disabled className="w-full">
                 Ver a vaga
@@ -250,18 +327,47 @@ function ApplicationCard({
               <Button
                 variant="outline"
                 className="w-full"
-                onClick={onQuitProcess}
+                onClick={(event) => onQuitProcess(event.currentTarget)}
                 disabled={isQuitPending}
               >
                 {isQuitPending ? "Saindo..." : "Sair do processo"}
               </Button>
             </>
-          )}
+          ) : null}
         </div>
       </CardContent>
+      {application.status === "not_selected" && (
+        <div
+          id={similarId}
+          hidden={!showSimilar}
+          className="px-6 pb-6 text-base"
+        >
+          <h3 className="mb-2 text-lg font-semibold">Vagas parecidas</h3>
+          {application.similar_jobs.length === 0 ? (
+            <p>Nenhuma vaga parecida disponível no momento.</p>
+          ) : (
+            <ul className="space-y-3">
+              {application.similar_jobs.map((job) => (
+                <li
+                  key={job.id}
+                  className="rounded-md border border-border p-4"
+                >
+                  <p className="font-semibold">{job.title}</p>
+                  <p>{job.company_name}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </Card>
   );
 }
+
+function applicationTitleId(applicationId: string): string {
+  return `application-${applicationId}-title`;
+}
+
 function getCompanyInitials(companyName: string): string {
   const words = companyName.trim().split(/\s+/);
 
@@ -333,7 +439,27 @@ function getApplicationDescription(application: Application): string {
 
 function formatDate(date: string): string {
   return new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
     day: "numeric",
     month: "long",
   }).format(new Date(date));
+}
+
+function withdrawalErrorMessage(
+  error: Error,
+  status?: ApplicationStatus,
+): string {
+  if (status === "withdrawn") {
+    return "A lista foi atualizada: você já saiu deste processo seletivo.";
+  }
+  if (
+    error instanceof ApiError &&
+    error.code === "application_already_closed"
+  ) {
+    return "Esta candidatura já foi encerrada. Confira o status atualizado na lista.";
+  }
+  if (error instanceof ApiError && error.code === "application_not_found") {
+    return "Esta candidatura não está mais disponível. Atualize a lista para continuar.";
+  }
+  return "Não foi possível confirmar a saída do processo seletivo. Confira o status na lista antes de tentar novamente.";
 }

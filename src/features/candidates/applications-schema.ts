@@ -1,11 +1,15 @@
 import { z } from "zod";
 
 import { apiClient } from "@/lib/api-client";
+import { toApiError } from "@/lib/api-error";
 
 export const searchSchema = z.object({
   search: z
     .string()
-    .max(50, { message: "O nome da empresa deve ter no máximo 50 caracteres." })
+    .trim()
+    .max(200, {
+      message: "O nome da empresa deve ter no máximo 200 caracteres.",
+    })
     .optional(),
 });
 
@@ -29,13 +33,13 @@ const similarJobSchema = z.object({
   company_name: z.string(),
 });
 
-const applicationSchema = z.object({
+export const applicationSchema = z.object({
   id: z.string().uuid(),
   job_id: z.string().uuid(),
   job_title: z.string(),
   company_name: z.string(),
-  submitted_at: z.string().datetime(),
-  days_in_process: z.number(),
+  submitted_at: z.string().datetime({ offset: true }),
+  days_in_process: z.number().int().nonnegative(),
   status: applicationStatusSchema,
   similar_jobs: z.array(similarJobSchema),
 });
@@ -58,5 +62,24 @@ export async function fetchApplications({
     ...(signal ? { signal } : {}),
   });
 
-  return applicationsResponseSchema.parse(response.data);
+  try {
+    return applicationsResponseSchema.parse(response.data);
+  } catch (error) {
+    throw toApiError(error);
+  }
+}
+
+export async function withdrawApplication(id: string): Promise<Application> {
+  const response = await apiClient.post<unknown>(
+    `/applications/${id}/withdraw`,
+  );
+  try {
+    const application = applicationSchema.parse(response.data);
+    if (application.id !== id || application.status !== "withdrawn") {
+      throw new Error("Unexpected withdrawal response");
+    }
+    return application;
+  } catch (error) {
+    throw toApiError(error);
+  }
 }

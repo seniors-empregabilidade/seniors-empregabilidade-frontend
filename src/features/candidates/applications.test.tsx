@@ -10,8 +10,8 @@ import * as applicationsApi from "./applications-schema";
 
 const mockApplications = [
   {
-    id: "11111111-1111-1111-1111-111111111111",
-    job_id: "22222222-2222-2222-2222-222222222222",
+    id: "11111111-1111-4111-8111-111111111111",
+    job_id: "22222222-2222-4222-8222-222222222222",
     job_title: "Analista Administrativo",
     company_name: "LogiBrás",
     submitted_at: "2026-08-04T12:00:00.000Z",
@@ -146,6 +146,60 @@ describe("ApplicationsPage", () => {
     ).toBeInTheDocument();
   });
 
+  it.each([
+    {
+      status: "in_selection_process" as const,
+      label: "Em processo seletivo",
+      description: "Enviada em 4 de agosto · 15 dias em processo.",
+      withdrawButtons: 1,
+    },
+    {
+      status: "hired" as const,
+      label: "Você foi selecionado",
+      description:
+        "Enviada em 4 de agosto. A empresa selecionou você para a oportunidade.",
+      withdrawButtons: 0,
+    },
+    {
+      status: "withdrawn" as const,
+      label: "Você saiu do processo seletivo",
+      description:
+        "Enviada em 4 de agosto. Você optou por sair deste processo seletivo.",
+      withdrawButtons: 0,
+    },
+    {
+      status: "expired" as const,
+      label: "Candidatura expirada",
+      description:
+        "Enviada em 4 de agosto. Esta candidatura não está mais ativa.",
+      withdrawButtons: 0,
+    },
+  ])(
+    "must describe a $status application and offer withdrawal only while it is active",
+    async ({ status, label, description, withdrawButtons }) => {
+      vi.spyOn(applicationsApi, "fetchApplications").mockResolvedValue([
+        { ...mockApplications[0]!, status },
+      ]);
+
+      renderWithClient(<ApplicationsPage />);
+
+      const card = await screen.findByRole("article", {
+        name: "Analista Administrativo · LogiBrás",
+      });
+      expect(within(card).getByText(label, { exact: true })).toBeVisible();
+      expect(within(card).getByText(description)).toBeVisible();
+      expect(
+        within(card).queryByText("Você não foi selecionado"),
+      ).not.toBeInTheDocument();
+      expect(
+        within(card).queryByRole("button", { name: "Ver vagas parecidas" }),
+      ).not.toBeInTheDocument();
+      expect(
+        within(card).queryAllByRole("button", { name: "Sair do processo" }),
+      ).toHaveLength(withdrawButtons);
+    },
+  );
+
   it("must filter the list of applications based on the company search", async () => {
     const user = userEvent.setup();
 
@@ -197,7 +251,7 @@ describe("ApplicationsPage", () => {
     });
   });
 
-  it("must display a validation error when the search exceeds 50 characters", async () => {
+  it("must display a validation error without requesting a search over 200 characters", async () => {
     const user = userEvent.setup();
     renderWithClient(<ApplicationsPage />);
 
@@ -205,18 +259,27 @@ describe("ApplicationsPage", () => {
       name: /Buscar por nome da empresa/i,
     });
 
-    await user.type(searchInput, "a".repeat(51));
+    await user.click(searchInput);
+    await user.paste("a".repeat(201));
 
     await waitFor(() => {
       expect(
         screen.getByText(
-          /O nome da empresa deve ter no máximo 50 caracteres./i,
+          /O nome da empresa deve ter no máximo 200 caracteres./i,
         ),
       ).toBeInTheDocument();
     });
 
     expect(searchInput).toHaveAttribute("aria-invalid", "true");
     expect(searchInput).toHaveAttribute("aria-describedby", "search-error");
+    expect(
+      vi
+        .mocked(applicationsApi.fetchApplications)
+        .mock.calls.every(
+          ([params]) =>
+            !params?.companyName || params.companyName.length <= 200,
+        ),
+    ).toBe(true);
   });
 
   it("must open the withdrawal confirmation dialog and allow cancellation", async () => {
@@ -254,13 +317,32 @@ describe("ApplicationsPage", () => {
         }),
       ).not.toBeInTheDocument();
     });
+    await waitFor(() => expect(quitButton[0]).toHaveFocus());
+  });
+
+  it("must return focus to the opening button when the dialog is dismissed with Escape", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<ApplicationsPage />);
+
+    const [quitButton] = await screen.findAllByRole("button", {
+      name: "Sair do processo",
+    });
+    await user.click(quitButton!);
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+
+    await waitFor(() =>
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument(),
+    );
+    await waitFor(() => expect(quitButton).toHaveFocus());
   });
 
   it("must submit the withdrawal confirmation", async () => {
     const user = userEvent.setup();
 
     const postSpy = vi.spyOn(apiClient, "post").mockResolvedValue({
-      data: {},
+      data: { ...mockApplications[0], status: "withdrawn" },
     });
     renderWithClient(<ApplicationsPage />);
     await waitFor(() => {
@@ -284,7 +366,7 @@ describe("ApplicationsPage", () => {
 
     await waitFor(() => {
       expect(postSpy).toHaveBeenCalledWith(
-        "/applications/11111111-1111-1111-1111-111111111111/withdraw",
+        "/applications/11111111-1111-4111-8111-111111111111/withdraw",
       );
     });
 
@@ -327,12 +409,12 @@ describe("ApplicationsPage", () => {
     await user.click(confirmButton);
 
     expect(postSpy).toHaveBeenCalledWith(
-      "/applications/11111111-1111-1111-1111-111111111111/withdraw",
+      "/applications/11111111-1111-4111-8111-111111111111/withdraw",
     );
 
     expect(
       await within(dialog).findByText(
-        /Não foi possível sair do processo seletivo. Tente novamente./i,
+        /Não foi possível confirmar a saída do processo seletivo/i,
       ),
     ).toBeInTheDocument();
 
@@ -353,7 +435,8 @@ describe("ApplicationsPage", () => {
     const postSpy = vi.spyOn(apiClient, "post").mockImplementation(
       () =>
         new Promise((resolve) => {
-          resolvePost = () => resolve({ data: {} });
+          resolvePost = () =>
+            resolve({ data: { ...mockApplications[0], status: "withdrawn" } });
         }),
     );
 
@@ -380,7 +463,7 @@ describe("ApplicationsPage", () => {
     await user.click(confirmButton);
 
     expect(postSpy).toHaveBeenCalledWith(
-      "/applications/11111111-1111-1111-1111-111111111111/withdraw",
+      "/applications/11111111-1111-4111-8111-111111111111/withdraw",
     );
 
     expect(
@@ -388,11 +471,58 @@ describe("ApplicationsPage", () => {
     ).toBeDisabled();
 
     expect(dialog).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
 
     resolvePost();
 
     await waitFor(() => {
       expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     });
+  });
+
+  it("clears a previous failure before opening another application", async () => {
+    const user = userEvent.setup();
+    const post = vi
+      .spyOn(apiClient, "post")
+      .mockRejectedValue(new Error("Network"));
+    renderWithClient(<ApplicationsPage />);
+    const buttons = await screen.findAllByRole("button", {
+      name: "Sair do processo",
+    });
+    await user.click(buttons[0]!);
+    await user.click(
+      within(screen.getByRole("alertdialog")).getByRole("button", {
+        name: "Sair do processo",
+      }),
+    );
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Não foi possível confirmar",
+    );
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument(),
+    );
+    await user.click(
+      screen.getAllByRole("button", { name: "Sair do processo" })[1]!,
+    );
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(post).toHaveBeenCalledTimes(1);
+  });
+
+  it("reveals real similar job titles and companies only for a rejected application", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<ApplicationsPage />);
+    const button = await screen.findByRole("button", {
+      name: "Ver vagas parecidas",
+    });
+    expect(button).toHaveAttribute("aria-expanded", "false");
+    await user.click(button);
+    expect(button).toHaveAttribute("aria-expanded", "true");
+    const card = screen.getByRole("article", {
+      name: "Coordenador de Projetos · Vitalis",
+    });
+    expect(within(card).getByText("Gerente de Projetos")).toBeVisible();
+    expect(within(card).getByText("TechCorp")).toBeVisible();
   });
 });
