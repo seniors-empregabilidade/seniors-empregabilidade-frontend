@@ -1,3 +1,5 @@
+import type * as axe from "axe-core";
+
 const activeApplication = {
   id: "10000000-0000-4000-8000-000000000001",
   job_id: "20000000-0000-4000-8000-000000000001",
@@ -27,6 +29,27 @@ const wcag = {
     values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"],
   },
 };
+
+// Fail with each rule, reason and element, so a failure seen only in CI
+// explains itself in the job output.
+function reportViolations(violations: axe.Result[]): void {
+  throw new Error(
+    violations
+      .map((violation) =>
+        [
+          `${violation.id} (${violation.impact ?? "unknown"}): ${violation.help}`,
+          ...violation.nodes.map((node) =>
+            [
+              `  target: ${node.target.join(" ")}`,
+              `  ${node.failureSummary ?? ""}`,
+              `  html: ${node.html.slice(0, 200)}`,
+            ].join("\n"),
+          ),
+        ].join("\n"),
+      )
+      .join("\n\n"),
+  );
+}
 
 describe("candidate applications", () => {
   beforeEach(() => {
@@ -74,7 +97,7 @@ describe("candidate applications", () => {
     cy.get("main").should("have.length", 1);
     cy.contains("Em análise").should("be.visible");
     cy.injectAxe();
-    cy.checkA11y(undefined, wcag);
+    cy.checkA11y(undefined, wcag, reportViolations);
     cy.contains("button", "Ver vagas parecidas").click();
     cy.contains("Supervisão").should("be.visible");
     cy.contains("Empresa Exemplo").should("be.visible");
@@ -83,7 +106,7 @@ describe("candidate applications", () => {
     cy.contains("Empresa Horizonte").should("not.exist");
     cy.contains("button", "Sair do processo").click();
     cy.get('[role="alertdialog"]').should("be.visible");
-    cy.checkA11y('[role="alertdialog"]', wcag);
+    cy.checkA11y('[role="alertdialog"]', wcag, reportViolations);
     cy.contains("button", "Cancelar").should("be.focused").click();
     cy.get('[role="alertdialog"]').should("not.exist");
     cy.contains("Em análise").should("be.visible");
