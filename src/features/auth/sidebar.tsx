@@ -22,7 +22,7 @@ interface NavItem {
 const roleNavItems: Record<UserType, NavItem[]> = {
   candidate: [
     { label: "Relatórios", to: "/candidato" },
-    { label: "Vagas" },
+    { label: "Vagas", to: "/candidato/vagas" },
     { label: "Candidaturas", to: "/candidato/candidaturas" },
     { label: "Capacitação" },
     { label: "Como usar" },
