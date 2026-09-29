@@ -6,7 +6,5 @@ import { ProfileView } from "@/features/candidates/profile-view";
 // pai) e cobre esta rota filha automaticamente — repeti-lo aqui seria
 // redundante.
 export const Route = createFileRoute("/candidato/perfil")({
-  // onEditProfile fica de fora até a US-09-T03 existir de verdade —
-  // o ProfileView desabilita o botão sozinho quando não recebe a prop.
   component: () => <ProfileView />,
 });

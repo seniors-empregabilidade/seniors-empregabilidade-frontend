@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
+import { EditProfileModal } from "./edit-profile-modal";
 import { professionalProfileQueryOptions } from "./professional-profile";
 import { profileErrorMessage } from "./professional-profile-errors";
 import { formatExperiencePeriod, getYear } from "./profile-date-utils";
@@ -12,15 +14,7 @@ import type {
   Skill,
 } from "./professional-profile-schema";
 
-interface ProfileViewProps {
-  /**
-   * Abre o modal de edição de perfil (US-09-T03). Ainda não existe:
-   * enquanto não for passado, o botão "Editar perfil" fica desabilitado.
-   */
-  onEditProfile?: () => void;
-}
-
-export function ProfileView({ onEditProfile }: ProfileViewProps) {
+export function ProfileView() {
   const {
     data: profile,
     isPending,
@@ -28,6 +22,7 @@ export function ProfileView({ onEditProfile }: ProfileViewProps) {
     error,
     refetch,
   } = useQuery(professionalProfileQueryOptions);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   // isPending cobre tanto "carregando" quanto "sem dados ainda porque a
   // query está pausada" (ex.: offline, com networkMode padrão) — usar
@@ -49,27 +44,16 @@ export function ProfileView({ onEditProfile }: ProfileViewProps) {
     <main className="min-h-full bg-muted p-4 md:p-8">
       <div className="mb-6 flex items-start justify-between gap-3">
         <h1 className="text-3xl font-bold text-foreground">Meu perfil</h1>
-        <div className="flex flex-col items-end gap-1">
-          <Button
-            type="button"
-            onClick={onEditProfile}
-            disabled={!onEditProfile}
-            aria-describedby={
-              !onEditProfile ? "edit-profile-unavailable" : undefined
-            }
-          >
-            Editar perfil
-          </Button>
-          {!onEditProfile ? (
-            <span
-              id="edit-profile-unavailable"
-              className="text-base text-muted-foreground"
-            >
-              Disponível em breve
-            </span>
-          ) : null}
-        </div>
+        <Button type="button" onClick={() => setIsEditOpen(true)}>
+          Editar perfil
+        </Button>
       </div>
+
+      <EditProfileModal
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        profile={profile}
+      />
 
       <div className="flex flex-col gap-6 lg:flex-row">
         {/* Coluna principal */}

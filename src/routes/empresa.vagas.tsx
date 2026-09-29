@@ -1,10 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { CompanyJobsPage } from "@/features/companies/company-jobs-page";
+import { MyJobsPage } from "@/features/jobs/my-jobs-page";
 
-// O beforeLoad com requireRole("company") está no empresa.tsx (rota pai) e
-// cobre esta rota filha. onEditJob fica de fora até a US-18-T03 existir —
-// a tela desabilita o botão "Editar" sozinha quando não recebe a prop.
+// requireRole("company") runs in the parent route (empresa.tsx). The page
+// itself handles a company that is not approved yet, which the API refuses.
 export const Route = createFileRoute("/empresa/vagas")({
-  component: () => <CompanyJobsPage />,
+  component: () => <MyJobsPage />,
 });
