@@ -106,6 +106,9 @@ describe("candidate applications", () => {
     cy.contains("Empresa Horizonte").should("not.exist");
     cy.contains("button", "Sair do processo").click();
     cy.get('[role="alertdialog"]').should("be.visible");
+    // Mid fade-in the dialog text blends with the backdrop, so measure it
+    // only once the opening animation has finished.
+    cy.get('[role="alertdialog"]').should("have.css", "opacity", "1");
     cy.checkA11y('[role="alertdialog"]', wcag, reportViolations);
     cy.contains("button", "Cancelar").should("be.focused").click();
     cy.get('[role="alertdialog"]').should("not.exist");
