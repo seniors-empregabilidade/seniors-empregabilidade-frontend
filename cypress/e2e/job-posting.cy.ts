@@ -88,7 +88,7 @@ describe("job posting", () => {
       request.reply({ statusCode: 200, body: stored }),
     ).as("myJobs");
     cy.intercept({ method: "POST", pathname: "/api/v1/jobs" }, (request) => {
-      stored = [published];
+      stored = [{ ...published, application_count: 0 }];
       request.reply({ statusCode: 201, body: published });
     }).as("createJob");
 
@@ -127,7 +127,9 @@ describe("job posting", () => {
     cy.contains("foi publicada e já aparece na lista").should("be.visible");
     cy.contains("article", published.title).within(() => {
       cy.contains("Aberta").should("be.visible");
-      cy.contains("Híbrido · Encerra em 31/12/2099").should("be.visible");
+      cy.contains(
+        "Híbrido · Encerra em 31/12/2099 · Nenhuma candidatura ainda",
+      ).should("be.visible");
       cy.contains("li", "Gestão de equipes").should("be.visible");
     });
     cy.checkA11y(undefined, WCAG);
@@ -170,5 +172,65 @@ describe("job posting", () => {
     cy.get('[role="dialog"]').should("not.exist");
     cy.contains("Você ainda não publicou vagas").should("be.visible");
     cy.get("article").should("not.exist");
+  });
+
+  it("closes a job after confirming and reopens it from Minhas vagas", () => {
+    let status = "published";
+    cy.intercept({ method: "GET", pathname: "/api/v1/jobs/me" }, (request) =>
+      request.reply({
+        statusCode: 200,
+        body: [{ ...published, status, application_count: 2 }],
+      }),
+    ).as("myJobs");
+    cy.intercept(
+      { method: "PATCH", pathname: `/api/v1/jobs/${published.id}/status` },
+      (request) => {
+        const body = request.body as { status: string };
+        status = body.status === "closed" ? "closed" : "published";
+        request.reply({ statusCode: 200, body: { ...published, status } });
+      },
+    ).as("changeStatus");
+
+    signInAsApprovedCompany();
+    cy.contains("a", "Minhas vagas").click();
+    cy.contains("1 vaga aberta para candidatos").should("be.visible");
+    cy.contains("article", published.title).within(() => {
+      cy.contains("2 candidaturas").should("be.visible");
+      cy.contains("button", "Editar").should("be.disabled");
+      cy.contains("button", "Encerrar").click();
+    });
+
+    cy.get('[role="alertdialog"]')
+      .should("be.visible")
+      .and("have.css", "opacity", "1");
+    cy.contains("Encerrar a vaga?").should("be.visible");
+    cy.injectAxe();
+    cy.checkA11y(undefined, WCAG);
+    cy.get("@changeStatus.all").should("have.length", 0);
+    cy.contains("button", "Encerrar vaga").click();
+
+    cy.wait("@changeStatus")
+      .its("request.body")
+      .should("deep.equal", { status: "closed" });
+    cy.get('[role="alertdialog"]').should("not.exist");
+    cy.contains("foi encerrada e saiu das buscas dos candidatos").should(
+      "be.visible",
+    );
+    cy.contains("0 vagas abertas para candidatos").should("be.visible");
+    cy.contains("article", published.title).within(() => {
+      cy.contains("Encerrada").should("be.visible");
+      cy.contains("button", "Reabrir").should("be.focused").click();
+    });
+
+    cy.wait("@changeStatus")
+      .its("request.body")
+      .should("deep.equal", { status: "open" });
+    cy.contains("foi reaberta e voltou às buscas dos candidatos").should(
+      "be.visible",
+    );
+    cy.contains("article", published.title).within(() => {
+      cy.contains("Aberta").should("be.visible");
+    });
+    cy.checkA11y(undefined, WCAG);
   });
 });

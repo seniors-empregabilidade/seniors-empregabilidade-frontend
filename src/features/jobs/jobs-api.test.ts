@@ -4,6 +4,7 @@ import { stubApiRoutes, type ApiStub } from "../../../tests/api-stub";
 
 import type { JobPostingValues } from "./job-posting-schema";
 import {
+  changeJobStatus,
   createJob,
   fetchMyJobs,
   searchSkills,
@@ -98,23 +99,66 @@ describe("createJob", () => {
 });
 
 describe("fetchMyJobs", () => {
-  it("reads the company jobs, including one never published", async () => {
-    const draft = { ...job, status: "draft", published_at: null };
+  const listed = { ...job, application_count: 3 };
+
+  it("reads the company jobs with their application counts, closed and never published ones included", async () => {
+    const closed = { ...listed, status: "closed", application_count: 0 };
+    const draft = { ...listed, status: "draft", published_at: null };
     stub = stubApiRoutes({
-      "GET /jobs/me": { status: 200, data: [job, draft] },
+      "GET /jobs/me": { status: 200, data: [listed, closed, draft] },
     });
 
-    await expect(fetchMyJobs()).resolves.toEqual([job, draft]);
+    await expect(fetchMyJobs()).resolves.toEqual([listed, closed, draft]);
   });
 
-  it("rejects a list that breaks the contract", async () => {
-    stub = stubApiRoutes({
-      "GET /jobs/me": { status: 200, data: [{ ...job, work_mode: "moon" }] },
-    });
+  it.each([
+    ["an unknown work mode", { ...listed, work_mode: "moon" }],
+    ["a missing application count", job],
+  ])("rejects a list with %s", async (_, item) => {
+    stub = stubApiRoutes({ "GET /jobs/me": { status: 200, data: [item] } });
 
     await expect(fetchMyJobs()).rejects.toMatchObject({
       code: "invalid_jobs_response",
     });
+  });
+});
+
+describe("changeJobStatus", () => {
+  const path = `PATCH /jobs/${job.id}/status`;
+
+  it("closes a job with the API vocabulary", async () => {
+    stub = stubApiRoutes({
+      [path]: { status: 200, data: { ...job, status: "closed" } },
+    });
+
+    await expect(
+      changeJobStatus({ id: job.id, status: "closed" }),
+    ).resolves.toMatchObject({ status: "closed" });
+    expect(stub.requests[0]?.body).toEqual({ status: "closed" });
+  });
+
+  it("reopens a job, sending a new closing date only when there is one", async () => {
+    stub = stubApiRoutes({ [path]: { status: 200, data: job } });
+
+    await changeJobStatus({ id: job.id, status: "open" });
+    await changeJobStatus({
+      id: job.id,
+      status: "open",
+      closingDate: "2099-12-31",
+    });
+
+    expect(stub.requests.map((request) => request.body)).toEqual([
+      { status: "open" },
+      { status: "open", closing_date: "2099-12-31" },
+    ]);
+  });
+
+  it("does not confirm a change it cannot read", async () => {
+    stub = stubApiRoutes({ [path]: { status: 200, data: { id: job.id } } });
+
+    await expect(
+      changeJobStatus({ id: job.id, status: "closed" }),
+    ).rejects.toMatchObject({ code: "invalid_job_status_response" });
   });
 });
 

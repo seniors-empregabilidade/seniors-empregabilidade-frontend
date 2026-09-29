@@ -82,3 +82,30 @@ function fieldErrors(
   }
   return [...fields].map((field) => ({ field, message: fieldMessages[field] }));
 }
+
+const statusChangeMessages: Record<string, string> = {
+  job_already_open: "Essa vaga já estava aberta. A lista foi atualizada.",
+  job_already_closed: "Essa vaga já estava encerrada. A lista foi atualizada.",
+  job_status_change_not_allowed:
+    "O status dessa vaga não pode ser alterado por aqui.",
+  job_not_found: "Não encontramos essa vaga. A lista foi atualizada.",
+  closing_date_in_the_past: "A data de encerramento não pode estar no passado.",
+  approved_company_required: AWAITING_APPROVAL,
+  invalid_access_token: "Sua sessão expirou. Entre novamente.",
+};
+
+export function jobStatusChangeErrorMessage(
+  error: unknown,
+  action: "close" | "reopen",
+): string {
+  const fallback =
+    action === "close"
+      ? "Não foi possível encerrar a vaga. Tente novamente."
+      : "Não foi possível reabrir a vaga. Tente novamente.";
+  if (!(error instanceof ApiError) || !error.code) return fallback;
+  return statusChangeMessages[error.code] ?? fallback;
+}
+
+export function isClosingDateInThePast(error: unknown): boolean {
+  return error instanceof ApiError && error.code === "closing_date_in_the_past";
+}

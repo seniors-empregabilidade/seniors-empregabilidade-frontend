@@ -49,6 +49,13 @@ const jobSchema = z.object({
 
 export type Job = z.infer<typeof jobSchema>;
 
+// GET /jobs/me adds how many applications each job received.
+const jobSummarySchema = jobSchema.extend({
+  application_count: z.number().int().nonnegative(),
+});
+
+export type JobSummary = z.infer<typeof jobSummarySchema>;
+
 export const myJobsQueryKey = ["jobs", "me"] as const;
 
 export async function createJob(values: JobPostingValues): Promise<Job> {
@@ -68,12 +75,12 @@ export async function createJob(values: JobPostingValues): Promise<Job> {
   return parsed.data;
 }
 
-export async function fetchMyJobs(signal?: AbortSignal): Promise<Job[]> {
+export async function fetchMyJobs(signal?: AbortSignal): Promise<JobSummary[]> {
   const response = await apiClient.get<unknown>(
     "/jobs/me",
     signal ? { signal } : {},
   );
-  const parsed = z.array(jobSchema).safeParse(response.data);
+  const parsed = z.array(jobSummarySchema).safeParse(response.data);
   if (!parsed.success)
     throw new ApiError({
       message: "Não foi possível validar a lista de vagas.",
@@ -87,6 +94,26 @@ export const myJobsQueryOptions = queryOptions({
   queryFn: ({ signal }) => fetchMyJobs(signal),
   retry: false,
 });
+
+export type JobStatusChange =
+  | { id: string; status: "closed" }
+  | { id: string; status: "open"; closingDate?: string };
+
+export async function changeJobStatus(change: JobStatusChange): Promise<Job> {
+  const response = await apiClient.patch<unknown>(`/jobs/${change.id}/status`, {
+    status: change.status,
+    ...(change.status === "open" && change.closingDate
+      ? { closing_date: change.closingDate }
+      : {}),
+  });
+  const parsed = jobSchema.safeParse(response.data);
+  if (!parsed.success)
+    throw new ApiError({
+      message: "Não foi possível validar a resposta da mudança de status.",
+      code: "invalid_job_status_response",
+    });
+  return parsed.data;
+}
 
 export async function searchSkills(
   search: string,
