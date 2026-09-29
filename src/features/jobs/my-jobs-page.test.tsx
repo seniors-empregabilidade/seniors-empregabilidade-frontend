@@ -45,6 +45,58 @@ const draft = {
   published_at: null,
 };
 
+const listedPublished = { ...published, application_count: 3 };
+const listedDraft = { ...draft, application_count: 0 };
+const listedClosed = {
+  ...published,
+  id: "66666666-6666-4666-8666-666666666666",
+  title: "Auxiliar administrativo",
+  status: "closed",
+  application_count: 1,
+};
+const listedPastItsDate = {
+  ...published,
+  id: "77777777-7777-4777-8777-777777777777",
+  title: "Operador(a) de caixa",
+  closing_date: "2020-01-31",
+  application_count: 0,
+};
+
+type ListedJob = typeof listedPublished | typeof listedDraft;
+
+/**
+ * A server that remembers status changes, so the list the page refetches
+ * after a change shows it, as the real API would.
+ */
+function serverWith(initial: ListedJob[]): Record<string, StubRoute> {
+  const jobs = new Map(initial.map((job) => [job.id, { ...job }]));
+  const routes: Record<string, StubRoute> = {
+    "GET /jobs/me": () => ({ status: 200, data: [...jobs.values()] }),
+  };
+  for (const job of initial) {
+    routes[`PATCH /jobs/${job.id}/status`] = (request) => {
+      const body = request.body as { status: string; closing_date?: string };
+      const current = jobs.get(job.id) ?? job;
+      const changed = {
+        ...current,
+        status: body.status === "closed" ? "closed" : "published",
+        closing_date: body.closing_date ?? current.closing_date,
+      };
+      jobs.set(job.id, changed);
+      return { status: 200, data: changed };
+    };
+  }
+  return routes;
+}
+
+function statusRequests() {
+  return stub?.requests.filter((request) => request.method === "patch") ?? [];
+}
+
+function card(title: string) {
+  return within(screen.getByRole("article", { name: title }));
+}
+
 let stub: ApiStub | undefined;
 
 afterEach(() => {
@@ -109,27 +161,239 @@ describe("MyJobsPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("lists each job with its status, work mode, closing date and skills", async () => {
-    mount({ "GET /jobs/me": { status: 200, data: [published, draft] } });
+  it("lists each job with its status, work mode, closing date, applications and skills", async () => {
+    mount({
+      "GET /jobs/me": { status: 200, data: [listedPublished, listedDraft] },
+    });
 
-    const card = within(
+    const publishedCard = within(
       await screen.findByRole("article", { name: published.title }),
     );
-    expect(card.getByText("Aberta")).toBeInTheDocument();
+    expect(publishedCard.getByText("Aberta")).toBeInTheDocument();
     expect(
-      card.getByText("Remoto · Encerra em 31/12/2099"),
+      publishedCard.getByText(
+        "Remoto · Encerra em 31/12/2099 · 3 candidaturas",
+      ),
     ).toBeInTheDocument();
-    expect(card.getByText(published.description)).toBeInTheDocument();
+    expect(publishedCard.getByText(published.description)).toBeInTheDocument();
     expect(
-      card.getAllByRole("listitem").map((skill) => skill.textContent),
+      publishedCard.getAllByRole("listitem").map((skill) => skill.textContent),
     ).toEqual(["React", "Comunicação"]);
 
-    const draftCard = within(
-      screen.getByRole("article", { name: draft.title }),
-    );
+    const draftCard = card(draft.title);
     expect(draftCard.getByText("Rascunho")).toBeInTheDocument();
     expect(
-      draftCard.getByText("Presencial · Encerra em 05/01/2099"),
+      draftCard.getByText(
+        "Presencial · Encerra em 05/01/2099 · Nenhuma candidatura ainda",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("counts only the jobs candidates can find as open", async () => {
+    mount({
+      "GET /jobs/me": {
+        status: 200,
+        data: [listedPublished, listedClosed, listedPastItsDate, listedDraft],
+      },
+    });
+
+    expect(
+      await screen.findByText("1 vaga aberta para candidatos"),
+    ).toBeInTheDocument();
+    expect(card(listedClosed.title).getByText("Encerrada")).toBeInTheDocument();
+    expect(
+      card(listedPastItsDate.title).getByText("Prazo encerrado"),
+    ).toBeInTheDocument();
+  });
+
+  it("offers each job only the status action its state allows", async () => {
+    mount({
+      "GET /jobs/me": {
+        status: 200,
+        data: [listedPublished, listedClosed, listedPastItsDate, listedDraft],
+      },
+    });
+    await screen.findByRole("article", { name: published.title });
+
+    expect(
+      card(published.title).getByRole("button", { name: "Encerrar" }),
+    ).toBeInTheDocument();
+    expect(
+      card(listedClosed.title).getByRole("button", { name: "Reabrir" }),
+    ).toBeInTheDocument();
+    expect(
+      card(listedPastItsDate.title).getByRole("button", { name: "Reabrir" }),
+    ).toBeInTheDocument();
+    const draftCard = card(draft.title);
+    expect(
+      draftCard.queryByRole("button", { name: /Encerrar|Reabrir/ }),
+    ).not.toBeInTheDocument();
+    for (const edit of screen.getAllByRole("button", { name: "Editar" })) {
+      expect(edit).toBeDisabled();
+      expect(edit).toHaveAccessibleDescription(
+        "A edição de vagas estará disponível em breve.",
+      );
+    }
+  });
+
+  it("closes a job only after the confirmation and shows it closed", async () => {
+    const user = mount(serverWith([listedPublished]));
+    await screen.findByRole("article", { name: published.title });
+
+    await user.click(
+      card(published.title).getByRole("button", { name: "Encerrar" }),
+    );
+    expect(
+      await screen.findByRole("alertdialog", { name: "Encerrar a vaga?" }),
+    ).toBeInTheDocument();
+    expect(statusRequests()).toHaveLength(0);
+    await user.click(screen.getByRole("button", { name: "Encerrar vaga" }));
+
+    expect(
+      await screen.findByText(
+        `A vaga “${published.title}” foi encerrada e saiu das buscas dos candidatos.`,
+      ),
+    ).toBeInTheDocument();
+    expect(statusRequests().map((request) => request.body)).toEqual([
+      { status: "closed" },
+    ]);
+    await waitFor(() =>
+      expect(card(published.title).getByText("Encerrada")).toBeInTheDocument(),
+    );
+    expect(
+      card(published.title).getByRole("button", { name: "Reabrir" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("0 vagas abertas para candidatos")).toBeVisible();
+  });
+
+  it("keeps the job open when the closing is cancelled", async () => {
+    const user = mount(serverWith([listedPublished]));
+    await screen.findByRole("article", { name: published.title });
+
+    await user.click(
+      card(published.title).getByRole("button", { name: "Encerrar" }),
+    );
+    await user.click(await screen.findByRole("button", { name: "Cancelar" }));
+
+    await waitFor(() =>
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument(),
+    );
+    expect(statusRequests()).toHaveLength(0);
+    expect(card(published.title).getByText("Aberta")).toBeInTheDocument();
+  });
+
+  it("shows why a closing was refused, inside the confirmation", async () => {
+    const user = mount({
+      "GET /jobs/me": { status: 200, data: [listedPublished] },
+      [`PATCH /jobs/${published.id}/status`]: {
+        status: 409,
+        data: {
+          title: "Conflict",
+          status: 409,
+          code: "job_already_closed",
+          detail: "English text",
+        },
+      },
+    });
+    await screen.findByRole("article", { name: published.title });
+
+    await user.click(
+      card(published.title).getByRole("button", { name: "Encerrar" }),
+    );
+    await user.click(
+      await screen.findByRole("button", { name: "Encerrar vaga" }),
+    );
+
+    expect(
+      await screen.findByText(
+        "Essa vaga já estava encerrada. A lista foi atualizada.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+    expect(screen.queryByText("English text")).not.toBeInTheDocument();
+    await waitFor(() => expect(listRequests()).toHaveLength(2));
+  });
+
+  it("reopens a closed job still within its closing date right away", async () => {
+    const user = mount(serverWith([listedClosed]));
+    await screen.findByRole("article", { name: listedClosed.title });
+
+    await user.click(
+      card(listedClosed.title).getByRole("button", { name: "Reabrir" }),
+    );
+
+    expect(
+      await screen.findByText(
+        `A vaga “${listedClosed.title}” foi reaberta e voltou às buscas dos candidatos.`,
+      ),
+    ).toBeInTheDocument();
+    expect(statusRequests().map((request) => request.body)).toEqual([
+      { status: "open" },
+    ]);
+    await waitFor(() =>
+      expect(card(listedClosed.title).getByText("Aberta")).toBeInTheDocument(),
+    );
+  });
+
+  it("asks for a new closing date to reopen a job past its date", async () => {
+    const user = mount(serverWith([listedPastItsDate]));
+    await screen.findByRole("article", { name: listedPastItsDate.title });
+
+    await user.click(
+      card(listedPastItsDate.title).getByRole("button", { name: "Reabrir" }),
+    );
+    await screen.findByRole("dialog", { name: "Reabrir a vaga" });
+    await user.click(screen.getByRole("button", { name: "Reabrir vaga" }));
+
+    const newDate = screen.getByLabelText("Nova data de encerramento *");
+    expect(newDate).toHaveAccessibleDescription(
+      "Informe a nova data de encerramento.",
+    );
+    expect(statusRequests()).toHaveLength(0);
+
+    await user.type(newDate, "2000-01-01");
+    await user.click(screen.getByRole("button", { name: "Reabrir vaga" }));
+    expect(newDate).toHaveAccessibleDescription(
+      "A data de encerramento não pode estar no passado.",
+    );
+    expect(statusRequests()).toHaveLength(0);
+
+    await user.clear(newDate);
+    await user.type(newDate, "2099-06-30");
+    await user.click(screen.getByRole("button", { name: "Reabrir vaga" }));
+
+    expect(
+      await screen.findByText(
+        `A vaga “${listedPastItsDate.title}” foi reaberta e voltou às buscas dos candidatos.`,
+      ),
+    ).toBeInTheDocument();
+    expect(statusRequests().map((request) => request.body)).toEqual([
+      { status: "open", closing_date: "2099-06-30" },
+    ]);
+    await waitFor(() =>
+      expect(
+        card(listedPastItsDate.title).getByText(
+          "Remoto · Encerra em 30/06/2099 · Nenhuma candidatura ainda",
+        ),
+      ).toBeInTheDocument(),
+    );
+  });
+
+  it("shows a refused reopening next to the job", async () => {
+    const user = mount({
+      "GET /jobs/me": { status: 200, data: [listedClosed] },
+      [`PATCH /jobs/${listedClosed.id}/status`]: { status: 0 },
+    });
+    await screen.findByRole("article", { name: listedClosed.title });
+
+    await user.click(
+      card(listedClosed.title).getByRole("button", { name: "Reabrir" }),
+    );
+
+    expect(
+      await card(listedClosed.title).findByText(
+        "Não foi possível reabrir a vaga. Tente novamente.",
+      ),
     ).toBeInTheDocument();
   });
 
@@ -138,7 +402,7 @@ describe("MyJobsPage", () => {
     const user = mount({
       "GET /jobs/me": () => ({ status: 200, data: [...stored] }),
       "POST /jobs": () => {
-        stored.push(published);
+        stored.push({ ...published, application_count: 0 });
         return { status: 201, data: published };
       },
     });
@@ -200,7 +464,7 @@ describe("MyJobsPage", () => {
         attempts += 1;
         return attempts === 1
           ? { status: 0 }
-          : { status: 200, data: [published] };
+          : { status: 200, data: [listedPublished] };
       },
     });
 

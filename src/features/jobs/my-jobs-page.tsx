@@ -1,39 +1,58 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
-import { formatIsoDate, jobStatusLabels, workModeLabels } from "./job-labels";
+import { formatIsoDate, workModeLabels } from "./job-labels";
 import { JobPostingModal } from "./job-posting-modal";
-import { type Job, myJobsQueryOptions } from "./jobs-api";
+import {
+  applicationCountLabel,
+  isOpenToCandidates,
+  jobStatusLabel,
+} from "./job-status";
+import { JobStatusActions } from "./job-status-actions";
+import { type JobSummary, myJobsQueryOptions } from "./jobs-api";
 import { isAwaitingApproval, myJobsErrorMessage } from "./jobs-errors";
 
 export function MyJobsPage() {
-  const [publishedTitle, setPublishedTitle] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const editHintId = useId();
   const jobs = useQuery(myJobsQueryOptions);
   const awaitingApproval = isAwaitingApproval(jobs.error);
+  const openCount = jobs.data?.filter((job) => isOpenToCandidates(job)).length;
 
   return (
     <div className="min-h-full bg-muted p-4 md:p-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-3xl font-bold text-foreground">Minhas vagas</h1>
+        <div className="flex flex-col gap-1">
+          <h1 className="text-3xl font-bold text-foreground">Minhas vagas</h1>
+          {openCount === undefined || jobs.data?.length === 0 ? null : (
+            <p className="text-lg text-muted-foreground">
+              {openCount === 1
+                ? "1 vaga aberta para candidatos"
+                : `${openCount} vagas abertas para candidatos`}
+            </p>
+          )}
+        </div>
         {awaitingApproval ? null : (
           <JobPostingModal
-            onPublished={(job) => setPublishedTitle(job.title)}
+            onPublished={(job) =>
+              setNotice(
+                `A vaga “${job.title}” foi publicada e já aparece na lista.`,
+              )
+            }
           />
         )}
       </div>
 
       {/* Rendered empty from the start so the confirmation is announced. */}
       <div role="status">
-        {publishedTitle ? (
+        {notice ? (
           <div className="mb-6 flex flex-col gap-1 rounded-lg border border-success bg-background p-4">
             <span className="font-mono text-base font-semibold tracking-wide text-success uppercase">
               Sucesso
             </span>
-            <p className="text-lg text-foreground">
-              A vaga “{publishedTitle}” foi publicada e já aparece na lista.
-            </p>
+            <p className="text-lg text-foreground">{notice}</p>
           </div>
         ) : null}
       </div>
@@ -67,19 +86,34 @@ export function MyJobsPage() {
           a primeira.
         </p>
       ) : (
-        <ul className="flex flex-col gap-4">
-          {jobs.data.map((job) => (
-            <li key={job.id}>
-              <JobCard job={job} />
-            </li>
-          ))}
-        </ul>
+        <>
+          <p id={editHintId} className="mb-4 text-base text-muted-foreground">
+            A edição de vagas estará disponível em breve.
+          </p>
+          <ul className="flex flex-col gap-4">
+            {jobs.data.map((job) => (
+              <li key={job.id}>
+                <JobCard
+                  job={job}
+                  editHintId={editHintId}
+                  onStatusChanged={setNotice}
+                />
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </div>
   );
 }
 
-function JobCard({ job }: { job: Job }) {
+interface JobCardProps {
+  job: JobSummary;
+  editHintId: string;
+  onStatusChanged: (message: string) => void;
+}
+
+function JobCard({ job, editHintId, onStatusChanged }: JobCardProps) {
   const titleId = `job-${job.id}-title`;
 
   return (
@@ -96,17 +130,16 @@ function JobCard({ job }: { job: Job }) {
         </h2>
         <span
           className={`font-mono text-base font-semibold tracking-wide uppercase ${
-            job.status === "published"
-              ? "text-success"
-              : "text-muted-foreground"
+            isOpenToCandidates(job) ? "text-success" : "text-muted-foreground"
           }`}
         >
-          {jobStatusLabels[job.status]}
+          {jobStatusLabel(job)}
         </span>
       </div>
       <p className="text-base text-muted-foreground">
         {workModeLabels[job.work_mode]} · Encerra em{" "}
-        {formatIsoDate(job.closing_date)}
+        {formatIsoDate(job.closing_date)} ·{" "}
+        {applicationCountLabel(job.application_count)}
       </p>
       {job.description ? (
         <p className="line-clamp-3 text-lg break-words whitespace-pre-line text-foreground-2">
@@ -123,6 +156,11 @@ function JobCard({ job }: { job: Job }) {
           </li>
         ))}
       </ul>
+      <JobStatusActions
+        job={job}
+        editHintId={editHintId}
+        onChanged={onStatusChanged}
+      />
     </article>
   );
 }

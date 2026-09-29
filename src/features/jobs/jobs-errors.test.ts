@@ -4,7 +4,9 @@ import { ApiError } from "@/lib/api-error";
 
 import {
   isAwaitingApproval,
+  isClosingDateInThePast,
   jobPostingFailure,
+  jobStatusChangeErrorMessage,
   myJobsErrorMessage,
 } from "./jobs-errors";
 
@@ -101,5 +103,43 @@ describe("myJobsErrorMessage", () => {
     expect(myJobsErrorMessage(new Error("boom"))).toBe(
       "Não foi possível carregar suas vagas. Tente novamente.",
     );
+  });
+});
+
+describe("jobStatusChangeErrorMessage", () => {
+  it.each([
+    ["job_already_open", /já estava aberta/],
+    ["job_already_closed", /já estava encerrada/],
+    ["job_status_change_not_allowed", /não pode ser alterado por aqui/],
+    ["job_not_found", /Não encontramos essa vaga/],
+    ["closing_date_in_the_past", /não pode estar no passado/],
+  ])("explains %s in Portuguese", (code, expected) => {
+    expect(
+      jobStatusChangeErrorMessage(
+        new ApiError({ message: "x", code }),
+        "close",
+      ),
+    ).toMatch(expected);
+  });
+
+  it("keeps any other failure generic for the action tried", () => {
+    expect(jobStatusChangeErrorMessage(new Error("boom"), "close")).toBe(
+      "Não foi possível encerrar a vaga. Tente novamente.",
+    );
+    expect(
+      jobStatusChangeErrorMessage(
+        new ApiError({ message: "x", code: "internal_error" }),
+        "reopen",
+      ),
+    ).toBe("Não foi possível reabrir a vaga. Tente novamente.");
+  });
+
+  it("recognizes a closing date refused as past", () => {
+    expect(
+      isClosingDateInThePast(
+        new ApiError({ message: "x", code: "closing_date_in_the_past" }),
+      ),
+    ).toBe(true);
+    expect(isClosingDateInThePast(new Error("boom"))).toBe(false);
   });
 });
