@@ -22,6 +22,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as CandidatoIndexRouteImport } from './routes/candidato.index'
 import { Route as CandidatoCandidaturasRouteImport } from './routes/candidato.candidaturas'
 import { Route as CandidatoPerfilRouteImport } from './routes/candidato.perfil'
+import { Route as CandidatoVagasRouteImport } from './routes/candidato.vagas'
 import { Route as UsersRegisterRouteImport } from './routes/users/register'
 
 const IndexRoute = IndexRouteImport.update({
@@ -89,6 +90,11 @@ const CandidatoPerfilRoute = CandidatoPerfilRouteImport.update({
   path: '/perfil',
   getParentRoute: () => CandidatoRoute,
 } as any)
+const CandidatoVagasRoute = CandidatoVagasRouteImport.update({
+  id: '/vagas',
+  path: '/vagas',
+  getParentRoute: () => CandidatoRoute,
+} as any)
 const UsersRegisterRoute = UsersRegisterRouteImport.update({
   id: '/users/register',
   path: '/users/register',
@@ -108,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/candidato/candidaturas': typeof CandidatoCandidaturasRoute
   '/candidato/perfil': typeof CandidatoPerfilRoute
+  '/candidato/vagas': typeof CandidatoVagasRoute
   '/users/register': typeof UsersRegisterRoute
   '/candidato/': typeof CandidatoIndexRoute
 }
@@ -123,6 +130,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/candidato/candidaturas': typeof CandidatoCandidaturasRoute
   '/candidato/perfil': typeof CandidatoPerfilRoute
+  '/candidato/vagas': typeof CandidatoVagasRoute
   '/users/register': typeof UsersRegisterRoute
   '/candidato': typeof CandidatoIndexRoute
 }
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/candidato/candidaturas': typeof CandidatoCandidaturasRoute
   '/candidato/perfil': typeof CandidatoPerfilRoute
+  '/candidato/vagas': typeof CandidatoVagasRoute
   '/users/register': typeof UsersRegisterRoute
   '/candidato/': typeof CandidatoIndexRoute
 }
@@ -158,6 +167,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/candidato/candidaturas'
     | '/candidato/perfil'
+    | '/candidato/vagas'
     | '/users/register'
     | '/candidato/'
   fileRoutesByTo: FileRoutesByTo
@@ -173,6 +183,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/candidato/candidaturas'
     | '/candidato/perfil'
+    | '/candidato/vagas'
     | '/users/register'
     | '/candidato'
   id:
@@ -189,6 +200,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/candidato/candidaturas'
     | '/candidato/perfil'
+    | '/candidato/vagas'
     | '/users/register'
     | '/candidato/'
   fileRoutesById: FileRoutesById
@@ -300,6 +312,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CandidatoPerfilRouteImport
       parentRoute: typeof CandidatoRoute
     }
+    '/candidato/vagas': {
+      id: '/candidato/vagas'
+      path: '/vagas'
+      fullPath: '/candidato/vagas'
+      preLoaderRoute: typeof CandidatoVagasRouteImport
+      parentRoute: typeof CandidatoRoute
+    }
     '/users/register': {
       id: '/users/register'
       path: '/users/register'
@@ -313,12 +332,14 @@ declare module '@tanstack/react-router' {
 interface CandidatoRouteChildren {
   CandidatoCandidaturasRoute: typeof CandidatoCandidaturasRoute
   CandidatoPerfilRoute: typeof CandidatoPerfilRoute
+  CandidatoVagasRoute: typeof CandidatoVagasRoute
   CandidatoIndexRoute: typeof CandidatoIndexRoute
 }
 
 const CandidatoRouteChildren: CandidatoRouteChildren = {
   CandidatoCandidaturasRoute: CandidatoCandidaturasRoute,
   CandidatoPerfilRoute: CandidatoPerfilRoute,
+  CandidatoVagasRoute: CandidatoVagasRoute,
   CandidatoIndexRoute: CandidatoIndexRoute,
 }
 
