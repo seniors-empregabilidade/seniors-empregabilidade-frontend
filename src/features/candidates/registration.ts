@@ -52,7 +52,7 @@ const fieldNames = {
 
 const messages: Record<string, string> = {
   invalid_cpf: "Este CPF não é válido. Confira os números digitados.",
-  minimum_age_not_met: "É necessário ter 45 anos ou mais para criar uma conta.",
+  minimum_age_not_met: "É necessário ter 50 anos ou mais para criar uma conta.",
   terms_acceptance_required: "Aceite os Termos de Uso para criar sua conta.",
   cpf_already_registered:
     "Já existe uma conta com este CPF. Você pode entrar na sua conta.",

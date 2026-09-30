@@ -273,7 +273,7 @@ function SiteFooter() {
             <span className="text-xl font-bold text-on-dark">Seniors</span>
           </div>
           <p className="mt-4 max-w-xs text-base text-on-dark-subtle">
-            Plataforma de empregabilidade para profissionais com 45 anos ou
+            Plataforma de empregabilidade para profissionais com 50 anos ou
             mais.
           </p>
         </div>
