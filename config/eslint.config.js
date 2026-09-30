@@ -15,6 +15,7 @@ const projectRoot = path.resolve(import.meta.dirname, "..");
 export default tseslint.config(
   {
     ignores: [
+      ".claude/**",
       "coverage/**",
       "dist/**",
       "node_modules/**",

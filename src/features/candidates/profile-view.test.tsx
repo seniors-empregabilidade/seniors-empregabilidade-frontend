@@ -155,4 +155,33 @@ describe("ProfileView", () => {
     expect(screen.getByLabelText(/^idade$/i)).toBeDisabled();
     expect(screen.getByLabelText(/^e-mail$/i)).toBeDisabled();
   });
+
+  it("keeps the loaded profile and the open modal when a refetch fails", async () => {
+    const user = userEvent.setup();
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    vi.spyOn(apiClient, "get")
+      .mockResolvedValueOnce({ data: validProfile })
+      .mockRejectedValueOnce(new ApiError({ message: "Network Error" }));
+
+    renderComponent(
+      <QueryClientProvider client={client}>
+        <ProfileView />
+      </QueryClientProvider>,
+    );
+
+    await screen.findByText("Marcos Silveira");
+    await user.click(screen.getByRole("button", { name: /editar perfil/i }));
+    await client.refetchQueries({
+      queryKey: ["candidates", "professional-profile"],
+    });
+
+    expect(
+      screen.getByRole("dialog", { name: /editar perfil/i }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: /tentar novamente/i }),
+    ).not.toBeInTheDocument();
+  });
 });
