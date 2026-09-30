@@ -66,6 +66,10 @@ describe("Sidebar", () => {
       "href",
       "/candidato",
     );
+    expect(screen.getByRole("link", { name: "Vagas" })).toHaveAttribute(
+      "href",
+      "/candidato/vagas",
+    );
     expect(screen.getByRole("link", { name: "Candidaturas" })).toHaveAttribute(
       "href",
       "/candidato/candidaturas",
@@ -92,7 +96,7 @@ describe("Sidebar", () => {
   it("shows the remaining candidate nav items as static text, not as controls", () => {
     render(<Sidebar userType="candidate" />);
 
-    ["Vagas", "Capacitação", "Como usar"].forEach((label) => {
+    ["Capacitação", "Como usar"].forEach((label) => {
       expect(screen.getByText(label)).toBeVisible();
       expect(
         screen.queryByRole("button", { name: label }),
