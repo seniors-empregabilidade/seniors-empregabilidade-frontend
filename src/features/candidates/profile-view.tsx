@@ -31,7 +31,10 @@ export function ProfileView() {
     return <ProfileSkeleton />;
   }
 
-  if (isError) {
+  // A failed background refetch (window focus, or closing the edit modal)
+  // keeps the last loaded profile on screen, so an open modal is not torn
+  // down. The error state is only for a profile that never loaded.
+  if (isError && !profile) {
     return (
       <ProfileErrorState
         message={profileErrorMessage(error)}

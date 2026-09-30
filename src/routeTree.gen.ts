@@ -23,6 +23,8 @@ import { Route as CandidatoIndexRouteImport } from './routes/candidato.index'
 import { Route as CandidatoCandidaturasRouteImport } from './routes/candidato.candidaturas'
 import { Route as CandidatoPerfilRouteImport } from './routes/candidato.perfil'
 import { Route as CandidatoVagasRouteImport } from './routes/candidato.vagas'
+import { Route as EmpresaIndexRouteImport } from './routes/empresa.index'
+import { Route as EmpresaVagasRouteImport } from './routes/empresa.vagas'
 import { Route as UsersRegisterRouteImport } from './routes/users/register'
 
 const IndexRoute = IndexRouteImport.update({
@@ -95,6 +97,16 @@ const CandidatoVagasRoute = CandidatoVagasRouteImport.update({
   path: '/vagas',
   getParentRoute: () => CandidatoRoute,
 } as any)
+const EmpresaIndexRoute = EmpresaIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => EmpresaRoute,
+} as any)
+const EmpresaVagasRoute = EmpresaVagasRouteImport.update({
+  id: '/vagas',
+  path: '/vagas',
+  getParentRoute: () => EmpresaRoute,
+} as any)
 const UsersRegisterRoute = UsersRegisterRouteImport.update({
   id: '/users/register',
   path: '/users/register',
@@ -108,15 +120,17 @@ export interface FileRoutesByFullPath {
   '/cadastro-empresa': typeof CadastroEmpresaRoute
   '/candidato': typeof CandidatoRouteWithChildren
   '/email-verification': typeof EmailVerificationRoute
-  '/empresa': typeof EmpresaRoute
+  '/empresa': typeof EmpresaRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/candidato/candidaturas': typeof CandidatoCandidaturasRoute
   '/candidato/perfil': typeof CandidatoPerfilRoute
   '/candidato/vagas': typeof CandidatoVagasRoute
+  '/empresa/vagas': typeof EmpresaVagasRoute
   '/users/register': typeof UsersRegisterRoute
   '/candidato/': typeof CandidatoIndexRoute
+  '/empresa/': typeof EmpresaIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -124,15 +138,16 @@ export interface FileRoutesByTo {
   '/cadastro': typeof CadastroRoute
   '/cadastro-empresa': typeof CadastroEmpresaRoute
   '/email-verification': typeof EmailVerificationRoute
-  '/empresa': typeof EmpresaRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/candidato/candidaturas': typeof CandidatoCandidaturasRoute
   '/candidato/perfil': typeof CandidatoPerfilRoute
   '/candidato/vagas': typeof CandidatoVagasRoute
+  '/empresa/vagas': typeof EmpresaVagasRoute
   '/users/register': typeof UsersRegisterRoute
   '/candidato': typeof CandidatoIndexRoute
+  '/empresa': typeof EmpresaIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -142,15 +157,17 @@ export interface FileRoutesById {
   '/cadastro-empresa': typeof CadastroEmpresaRoute
   '/candidato': typeof CandidatoRouteWithChildren
   '/email-verification': typeof EmailVerificationRoute
-  '/empresa': typeof EmpresaRoute
+  '/empresa': typeof EmpresaRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/candidato/candidaturas': typeof CandidatoCandidaturasRoute
   '/candidato/perfil': typeof CandidatoPerfilRoute
   '/candidato/vagas': typeof CandidatoVagasRoute
+  '/empresa/vagas': typeof EmpresaVagasRoute
   '/users/register': typeof UsersRegisterRoute
   '/candidato/': typeof CandidatoIndexRoute
+  '/empresa/': typeof EmpresaIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -168,8 +185,10 @@ export interface FileRouteTypes {
     | '/candidato/candidaturas'
     | '/candidato/perfil'
     | '/candidato/vagas'
+    | '/empresa/vagas'
     | '/users/register'
     | '/candidato/'
+    | '/empresa/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -177,15 +196,16 @@ export interface FileRouteTypes {
     | '/cadastro'
     | '/cadastro-empresa'
     | '/email-verification'
-    | '/empresa'
     | '/forgot-password'
     | '/login'
     | '/reset-password'
     | '/candidato/candidaturas'
     | '/candidato/perfil'
     | '/candidato/vagas'
+    | '/empresa/vagas'
     | '/users/register'
     | '/candidato'
+    | '/empresa'
   id:
     | '__root__'
     | '/'
@@ -201,8 +221,10 @@ export interface FileRouteTypes {
     | '/candidato/candidaturas'
     | '/candidato/perfil'
     | '/candidato/vagas'
+    | '/empresa/vagas'
     | '/users/register'
     | '/candidato/'
+    | '/empresa/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -212,7 +234,7 @@ export interface RootRouteChildren {
   CadastroEmpresaRoute: typeof CadastroEmpresaRoute
   CandidatoRoute: typeof CandidatoRouteWithChildren
   EmailVerificationRoute: typeof EmailVerificationRoute
-  EmpresaRoute: typeof EmpresaRoute
+  EmpresaRoute: typeof EmpresaRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -319,6 +341,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CandidatoVagasRouteImport
       parentRoute: typeof CandidatoRoute
     }
+    '/empresa/': {
+      id: '/empresa/'
+      path: '/'
+      fullPath: '/empresa/'
+      preLoaderRoute: typeof EmpresaIndexRouteImport
+      parentRoute: typeof EmpresaRoute
+    }
+    '/empresa/vagas': {
+      id: '/empresa/vagas'
+      path: '/vagas'
+      fullPath: '/empresa/vagas'
+      preLoaderRoute: typeof EmpresaVagasRouteImport
+      parentRoute: typeof EmpresaRoute
+    }
     '/users/register': {
       id: '/users/register'
       path: '/users/register'
@@ -347,6 +383,19 @@ const CandidatoRouteWithChildren = CandidatoRoute._addFileChildren(
   CandidatoRouteChildren,
 )
 
+interface EmpresaRouteChildren {
+  EmpresaVagasRoute: typeof EmpresaVagasRoute
+  EmpresaIndexRoute: typeof EmpresaIndexRoute
+}
+
+const EmpresaRouteChildren: EmpresaRouteChildren = {
+  EmpresaVagasRoute: EmpresaVagasRoute,
+  EmpresaIndexRoute: EmpresaIndexRoute,
+}
+
+const EmpresaRouteWithChildren =
+  EmpresaRoute._addFileChildren(EmpresaRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdministradorRoute: AdministradorRoute,
@@ -354,7 +403,7 @@ const rootRouteChildren: RootRouteChildren = {
   CadastroEmpresaRoute: CadastroEmpresaRoute,
   CandidatoRoute: CandidatoRouteWithChildren,
   EmailVerificationRoute: EmailVerificationRoute,
-  EmpresaRoute: EmpresaRoute,
+  EmpresaRoute: EmpresaRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
