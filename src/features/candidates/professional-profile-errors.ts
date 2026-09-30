@@ -3,9 +3,40 @@ import { ApiError } from "@/lib/api-error";
 const GENERIC_PROFILE_ERROR =
   "Não foi possível carregar seu perfil. Tente novamente.";
 
+const GENERIC_SAVE_ERROR =
+  "Não foi possível salvar a alteração. Tente novamente.";
+
 const messages: Record<string, string> = {
   profile_not_found: "Não encontramos seu perfil de candidato.",
 };
+
+const saveMessages: Record<string, string> = {
+  ...messages,
+  validation_error:
+    "Alguns dados não foram aceitos. Revise os campos e tente novamente.",
+  invalid_experience_period:
+    "A data de fim não pode ser anterior à data de início.",
+  invalid_education_period:
+    "A data de conclusão não pode ser anterior à data de início.",
+  experience_not_found:
+    "Esta experiência não existe mais. Feche e abra o perfil novamente.",
+  education_not_found:
+    "Esta formação não existe mais. Feche e abra o perfil novamente.",
+  skill_not_found: "Esta habilidade não está mais disponível no catálogo.",
+  skill_already_added: "Esta habilidade já está no seu perfil.",
+};
+
+function translate(
+  error: unknown,
+  table: Record<string, string>,
+  fallback: string,
+): string {
+  if (error instanceof ApiError && error.code) {
+    return table[error.code] ?? fallback;
+  }
+
+  return fallback;
+}
 
 /**
  * The API's `detail` is English operator text (problem+json), so it is
@@ -14,9 +45,10 @@ const messages: Record<string, string> = {
  * stays generic rather than leaking a provider message.
  */
 export function profileErrorMessage(error: unknown): string {
-  if (error instanceof ApiError && error.code) {
-    return messages[error.code] ?? GENERIC_PROFILE_ERROR;
-  }
+  return translate(error, messages, GENERIC_PROFILE_ERROR);
+}
 
-  return GENERIC_PROFILE_ERROR;
+/** Same mapping as `profileErrorMessage`, for failures while saving. */
+export function profileSaveErrorMessage(error: unknown): string {
+  return translate(error, saveMessages, GENERIC_SAVE_ERROR);
 }

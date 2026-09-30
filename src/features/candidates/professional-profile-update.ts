@@ -8,9 +8,6 @@ import {
 } from "./professional-profile-schema";
 import type { ProfessionalProfileUpdateValues } from "./professional-profile-update-schema";
 
-// TODO: confirmar com o backend o método e o path exatos (assumi PATCH no
-// mesmo path do GET, /professionals/me, seguindo convenção REST — ainda não
-// vi isso documentado no Swagger).
 const PROFILE_ENDPOINT = "/professionals/me";
 
 export async function updateProfessionalProfile(
