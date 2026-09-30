@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 
 import { jobSearchQueryOptions } from "./job-search";
 import type { JobSearchResult, WorkMode } from "./job-search-schema";
+import { JobVacancyDetailModal } from "./job-vacancy-detail-modal";
+import type { JobVacancy } from "./job-vacancy-schema";
 
 const WORK_MODE_LABELS: Record<WorkMode, string> = {
   onsite: "Presencial",
@@ -32,6 +34,7 @@ function useDebouncedValue(value: string, delayMs: number): string {
 
 export function JobSearchView() {
   const [term, setTerm] = useState("");
+  const [selectedJob, setSelectedJob] = useState<JobSearchResult | null>(null);
   const debouncedTerm = useDebouncedValue(term, SEARCH_DEBOUNCE_MS);
 
   const {
@@ -63,18 +66,61 @@ export function JobSearchView() {
           onRetry={() => void refetch()}
         />
       ) : (
-        <JobSearchResults jobs={jobs} term={debouncedTerm} />
+        <JobSearchResults
+          jobs={jobs}
+          term={debouncedTerm}
+          onView={setSelectedJob}
+        />
       )}
+
+      <JobVacancyDetailModal
+        vacancy={selectedJob ? toJobVacancy(selectedJob) : null}
+        {...(selectedJob
+          ? {
+              matchSummary: {
+                matchedCount: selectedJob.matched_skill_count,
+                requiredCount: selectedJob.required_skill_count,
+                missingNames: selectedJob.missing_skills.map(
+                  (skill) => skill.name,
+                ),
+              },
+            }
+          : {})}
+        open={selectedJob !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedJob(null);
+        }}
+      />
     </main>
   );
+}
+
+function toJobVacancy(job: JobSearchResult): JobVacancy {
+  return {
+    id: job.id,
+    title: job.title,
+    description: "",
+    company_name: job.company_name,
+    city: job.location,
+    state: null,
+    work_mode: job.work_mode,
+    salary_min: null,
+    salary_max: job.salary_max,
+    published_at: job.published_at ?? "",
+    status: "open",
+    has_applied: false,
+    skills: job.missing_skills.map((skill) => skill.name),
+  };
 }
 
 function JobSearchResults({
   jobs,
   term,
+  onView,
 }: {
   jobs: JobSearchResult[];
   term: string;
+  onView: (job: JobSearchResult) => void;
 }) {
   return (
     <div>
@@ -92,7 +138,7 @@ function JobSearchResults({
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {jobs.map((job) => (
-            <JobCard key={job.id} job={job} />
+            <JobCard key={job.id} job={job} onView={onView} />
           ))}
         </div>
       )}
@@ -100,7 +146,13 @@ function JobSearchResults({
   );
 }
 
-function JobCard({ job }: { job: JobSearchResult }) {
+function JobCard({
+  job,
+  onView,
+}: {
+  job: JobSearchResult;
+  onView: (job: JobSearchResult) => void;
+}) {
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border bg-background p-6">
       <div className="flex items-start gap-3">
@@ -130,7 +182,12 @@ function JobCard({ job }: { job: JobSearchResult }) {
         . {formatMissingSkills(job.missing_skills)}
       </p>
 
-      <Button type="button" className="w-fit">
+      <Button
+        type="button"
+        className="w-fit"
+        aria-label={`Ver vaga ${job.title}`}
+        onClick={() => onView(job)}
+      >
         Ver vaga
       </Button>
     </div>
