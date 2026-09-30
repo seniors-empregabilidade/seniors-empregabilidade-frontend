@@ -5,6 +5,7 @@ import {
   render as renderComponent,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -131,5 +132,32 @@ describe("JobSearchView", () => {
     render(<JobSearchView />);
 
     expect(await screen.findByText(/Faltam.*WMS.*inglês básico/)).toBeVisible();
+  });
+
+  it("opens the vacancy detail from Ver vaga", async () => {
+    vi.spyOn(apiClient, "get").mockResolvedValueOnce({ data: [baseJob] });
+    const user = userEvent.setup();
+
+    render(<JobSearchView />);
+    await screen.findByRole("heading", { name: "Supervisor de Logística" });
+
+    await user.click(
+      screen.getByRole("button", { name: "Ver vaga Supervisor de Logística" }),
+    );
+
+    const dialog = await screen.findByRole("dialog");
+    expect(
+      within(dialog).getByRole("heading", { name: "Supervisor de Logística" }),
+    ).toBeVisible();
+    expect(
+      within(dialog).getByText("Você atende 3 de 4 requisitos"),
+    ).toBeVisible();
+    expect(within(dialog).getByText("certificação NR-11")).toBeVisible();
+    expect(
+      within(dialog).getByRole("button", { name: "Candidatar-se" }),
+    ).toBeEnabled();
+    expect(
+      within(dialog).queryByRole("heading", { name: "Descrição da vaga" }),
+    ).not.toBeInTheDocument();
   });
 });

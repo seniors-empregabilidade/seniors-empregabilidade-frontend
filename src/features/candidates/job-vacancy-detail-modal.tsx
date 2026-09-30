@@ -19,11 +19,18 @@ import { companyInitials, formatVacancyMeta } from "./job-vacancy-format";
 import { matchJobVacancySkills } from "./job-vacancy-match";
 import type { JobVacancy } from "./job-vacancy-schema";
 
+interface JobVacancyMatchSummary {
+  matchedCount: number;
+  requiredCount: number;
+  missingNames: string[];
+}
+
 interface JobVacancyDetailModalProps {
   vacancy: JobVacancy | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   candidateSkillNames?: string[];
+  matchSummary?: JobVacancyMatchSummary;
 }
 
 export function JobVacancyDetailModal({
@@ -31,6 +38,7 @@ export function JobVacancyDetailModal({
   open,
   onOpenChange,
   candidateSkillNames = [],
+  matchSummary,
 }: JobVacancyDetailModalProps) {
   const [applyError, setApplyError] = useState<string | null>(null);
   const [appliedHere, setAppliedHere] = useState(false);
@@ -90,6 +98,7 @@ export function JobVacancyDetailModal({
             applyError={applyError}
             successId={successId}
             errorId={errorId}
+            {...(matchSummary ? { matchSummary } : {})}
             onApply={() => {
               void handleApply();
             }}
@@ -111,6 +120,7 @@ function VacancyDetail({
   applyError,
   successId,
   errorId,
+  matchSummary,
   onApply,
 }: {
   vacancy: JobVacancy;
@@ -123,10 +133,24 @@ function VacancyDetail({
   applyError: string | null;
   successId: string;
   errorId: string;
+  matchSummary?: JobVacancyMatchSummary;
   onApply: () => void;
 }) {
   const meta = formatVacancyMeta(vacancy);
-  const match = matchJobVacancySkills(vacancy.skills, candidateSkillNames);
+  const computedMatch = matchJobVacancySkills(
+    vacancy.skills,
+    candidateSkillNames,
+  );
+  const match = matchSummary
+    ? {
+        matched: [],
+        missing: matchSummary.missingNames,
+        total: matchSummary.requiredCount,
+      }
+    : computedMatch;
+  const matchedCount = matchSummary
+    ? matchSummary.matchedCount
+    : computedMatch.matched.length;
   const actionLabel = applyButtonLabel({
     busy,
     alreadyApplied,
@@ -180,16 +204,18 @@ function VacancyDetail({
         </div>
       </DialogHeader>
 
-      <CompatibilitySection match={match} />
+      <CompatibilitySection match={match} matchedCount={matchedCount} />
 
-      <section>
-        <h3 className="mb-2 text-lg font-bold text-foreground">
-          Descrição da vaga
-        </h3>
-        <p className="text-lg leading-6 whitespace-pre-line text-foreground">
-          {vacancy.description}
-        </p>
-      </section>
+      {vacancy.description.trim() ? (
+        <section>
+          <h3 className="mb-2 text-lg font-bold text-foreground">
+            Descrição da vaga
+          </h3>
+          <p className="text-lg leading-6 whitespace-pre-line text-foreground">
+            {vacancy.description}
+          </p>
+        </section>
+      ) : null}
 
       {applySuccess ? (
         <div
@@ -248,8 +274,10 @@ function VacancyDetail({
 
 function CompatibilitySection({
   match,
+  matchedCount,
 }: {
   match: ReturnType<typeof matchJobVacancySkills>;
+  matchedCount: number;
 }) {
   return (
     <section>
@@ -263,7 +291,7 @@ function CompatibilitySection({
       ) : (
         <>
           <p className="mb-2 text-base text-muted-foreground">
-            Você atende {match.matched.length} de {match.total} requisitos
+            Você atende {matchedCount} de {match.total} requisitos
           </p>
           <ul className="flex flex-col gap-2">
             {match.matched.map((skill) => (
