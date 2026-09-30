@@ -20,6 +20,9 @@ cypress/videos
 !.env.example
 *.local
 
+# Agent tooling
+.claude
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
