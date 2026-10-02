@@ -5,6 +5,7 @@ import { ApiError } from "@/lib/api-error";
 import {
   isAwaitingApproval,
   isClosingDateInThePast,
+  jobEditFailure,
   jobPostingFailure,
   jobStatusChangeErrorMessage,
   myJobsErrorMessage,
@@ -82,6 +83,53 @@ describe("jobPostingFailure", () => {
     expect(jobPostingFailure(error)).toEqual({
       message:
         "Não foi possível publicar a vaga. Seus dados foram mantidos; tente novamente.",
+      fields: [],
+    });
+  });
+});
+
+describe("jobEditFailure", () => {
+  it("places server field errors on the fields the edit form shows", () => {
+    const failure = jobEditFailure(
+      new ApiError({
+        message: "The request contains invalid data.",
+        status: 422,
+        code: "validation_error",
+        errors: {
+          "body.title": ["String should have at most 150 characters"],
+          "body.skills.0.name": ["Value error"],
+          "body.closing_date": ["Not editable here"],
+        },
+      }),
+    );
+
+    expect(failure.message).toBe(
+      "Confira os campos destacados e tente novamente.",
+    );
+    expect(failure.fields.map(({ field }) => field)).toEqual([
+      "title",
+      "skills",
+    ]);
+  });
+
+  it("tells a job that no longer exists apart from a generic failure", () => {
+    expect(
+      jobEditFailure(new ApiError({ message: "x", code: "job_not_found" }))
+        .message,
+    ).toMatch(/Não encontramos essa vaga/);
+  });
+
+  it.each([
+    [
+      "an unmapped code",
+      new ApiError({ message: "x", code: "internal_error" }),
+    ],
+    ["a network failure", new ApiError({ message: "x" })],
+    ["an unknown error", new Error("boom")],
+  ])("keeps %s generic, in the words of saving", (_, error) => {
+    expect(jobEditFailure(error)).toEqual({
+      message:
+        "Não foi possível salvar as alterações. Seus dados foram mantidos; tente novamente.",
       fields: [],
     });
   });

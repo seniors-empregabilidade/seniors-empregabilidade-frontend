@@ -24,6 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+import { JobEditModal } from "./job-edit-modal";
 import { todayIsoDate } from "./job-posting-schema";
 import { needsNewClosingDate, statusActionFor } from "./job-status";
 import {
@@ -39,16 +40,10 @@ import {
 
 interface JobStatusActionsProps {
   job: JobSummary;
-  /** Explains, once per page, why editing is not available yet. */
-  editHintId: string;
   onChanged: (message: string) => void;
 }
 
-export function JobStatusActions({
-  job,
-  editHintId,
-  onChanged,
-}: JobStatusActionsProps) {
+export function JobStatusActions({ job, onChanged }: JobStatusActionsProps) {
   const queryClient = useQueryClient();
   const [dialog, setDialog] = useState<"close" | "reopen" | null>(null);
   const [closingDate, setClosingDate] = useState("");
@@ -124,14 +119,20 @@ export function JobStatusActions({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          disabled
-          aria-describedby={editHintId}
-        >
-          Editar
-        </Button>
+        <JobEditModal
+          job={job}
+          onSaved={(saved) =>
+            onChanged(`A vaga “${saved.title}” foi atualizada.`)
+          }
+          {...(action === "close"
+            ? {
+                onRequestClose: () => {
+                  mutation.reset();
+                  setDialog("close");
+                },
+              }
+            : {})}
+        />
         {action === "close" ? (
           <Button
             type="button"

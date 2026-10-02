@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
@@ -16,7 +16,6 @@ import { isAwaitingApproval, myJobsErrorMessage } from "./jobs-errors";
 
 export function MyJobsPage() {
   const [notice, setNotice] = useState<string | null>(null);
-  const editHintId = useId();
   const jobs = useQuery(myJobsQueryOptions);
   const awaitingApproval = isAwaitingApproval(jobs.error);
   const openCount = jobs.data?.filter((job) => isOpenToCandidates(job)).length;
@@ -87,17 +86,10 @@ export function MyJobsPage() {
         </p>
       ) : (
         <>
-          <p id={editHintId} className="mb-4 text-base text-muted-foreground">
-            A edição de vagas estará disponível em breve.
-          </p>
           <ul className="flex flex-col gap-4">
             {jobs.data.map((job) => (
               <li key={job.id}>
-                <JobCard
-                  job={job}
-                  editHintId={editHintId}
-                  onStatusChanged={setNotice}
-                />
+                <JobCard job={job} onStatusChanged={setNotice} />
               </li>
             ))}
           </ul>
@@ -109,11 +101,10 @@ export function MyJobsPage() {
 
 interface JobCardProps {
   job: JobSummary;
-  editHintId: string;
   onStatusChanged: (message: string) => void;
 }
 
-function JobCard({ job, editHintId, onStatusChanged }: JobCardProps) {
+function JobCard({ job, onStatusChanged }: JobCardProps) {
   const titleId = `job-${job.id}-title`;
 
   return (
@@ -156,11 +147,7 @@ function JobCard({ job, editHintId, onStatusChanged }: JobCardProps) {
           </li>
         ))}
       </ul>
-      <JobStatusActions
-        job={job}
-        editHintId={editHintId}
-        onChanged={onStatusChanged}
-      />
+      <JobStatusActions job={job} onChanged={onStatusChanged} />
     </article>
   );
 }

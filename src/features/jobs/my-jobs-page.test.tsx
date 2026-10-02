@@ -38,7 +38,7 @@ const draft = {
   id: "55555555-5555-4555-8555-555555555555",
   title: "Analista de operações",
   description: "",
-  skills: [],
+  skills: [] as typeof published.skills,
   work_mode: "onsite",
   closing_date: "2099-01-05",
   status: "draft",
@@ -90,7 +90,12 @@ function serverWith(initial: ListedJob[]): Record<string, StubRoute> {
 }
 
 function statusRequests() {
-  return stub?.requests.filter((request) => request.method === "patch") ?? [];
+  return (
+    stub?.requests.filter(
+      (request) =>
+        request.method === "patch" && request.url?.endsWith("/status"),
+    ) ?? []
+  );
 }
 
 function card(title: string) {
@@ -228,11 +233,10 @@ describe("MyJobsPage", () => {
     expect(
       draftCard.queryByRole("button", { name: /Encerrar|Reabrir/ }),
     ).not.toBeInTheDocument();
+    // Every job can be edited, whatever its status.
+    expect(screen.getAllByRole("button", { name: "Editar" })).toHaveLength(4);
     for (const edit of screen.getAllByRole("button", { name: "Editar" })) {
-      expect(edit).toBeDisabled();
-      expect(edit).toHaveAccessibleDescription(
-        "A edição de vagas estará disponível em breve.",
-      );
+      expect(edit).toBeEnabled();
     }
   });
 
@@ -395,6 +399,105 @@ describe("MyJobsPage", () => {
         "Não foi possível reabrir a vaga. Tente novamente.",
       ),
     ).toBeInTheDocument();
+  });
+
+  it("edits a job through the modal and shows the change in the list", async () => {
+    let stored: ListedJob = { ...listedPublished };
+    const user = mount({
+      "GET /jobs/me": () => ({ status: 200, data: [stored] }),
+      [`PATCH /jobs/${published.id}`]: (request) => {
+        const body = request.body as {
+          title: string;
+          description: string;
+          skills: { name: string }[];
+        };
+        stored = {
+          ...stored,
+          title: body.title,
+          description: body.description,
+          skills: stored.skills.filter((skill) =>
+            body.skills.some(({ name }) => name === skill.name),
+          ),
+        };
+        return { status: 200, data: stored };
+      },
+    });
+    await screen.findByRole("article", { name: published.title });
+
+    await user.click(
+      card(published.title).getByRole("button", { name: "Editar" }),
+    );
+    const title = await screen.findByLabelText("Título da vaga *");
+    expect(title).toHaveValue(published.title);
+    await user.clear(title);
+    await user.type(title, "Desenvolvedor(a) Frontend Sênior");
+    await user.click(
+      screen.getByRole("button", { name: "Remover habilidade Comunicação" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Salvar" }));
+
+    expect(
+      await screen.findByText(
+        "A vaga “Desenvolvedor(a) Frontend Sênior” foi atualizada.",
+      ),
+    ).toBeInTheDocument();
+    const updated = await screen.findByRole("article", {
+      name: "Desenvolvedor(a) Frontend Sênior",
+    });
+    expect(within(updated).queryByText("Comunicação")).not.toBeInTheDocument();
+    expect(within(updated).getByText("React")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Editar vaga" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("closes a job from the edit modal only after the confirmation", async () => {
+    const user = mount(serverWith([listedPublished]));
+    await screen.findByRole("article", { name: published.title });
+
+    await user.click(
+      card(published.title).getByRole("button", { name: "Editar" }),
+    );
+    await user.click(
+      await screen.findByRole("button", { name: "Encerrar vaga" }),
+    );
+
+    const confirmation = await screen.findByRole("alertdialog", {
+      name: "Encerrar a vaga?",
+    });
+    expect(
+      screen.queryByRole("heading", { name: "Editar vaga" }),
+    ).not.toBeInTheDocument();
+    expect(statusRequests()).toHaveLength(0);
+
+    await user.click(
+      within(confirmation).getByRole("button", { name: "Encerrar vaga" }),
+    );
+
+    expect(
+      await screen.findByText(
+        `A vaga “${published.title}” foi encerrada e saiu das buscas dos candidatos.`,
+      ),
+    ).toBeInTheDocument();
+    expect(statusRequests().map((request) => request.body)).toEqual([
+      { status: "closed" },
+    ]);
+  });
+
+  it("does not offer to close a job that is not open from the edit modal", async () => {
+    const user = mount({
+      "GET /jobs/me": { status: 200, data: [listedClosed] },
+    });
+    await screen.findByRole("article", { name: listedClosed.title });
+
+    await user.click(
+      card(listedClosed.title).getByRole("button", { name: "Editar" }),
+    );
+
+    await screen.findByRole("heading", { name: "Editar vaga" });
+    expect(
+      screen.queryByRole("button", { name: "Encerrar vaga" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows a job published in the modal in the list, once the API confirmed it", async () => {
