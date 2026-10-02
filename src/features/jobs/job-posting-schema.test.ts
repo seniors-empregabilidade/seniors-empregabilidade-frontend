@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  jobEditSchema,
   jobPostingSchema,
   normalizeSkillName,
   todayIsoDate,
@@ -66,6 +67,35 @@ describe("jobPostingSchema", () => {
     ).toBe(false);
   });
 });
+
+describe("jobEditSchema", () => {
+  it("still needs a title, a description and at least one skill", () => {
+    expect(
+      messagesFor2({ ...valid, title: " ", description: "", skills: [] }),
+    ).toEqual({
+      title: ["Preencha este campo."],
+      description: ["Preencha este campo."],
+      skills: ["Adicione pelo menos uma habilidade."],
+    });
+  });
+
+  it("does not check the closing date, which editing leaves as stored", () => {
+    expect(
+      jobEditSchema.safeParse({ ...valid, closingDate: "2020-01-31" }).success,
+    ).toBe(true);
+  });
+});
+
+function messagesFor2(input: unknown): Record<string, string[]> {
+  const result = jobEditSchema.safeParse(input);
+  if (result.success) return {};
+  const messages: Record<string, string[]> = {};
+  for (const issue of result.error.issues) {
+    const key = issue.path.join(".");
+    (messages[key] ??= []).push(issue.message);
+  }
+  return messages;
+}
 
 describe("normalizeSkillName", () => {
   it("compares names without case, accents or repeated spaces", () => {
