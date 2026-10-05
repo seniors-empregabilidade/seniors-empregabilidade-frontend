@@ -100,8 +100,7 @@ export type JobEdit = Pick<
   "title" | "description" | "skills"
 > & { id: string };
 
-// Assumes PATCH /jobs/{id} with the editable fields, answering with the job
-// shape. Confirm against docs/JOBS.md in the backend repository.
+// PATCH /jobs/{id} replaces the three editable fields and answers with the job.
 export async function updateJob({
   id,
   title,

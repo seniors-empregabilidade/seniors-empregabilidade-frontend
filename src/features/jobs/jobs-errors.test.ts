@@ -86,6 +86,23 @@ describe("jobPostingFailure", () => {
       fields: [],
     });
   });
+
+  it("stays generic when a validation error names no field of the form", () => {
+    expect(
+      jobPostingFailure(
+        new ApiError({
+          message: "The request contains invalid data.",
+          status: 422,
+          code: "validation_error",
+          errors: { body: ["Input should be a valid dictionary"] },
+        }),
+      ),
+    ).toEqual({
+      message:
+        "Não foi possível publicar a vaga. Seus dados foram mantidos; tente novamente.",
+      fields: [],
+    });
+  });
 });
 
 describe("jobEditFailure", () => {
@@ -110,6 +127,23 @@ describe("jobEditFailure", () => {
       "title",
       "skills",
     ]);
+  });
+
+  it("stays generic when the only field errors are about fields it does not edit", () => {
+    expect(
+      jobEditFailure(
+        new ApiError({
+          message: "The request contains invalid data.",
+          status: 422,
+          code: "validation_error",
+          errors: { "body.closing_date": ["Not editable here"] },
+        }),
+      ),
+    ).toEqual({
+      message:
+        "Não foi possível salvar as alterações. Seus dados foram mantidos; tente novamente.",
+      fields: [],
+    });
   });
 
   it("tells a job that no longer exists apart from a generic failure", () => {

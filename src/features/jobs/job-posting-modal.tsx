@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import type { DefaultValues } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -11,10 +12,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-import { emptyJobPosting, JobPostingForm } from "./job-posting-form";
+import { JobPostingForm } from "./job-posting-form";
 import type { JobPostingValues } from "./job-posting-schema";
 import { createJob, type Job, myJobsQueryKey } from "./jobs-api";
 import { jobPostingFailure } from "./jobs-errors";
+
+const emptyJob: DefaultValues<JobPostingValues> = {
+  title: "",
+  description: "",
+  closingDate: "",
+  skills: [],
+};
 
 interface JobPostingModalProps {
   /** Runs only after the API confirmed the job, with the job it stored. */
@@ -23,7 +31,6 @@ interface JobPostingModalProps {
 
 export function JobPostingModal({ onPublished }: JobPostingModalProps) {
   const [open, setOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
   // A new key gives the next opening a blank form.
   const [formKey, setFormKey] = useState(0);
   const queryClient = useQueryClient();
@@ -39,14 +46,12 @@ export function JobPostingModal({ onPublished }: JobPostingModalProps) {
   });
 
   async function publish(values: JobPostingValues) {
-    setSaving(true);
     try {
       const job = await mutation.mutateAsync(values);
       setOpen(false);
       setFormKey((key) => key + 1);
       onPublished?.(job);
     } finally {
-      setSaving(false);
       mutation.reset();
     }
   }
@@ -56,7 +61,7 @@ export function JobPostingModal({ onPublished }: JobPostingModalProps) {
       open={open}
       onOpenChange={(nextOpen) => {
         // Closing mid-request would hide whether the job was published.
-        if (!nextOpen && saving) return;
+        if (!nextOpen && mutation.isPending) return;
         setOpen(nextOpen);
         if (!nextOpen) setFormKey((key) => key + 1);
       }}
@@ -72,10 +77,10 @@ export function JobPostingModal({ onPublished }: JobPostingModalProps) {
         <JobPostingForm
           key={formKey}
           mode="create"
-          defaultValues={emptyJobPosting}
+          defaultValues={emptyJob}
           submitLabel="Publicar vaga"
           pendingLabel="Publicando…"
-          pending={saving}
+          pending={mutation.isPending}
           onSubmit={publish}
           describeFailure={jobPostingFailure}
         />

@@ -81,6 +81,11 @@ export function JobStatusActions({ job, onChanged }: JobStatusActionsProps) {
     }
   }
 
+  function openCloseConfirmation() {
+    mutation.reset();
+    setDialog("close");
+  }
+
   function reopen() {
     mutation.reset();
     if (needsNewClosingDate(job)) {
@@ -125,12 +130,7 @@ export function JobStatusActions({ job, onChanged }: JobStatusActionsProps) {
             onChanged(`A vaga “${saved.title}” foi atualizada.`)
           }
           {...(action === "close"
-            ? {
-                onRequestClose: () => {
-                  mutation.reset();
-                  setDialog("close");
-                },
-              }
+            ? { onRequestClose: openCloseConfirmation }
             : {})}
         />
         {action === "close" ? (
@@ -138,10 +138,7 @@ export function JobStatusActions({ job, onChanged }: JobStatusActionsProps) {
             type="button"
             variant="outline"
             disabled={pending}
-            onClick={() => {
-              mutation.reset();
-              setDialog("close");
-            }}
+            onClick={openCloseConfirmation}
           >
             Encerrar
           </Button>

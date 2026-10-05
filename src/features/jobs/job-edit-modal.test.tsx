@@ -110,9 +110,9 @@ describe("Job edit modal", () => {
     await openModal(user);
 
     expect(screen.getByLabelText("Título da vaga *")).toHaveValue(job.title);
-    expect(screen.getByLabelText("Descrição da vaga *")).toHaveValue(
-      job.description,
-    );
+    const description = screen.getByLabelText("Descrição da vaga");
+    expect(description).toHaveValue(job.description);
+    expect(description).not.toBeRequired();
     expect(addedSkills().getAllByRole("listitem")).toHaveLength(2);
     expect(addedSkills().getByText("React")).toBeInTheDocument();
     expect(addedSkills().getByText("· Comportamental")).toBeInTheDocument();
@@ -191,6 +191,17 @@ describe("Job edit modal", () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["jobs", "me"] });
   });
 
+  it("saves a job without a description, which the API allows", async () => {
+    const { user, onSaved } = mount({}, { job: { ...job, description: "" } });
+    await openModal(user);
+
+    await user.click(screen.getByRole("button", { name: "Salvar" }));
+
+    await expectClosed();
+    expect(saveRequests()[0]?.body).toMatchObject({ description: "" });
+    expect(onSaved).toHaveBeenCalled();
+  });
+
   it("saves a job whose closing date has passed", async () => {
     const { user, onSaved } = mount(
       {},
@@ -230,8 +241,11 @@ describe("Job edit modal", () => {
     expect(onSaved).not.toHaveBeenCalled();
   });
 
-  it("explains a job that no longer exists", async () => {
-    const { user } = mount({ [path]: problem(404, "job_not_found") });
+  it("explains a job that no longer exists and refreshes the list only once closed", async () => {
+    const { user, queryClient } = mount({
+      [path]: problem(404, "job_not_found"),
+    });
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
     await openModal(user);
 
     await user.click(screen.getByRole("button", { name: "Salvar" }));
@@ -239,6 +253,12 @@ describe("Job edit modal", () => {
     expect(
       await screen.findByText(/Não encontramos essa vaga/),
     ).toBeInTheDocument();
+    expect(invalidate).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    await expectClosed();
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["jobs", "me"] });
   });
 
   it.each([
@@ -299,6 +319,36 @@ describe("Job edit modal", () => {
     expect(onRequestClose).toHaveBeenCalledTimes(1);
     expect(saveRequests()).toHaveLength(0);
   });
+
+  it.each([
+    [
+      "a typed change",
+      (user: UserEvent) =>
+        user.type(screen.getByLabelText("Título da vaga *"), " revisado"),
+    ],
+    [
+      "a removed skill",
+      (user: UserEvent) =>
+        user.click(
+          screen.getByRole("button", { name: "Remover habilidade React" }),
+        ),
+    ],
+  ])(
+    "does not offer closing over %s that was not saved",
+    async (_, change: (user: UserEvent) => Promise<void>) => {
+      const { user, onRequestClose } = mount({}, { withClose: true });
+      await openModal(user);
+
+      await change(user);
+
+      const close = screen.getByRole("button", { name: "Encerrar vaga" });
+      expect(close).toBeDisabled();
+      expect(close).toHaveAccessibleDescription(
+        "Salve ou cancele as alterações para encerrar a vaga.",
+      );
+      expect(onRequestClose).not.toHaveBeenCalled();
+    },
+  );
 
   it("offers no closing when the caller gave none", async () => {
     const { user } = mount();

@@ -45,13 +45,21 @@ const publishMessages: Record<string, string> = {
     "Não conseguimos confirmar a publicação. Confira a lista de vagas antes de tentar de novo.",
 };
 
+const allFields: JobPostingField[] = [
+  "title",
+  "description",
+  "workMode",
+  "closingDate",
+  "skills",
+];
+
 /**
  * The API's `detail` is English operator text (problem+json), so a failure is
  * mapped by `code` to the Portuguese the person reads, and field errors are
  * placed on the form field they belong to.
  */
 export function jobPostingFailure(error: unknown): JobPostingFailure {
-  return failureFrom(error, publishMessages, GENERIC_PUBLISH_ERROR);
+  return failureFrom(error, publishMessages, GENERIC_PUBLISH_ERROR, allFields);
 }
 
 const GENERIC_EDIT_ERROR =
@@ -74,27 +82,26 @@ const editableFields: JobPostingField[] = ["title", "description", "skills"];
 
 /** Same mapping as `jobPostingFailure`, in the words of saving an edit. */
 export function jobEditFailure(error: unknown): JobPostingFailure {
-  const failure = failureFrom(error, editMessages, GENERIC_EDIT_ERROR);
-  return {
-    ...failure,
-    fields: failure.fields.filter(({ field }) =>
-      editableFields.includes(field),
-    ),
-  };
+  return failureFrom(error, editMessages, GENERIC_EDIT_ERROR, editableFields);
 }
 
 function failureFrom(
   error: unknown,
   messages: Record<string, string>,
   generic: string,
+  shownFields: JobPostingField[],
 ): JobPostingFailure {
   if (!(error instanceof ApiError) || !error.code)
     return { message: generic, fields: [] };
 
-  return {
-    message: messages[error.code] ?? generic,
-    fields: fieldErrors(error.errors),
-  };
+  const fields = fieldErrors(error.errors).filter(({ field }) =>
+    shownFields.includes(field),
+  );
+  // "Confira os campos destacados" needs a highlighted field to point at.
+  if (error.code === "validation_error" && fields.length === 0)
+    return { message: generic, fields };
+
+  return { message: messages[error.code] ?? generic, fields };
 }
 
 export function isAwaitingApproval(error: unknown): boolean {

@@ -451,6 +451,49 @@ describe("MyJobsPage", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("keeps the edit modal and its message for a job gone from the server, then refreshes the list", async () => {
+    let listed: ListedJob[] = [listedPublished];
+    const user = mount({
+      "GET /jobs/me": () => ({ status: 200, data: listed }),
+      [`PATCH /jobs/${published.id}`]: () => {
+        listed = [];
+        return {
+          status: 404,
+          data: {
+            title: "Not Found",
+            status: 404,
+            code: "job_not_found",
+            detail: "English text",
+          },
+        };
+      },
+    });
+    await screen.findByRole("article", { name: published.title });
+
+    await user.click(
+      card(published.title).getByRole("button", { name: "Editar" }),
+    );
+    await user.click(await screen.findByRole("button", { name: "Salvar" }));
+
+    expect(
+      await screen.findByText(
+        "Não encontramos essa vaga. Feche esta janela e confira a lista de vagas.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Editar vaga" }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    expect(
+      await screen.findByText(/Você ainda não publicou vagas/),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Editar vaga" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("closes a job from the edit modal only after the confirmation", async () => {
     const user = mount(serverWith([listedPublished]));
     await screen.findByRole("article", { name: published.title });

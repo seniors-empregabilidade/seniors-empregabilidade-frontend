@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -26,9 +26,9 @@ interface JobEditModalProps {
   /** Runs only after the API confirmed the change, with the job it stored. */
   onSaved?: (job: Job) => void;
   /**
-   * Offers "Encerrar vaga" in the modal. The modal closes, discarding what was
-   * typed, and hands over to the confirmation the caller owns, so closing a
-   * job always goes through it.
+   * Offers "Encerrar vaga" in the modal once nothing is left unsaved. The modal
+   * closes and hands over to the confirmation the caller owns, so closing a job
+   * always goes through it.
    */
   onRequestClose?: () => void;
 }
@@ -50,28 +50,38 @@ export function JobEditModal({
   onRequestClose,
 }: JobEditModalProps) {
   const [open, setOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
   // A new key makes the next opening start from the job again, discarding
   // whatever was typed and not saved.
   const [formKey, setFormKey] = useState(0);
+  // A refused or lost save may mean the job changed or no longer exists. The
+  // list refreshes only once the modal closes: a job gone from it would take
+  // its card, and this modal, away before the person reads why.
+  const listMayBeStale = useRef(false);
+  const closeHintId = useId();
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: updateJob,
     retry: false,
     gcTime: 0,
-    // Whatever the outcome, the list shows what the server stored.
-    onSettled: () =>
+    // The list already shows the change when the modal closes.
+    onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: myJobsQueryKey }),
+    onError: () => {
+      listMayBeStale.current = true;
+    },
   });
 
   function discard() {
     setOpen(false);
     setFormKey((key) => key + 1);
+    if (listMayBeStale.current) {
+      listMayBeStale.current = false;
+      void queryClient.invalidateQueries({ queryKey: myJobsQueryKey });
+    }
   }
 
   async function save({ title, description, skills }: JobPostingValues) {
-    setSaving(true);
     try {
       const saved = await mutation.mutateAsync({
         id: job.id,
@@ -82,7 +92,6 @@ export function JobEditModal({
       discard();
       onSaved?.(saved);
     } finally {
-      setSaving(false);
       mutation.reset();
     }
   }
@@ -92,7 +101,7 @@ export function JobEditModal({
       open={open}
       onOpenChange={(nextOpen) => {
         // Closing mid-request would hide whether the change was saved.
-        if (!nextOpen && saving) return;
+        if (!nextOpen && mutation.isPending) return;
         if (nextOpen) setOpen(true);
         else discard();
       }}
@@ -118,24 +127,34 @@ export function JobEditModal({
           defaultValues={currentValues(job)}
           submitLabel="Salvar"
           pendingLabel="Salvando…"
-          pending={saving}
+          pending={mutation.isPending}
           onSubmit={save}
           describeFailure={jobEditFailure}
           {...(onRequestClose
             ? {
-                footerStart: (busy) => (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={busy}
-                    className="sm:mr-auto"
-                    onClick={() => {
-                      discard();
-                      onRequestClose();
-                    }}
-                  >
-                    Encerrar vaga
-                  </Button>
+                footerStart: ({ busy, dirty }) => (
+                  <div className="flex flex-col gap-1 sm:mr-auto sm:max-w-64">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={busy || dirty}
+                      aria-describedby={dirty ? closeHintId : undefined}
+                      onClick={() => {
+                        discard();
+                        onRequestClose();
+                      }}
+                    >
+                      Encerrar vaga
+                    </Button>
+                    {dirty ? (
+                      <p
+                        id={closeHintId}
+                        className="text-base text-muted-foreground"
+                      >
+                        Salve ou cancele as alterações para encerrar a vaga.
+                      </p>
+                    ) : null}
+                  </div>
                 ),
               }
             : {})}

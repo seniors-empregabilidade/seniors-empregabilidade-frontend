@@ -29,14 +29,6 @@ import {
 import type { JobPostingFailure } from "./jobs-errors";
 import { useDebouncedValue } from "./use-debounced-value";
 
-// eslint-disable-next-line react-refresh/only-export-components
-export const emptyJobPosting: DefaultValues<JobPostingValues> = {
-  title: "",
-  description: "",
-  closingDate: "",
-  skills: [],
-};
-
 const SUGGESTION_DELAY_MS = 300;
 
 const choiceClassName = "flex min-h-11 items-center gap-2 text-lg";
@@ -44,9 +36,9 @@ const radioClassName = "size-5 shrink-0 accent-primary";
 
 export interface JobPostingFormProps {
   /**
-   * "create" asks for every field. "edit" asks for the title, the description
-   * and the skills; the work mode and the closing date keep the values given
-   * in `defaultValues`, unshown and unchecked.
+   * "create" asks for every field. "edit" asks for the title, the optional
+   * description and the skills; the work mode and the closing date keep the
+   * values given in `defaultValues`, unshown and unchecked.
    */
   mode: "create" | "edit";
   defaultValues: DefaultValues<JobPostingValues>;
@@ -58,8 +50,11 @@ export interface JobPostingFormProps {
   onSubmit: (values: JobPostingValues) => Promise<void>;
   /** Turns the rejection into the Portuguese message and the field errors. */
   describeFailure: (error: unknown) => JobPostingFailure;
-  /** Extra footer content before Cancel, given whether the form is busy. */
-  footerStart?: (busy: boolean) => ReactNode;
+  /**
+   * Extra footer content before Cancel, given whether the form is busy and
+   * whether it holds changes not saved yet.
+   */
+  footerStart?: (state: { busy: boolean; dirty: boolean }) => ReactNode;
 }
 
 /**
@@ -120,10 +115,14 @@ export function JobPostingForm({
       : [];
 
   const busy = pending || formState.isSubmitting;
+  const descriptionRequired = mode === "create";
 
   function addSkill(skill: JobSkill) {
     if (!addedNames.has(normalizeSkillName(skill.name))) {
-      setValue("skills", [...skills, skill], { shouldValidate: true });
+      setValue("skills", [...skills, skill], {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
     }
     setSkillDraft("");
   }
@@ -156,7 +155,7 @@ export function JobPostingForm({
     setValue(
       "skills",
       skills.filter((skill) => skill.name !== name),
-      { shouldValidate: true },
+      { shouldValidate: true, shouldDirty: true },
     );
   }
 
@@ -200,12 +199,14 @@ export function JobPostingForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor={descriptionId}>Descrição da vaga *</Label>
+          <Label htmlFor={descriptionId}>
+            {descriptionRequired ? "Descrição da vaga *" : "Descrição da vaga"}
+          </Label>
           <textarea
             {...register("description")}
             id={descriptionId}
             rows={5}
-            aria-required="true"
+            aria-required={descriptionRequired}
             aria-invalid={Boolean(errors.description)}
             aria-describedby={
               errors.description ? descriptionErrorId : undefined
@@ -408,7 +409,7 @@ export function JobPostingForm({
       )}
 
       <DialogFooter>
-        {footerStart?.(busy)}
+        {footerStart?.({ busy, dirty: formState.isDirty })}
         <DialogClose
           disabled={busy}
           render={

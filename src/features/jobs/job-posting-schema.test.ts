@@ -15,8 +15,11 @@ const valid = {
   skills: [{ name: "Gestão de equipes", type: "soft" }],
 };
 
-function messagesFor(input: unknown): Record<string, string[]> {
-  const result = jobPostingSchema.safeParse(input);
+function messagesFor(
+  input: unknown,
+  schema: typeof jobPostingSchema = jobPostingSchema,
+): Record<string, string[]> {
+  const result = schema.safeParse(input);
   if (result.success) return {};
   const messages: Record<string, string[]> = {};
   for (const issue of result.error.issues) {
@@ -69,14 +72,25 @@ describe("jobPostingSchema", () => {
 });
 
 describe("jobEditSchema", () => {
-  it("still needs a title, a description and at least one skill", () => {
+  it("still needs a title and at least one skill", () => {
     expect(
-      messagesFor2({ ...valid, title: " ", description: "", skills: [] }),
+      messagesFor({ ...valid, title: " ", skills: [] }, jobEditSchema),
     ).toEqual({
       title: ["Preencha este campo."],
-      description: ["Preencha este campo."],
       skills: ["Adicione pelo menos uma habilidade."],
     });
+  });
+
+  it("accepts the empty or long description the API stores", () => {
+    expect(messagesFor({ ...valid, description: "" }, jobEditSchema)).toEqual(
+      {},
+    );
+    expect(
+      messagesFor({ ...valid, description: "a".repeat(10000) }, jobEditSchema),
+    ).toEqual({});
+    expect(
+      messagesFor({ ...valid, description: "a".repeat(10001) }, jobEditSchema),
+    ).toEqual({ description: ["Use até 10000 caracteres."] });
   });
 
   it("does not check the closing date, which editing leaves as stored", () => {
@@ -85,17 +99,6 @@ describe("jobEditSchema", () => {
     ).toBe(true);
   });
 });
-
-function messagesFor2(input: unknown): Record<string, string[]> {
-  const result = jobEditSchema.safeParse(input);
-  if (result.success) return {};
-  const messages: Record<string, string[]> = {};
-  for (const issue of result.error.issues) {
-    const key = issue.path.join(".");
-    (messages[key] ??= []).push(issue.message);
-  }
-  return messages;
-}
 
 describe("normalizeSkillName", () => {
   it("compares names without case, accents or repeated spaces", () => {
