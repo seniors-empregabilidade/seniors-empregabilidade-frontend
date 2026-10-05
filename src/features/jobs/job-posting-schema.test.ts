@@ -113,7 +113,9 @@ describe("normalizeSkillName", () => {
 });
 
 describe("todayIsoDate", () => {
-  it("formats the local calendar date with padded month and day", () => {
-    expect(todayIsoDate(new Date(2026, 0, 5, 23, 59))).toBe("2026-01-05");
+  it("follows the São Paulo calendar the API uses, with padded month and day", () => {
+    // 23:30 on January 5 in São Paulo, already January 6 in UTC.
+    expect(todayIsoDate(new Date("2026-01-06T02:30:00Z"))).toBe("2026-01-05");
+    expect(todayIsoDate(new Date("2026-01-06T03:30:00Z"))).toBe("2026-01-06");
   });
 });

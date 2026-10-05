@@ -59,11 +59,24 @@ export const jobEditSchema = jobPostingSchema.extend({
   closingDate: z.string(),
 });
 
-/** Today's calendar date where the person is, as `<input type="date">` reads it. */
+const saoPauloCalendar = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/Sao_Paulo",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+/**
+ * Today's date in São Paulo, as `<input type="date">` reads it. The API decides
+ * whether a job is open, and whether a new closing date is in the past, by this
+ * calendar (`app.core.local_date`), so "Minhas vagas" matches what candidates
+ * find wherever the person is.
+ */
 export function todayIsoDate(now: Date = new Date()): string {
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${now.getFullYear()}-${month}-${day}`;
+  const parts = Object.fromEntries(
+    saoPauloCalendar.formatToParts(now).map(({ type, value }) => [type, value]),
+  );
+  return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
 /**
