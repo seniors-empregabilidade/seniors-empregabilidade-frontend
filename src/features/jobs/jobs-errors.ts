@@ -45,19 +45,63 @@ const publishMessages: Record<string, string> = {
     "Não conseguimos confirmar a publicação. Confira a lista de vagas antes de tentar de novo.",
 };
 
+const allFields: JobPostingField[] = [
+  "title",
+  "description",
+  "workMode",
+  "closingDate",
+  "skills",
+];
+
 /**
  * The API's `detail` is English operator text (problem+json), so a failure is
  * mapped by `code` to the Portuguese the person reads, and field errors are
  * placed on the form field they belong to.
  */
 export function jobPostingFailure(error: unknown): JobPostingFailure {
-  if (!(error instanceof ApiError) || !error.code)
-    return { message: GENERIC_PUBLISH_ERROR, fields: [] };
+  return failureFrom(error, publishMessages, GENERIC_PUBLISH_ERROR, allFields);
+}
 
-  return {
-    message: publishMessages[error.code] ?? GENERIC_PUBLISH_ERROR,
-    fields: fieldErrors(error.errors),
-  };
+const GENERIC_EDIT_ERROR =
+  "Não foi possível salvar as alterações. Seus dados foram mantidos; tente novamente.";
+
+const editMessages: Record<string, string> = {
+  validation_error: "Confira os campos destacados e tente novamente.",
+  approved_company_required: AWAITING_APPROVAL,
+  invalid_access_token:
+    "Sua sessão expirou. Entre novamente para salvar a vaga.",
+  job_not_found:
+    "Não encontramos essa vaga. Feche esta janela e confira a lista de vagas.",
+  invalid_job_update_response:
+    "Não conseguimos confirmar o salvamento. Confira a lista de vagas antes de tentar de novo.",
+};
+
+// The work mode and the closing date are not edited, so an error about them
+// has no field on the form to land on.
+const editableFields: JobPostingField[] = ["title", "description", "skills"];
+
+/** Same mapping as `jobPostingFailure`, in the words of saving an edit. */
+export function jobEditFailure(error: unknown): JobPostingFailure {
+  return failureFrom(error, editMessages, GENERIC_EDIT_ERROR, editableFields);
+}
+
+function failureFrom(
+  error: unknown,
+  messages: Record<string, string>,
+  generic: string,
+  shownFields: JobPostingField[],
+): JobPostingFailure {
+  if (!(error instanceof ApiError) || !error.code)
+    return { message: generic, fields: [] };
+
+  const fields = fieldErrors(error.errors).filter(({ field }) =>
+    shownFields.includes(field),
+  );
+  // "Confira os campos destacados" needs a highlighted field to point at.
+  if (error.code === "validation_error" && fields.length === 0)
+    return { message: generic, fields };
+
+  return { message: messages[error.code] ?? generic, fields };
 }
 
 export function isAwaitingApproval(error: unknown): boolean {

@@ -9,6 +9,7 @@ import {
   fetchMyJobs,
   searchSkills,
   skillSuggestionsQueryOptions,
+  updateJob,
 } from "./jobs-api";
 
 const job = {
@@ -94,6 +95,53 @@ describe("createJob", () => {
     await expect(createJob(values)).rejects.toMatchObject({
       code: "closing_date_in_the_past",
       errors: { closing_date: ["The closing date cannot be in the past."] },
+    });
+  });
+});
+
+describe("updateJob", () => {
+  const path = `PATCH /jobs/${job.id}`;
+  const edit = {
+    id: job.id,
+    title: "Desenvolvedor(a) Frontend Sênior",
+    description: "Nova descrição da vaga.",
+    skills: values.skills,
+  };
+
+  it("sends only the editable fields, with structured skills", async () => {
+    stub = stubApiRoutes({
+      [path]: { status: 200, data: { ...job, title: edit.title } },
+    });
+
+    await expect(updateJob(edit)).resolves.toMatchObject({ title: edit.title });
+    expect(stub.requests[0]?.body).toEqual({
+      title: edit.title,
+      description: edit.description,
+      skills: [
+        { name: "React", type: "hard" },
+        { name: "Comunicação", type: "soft" },
+      ],
+    });
+  });
+
+  it("does not confirm a change it cannot read", async () => {
+    stub = stubApiRoutes({ [path]: { status: 200, data: { id: job.id } } });
+
+    await expect(updateJob(edit)).rejects.toMatchObject({
+      code: "invalid_job_update_response",
+    });
+  });
+
+  it("keeps the problem code of a refused change", async () => {
+    stub = stubApiRoutes({
+      [path]: {
+        status: 404,
+        data: { title: "Not Found", status: 404, code: "job_not_found" },
+      },
+    });
+
+    await expect(updateJob(edit)).rejects.toMatchObject({
+      code: "job_not_found",
     });
   });
 });

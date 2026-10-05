@@ -63,20 +63,21 @@ function openMyJobs(): void {
   cy.contains("Você ainda não publicou vagas").should("be.visible");
 }
 
-function skillsInput(): Cypress.Chainable<JQuery<HTMLElement>> {
+// The form generates its ids, so fields are found by their label.
+function field(label: string): Cypress.Chainable<JQuery<HTMLElement>> {
   return cy
-    .contains("label", "Habilidades necessárias")
+    .contains("label", label)
     .invoke("attr", "for")
     .then((id) => cy.get(`[id="${id}"]`));
 }
 
 function fillTheJob(): void {
-  cy.get("#job-title").type(published.title);
-  cy.get("#job-description").type(published.description);
+  field("Título da vaga").type(published.title);
+  field("Descrição da vaga").type(published.description);
   cy.contains("label", "Híbrido").click();
-  cy.get("#job-closing-date").type(published.closing_date);
-  skillsInput().type("Excel{enter}");
-  skillsInput().type("gest");
+  field("Data de encerramento").type(published.closing_date);
+  field("Habilidades necessárias").type("Excel{enter}");
+  field("Habilidades necessárias").type("gest");
   cy.wait("@skills");
   cy.contains("button", "Gestão de equipes").click();
 }
@@ -101,7 +102,10 @@ describe("job posting", () => {
     // axe measures contrast mid fade-in otherwise.
     cy.get('[role="dialog"]').should("have.css", "opacity", "1");
     cy.contains("button", "Publicar vaga").click();
-    cy.get("#job-title-error").should("have.text", "Preencha este campo.");
+    field("Título da vaga")
+      .invoke("attr", "aria-describedby")
+      .then((id) => cy.get(`[id="${id}"]`))
+      .should("have.text", "Preencha este campo.");
     cy.contains("Adicione pelo menos uma habilidade.")
       .scrollIntoView()
       .should("be.visible");
@@ -165,7 +169,7 @@ describe("job posting", () => {
     cy.contains(
       "Não foi possível publicar a vaga. Seus dados foram mantidos; tente novamente.",
     ).should("be.visible");
-    cy.get("#job-title").should("have.value", published.title);
+    field("Título da vaga").should("have.value", published.title);
     cy.contains("An unexpected error occurred.").should("not.exist");
 
     cy.contains("button", "Cancelar").click();
@@ -196,7 +200,7 @@ describe("job posting", () => {
     cy.contains("1 vaga aberta para candidatos").should("be.visible");
     cy.contains("article", published.title).within(() => {
       cy.contains("2 candidaturas").should("be.visible");
-      cy.contains("button", "Editar").should("be.disabled");
+      cy.contains("button", "Editar").should("be.enabled");
       cy.contains("button", "Encerrar").click();
     });
 

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
@@ -15,11 +15,18 @@ import { type JobSummary, myJobsQueryOptions } from "./jobs-api";
 import { isAwaitingApproval, myJobsErrorMessage } from "./jobs-errors";
 
 export function MyJobsPage() {
-  const [notice, setNotice] = useState<string | null>(null);
-  const editHintId = useId();
+  const [notice, setNotice] = useState<{ id: number; message: string } | null>(
+    null,
+  );
   const jobs = useQuery(myJobsQueryOptions);
   const awaitingApproval = isAwaitingApproval(jobs.error);
   const openCount = jobs.data?.filter((job) => isOpenToCandidates(job)).length;
+
+  // A new id renders the notice again, so a repeated message, such as a second
+  // save of the same job, is announced again.
+  function announce(message: string) {
+    setNotice((current) => ({ id: (current?.id ?? 0) + 1, message }));
+  }
 
   return (
     <div className="min-h-full bg-muted p-4 md:p-8">
@@ -37,7 +44,7 @@ export function MyJobsPage() {
         {awaitingApproval ? null : (
           <JobPostingModal
             onPublished={(job) =>
-              setNotice(
+              announce(
                 `A vaga “${job.title}” foi publicada e já aparece na lista.`,
               )
             }
@@ -48,11 +55,14 @@ export function MyJobsPage() {
       {/* Rendered empty from the start so the confirmation is announced. */}
       <div role="status">
         {notice ? (
-          <div className="mb-6 flex flex-col gap-1 rounded-lg border border-success bg-background p-4">
+          <div
+            key={notice.id}
+            className="mb-6 flex flex-col gap-1 rounded-lg border border-success bg-background p-4"
+          >
             <span className="font-mono text-base font-semibold tracking-wide text-success uppercase">
               Sucesso
             </span>
-            <p className="text-lg text-foreground">{notice}</p>
+            <p className="text-lg text-foreground">{notice.message}</p>
           </div>
         ) : null}
       </div>
@@ -86,22 +96,13 @@ export function MyJobsPage() {
           a primeira.
         </p>
       ) : (
-        <>
-          <p id={editHintId} className="mb-4 text-base text-muted-foreground">
-            A edição de vagas estará disponível em breve.
-          </p>
-          <ul className="flex flex-col gap-4">
-            {jobs.data.map((job) => (
-              <li key={job.id}>
-                <JobCard
-                  job={job}
-                  editHintId={editHintId}
-                  onStatusChanged={setNotice}
-                />
-              </li>
-            ))}
-          </ul>
-        </>
+        <ul className="flex flex-col gap-4">
+          {jobs.data.map((job) => (
+            <li key={job.id}>
+              <JobCard job={job} onStatusChanged={announce} />
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );
@@ -109,11 +110,10 @@ export function MyJobsPage() {
 
 interface JobCardProps {
   job: JobSummary;
-  editHintId: string;
   onStatusChanged: (message: string) => void;
 }
 
-function JobCard({ job, editHintId, onStatusChanged }: JobCardProps) {
+function JobCard({ job, onStatusChanged }: JobCardProps) {
   const titleId = `job-${job.id}-title`;
 
   return (
@@ -156,11 +156,7 @@ function JobCard({ job, editHintId, onStatusChanged }: JobCardProps) {
           </li>
         ))}
       </ul>
-      <JobStatusActions
-        job={job}
-        editHintId={editHintId}
-        onChanged={onStatusChanged}
-      />
+      <JobStatusActions job={job} onChanged={onStatusChanged} />
     </article>
   );
 }

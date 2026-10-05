@@ -46,6 +46,19 @@ export const jobPostingSchema = z.object({
 
 export type JobPostingValues = z.infer<typeof jobPostingSchema>;
 
+/**
+ * Editing changes the title, the description and the skills. The description
+ * follows `PATCH /jobs/{id}`: it may be empty and holds up to 10,000
+ * characters, so every job the API stored can be saved again. The work mode and
+ * the closing date stay as stored: the form carries them without showing or
+ * checking them, so a job past its date can still be edited.
+ */
+export const jobEditSchema = jobPostingSchema.extend({
+  description: z.string().trim().max(10000, "Use até 10000 caracteres."),
+  workMode: workModeSchema,
+  closingDate: z.string(),
+});
+
 /** Today's calendar date where the person is, as `<input type="date">` reads it. */
 export function todayIsoDate(now: Date = new Date()): string {
   const month = String(now.getMonth() + 1).padStart(2, "0");

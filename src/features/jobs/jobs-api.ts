@@ -95,6 +95,32 @@ export const myJobsQueryOptions = queryOptions({
   retry: false,
 });
 
+export type JobEdit = Pick<
+  JobPostingValues,
+  "title" | "description" | "skills"
+> & { id: string };
+
+// PATCH /jobs/{id} replaces the three editable fields and answers with the job.
+export async function updateJob({
+  id,
+  title,
+  description,
+  skills,
+}: JobEdit): Promise<Job> {
+  const response = await apiClient.patch<unknown>(`/jobs/${id}`, {
+    title,
+    description,
+    skills: skills.map(({ name, type }) => ({ name, type })),
+  });
+  const parsed = jobSchema.safeParse(response.data);
+  if (!parsed.success)
+    throw new ApiError({
+      message: "Não foi possível validar a resposta da edição da vaga.",
+      code: "invalid_job_update_response",
+    });
+  return parsed.data;
+}
+
 export type JobStatusChange =
   | { id: string; status: "closed" }
   | { id: string; status: "open"; closingDate?: string };
