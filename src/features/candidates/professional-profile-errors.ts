@@ -22,8 +22,8 @@ const saveMessages: Record<string, string> = {
     "Esta experiência não existe mais. Feche e abra o perfil novamente.",
   education_not_found:
     "Esta formação não existe mais. Feche e abra o perfil novamente.",
-  skill_not_found: "Esta habilidade não está mais disponível no catálogo.",
-  skill_already_added: "Esta habilidade já está no seu perfil.",
+  skill_not_found:
+    "Uma das habilidades escolhidas saiu do catálogo. Feche e abra o perfil novamente.",
 };
 
 function translate(

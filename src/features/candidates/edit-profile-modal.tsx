@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useId, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -23,7 +23,6 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { profileSaveErrorMessage } from "./professional-profile-errors";
 import {
-  addProfileSkill,
   createEducation,
   createExperience,
   deleteEducationById,
@@ -31,9 +30,7 @@ import {
   educationValuesSchema,
   experienceValuesSchema,
   professionalProfileQueryKey,
-  removeProfileSkill,
-  searchSkillCatalog,
-  skillCatalogQueryKey,
+  saveSkillSelection,
   updateEducationById,
   updateExperienceById,
 } from "./professional-profile";
@@ -50,6 +47,7 @@ import {
   type ProfessionalProfileUpdateValues,
 } from "./professional-profile-update-schema";
 import { updateProfessionalProfile } from "./professional-profile-update";
+import { SkillSelection } from "./skill-selection";
 
 interface EditProfileModalProps {
   open: boolean;
@@ -76,10 +74,10 @@ export function EditProfileModal({
 }: EditProfileModalProps) {
   const queryClient = useQueryClient();
 
-  // Experiences, education and skills are saved one item at a time, before
-  // (or even without) "Salvar alterações". Refetching whenever the modal
-  // closes, including "Cancelar" and Esc, keeps "Meu perfil" in step with
-  // what the server actually stored.
+  // Experiences and education are saved one item at a time, before (or even
+  // without) "Salvar alterações", and a failed save may have stored part of
+  // the skills. Refetching whenever the modal closes, including "Cancelar" and
+  // Esc, keeps "Meu perfil" in step with what the server actually stored.
   function handleOpenChange(nextOpen: boolean) {
     onOpenChange(nextOpen);
     if (!nextOpen) {
@@ -135,6 +133,9 @@ function EditProfileForm({
   );
   const [education, setEducation] = useState<Education[]>(profile.education);
   const [skills, setSkills] = useState<Skill[]>(profile.skills);
+  // The skills the server holds. They follow each link and unlink that
+  // succeeds, so saving again after a failure only sends what is missing.
+  const [savedSkills, setSavedSkills] = useState<Skill[]>(profile.skills);
   const [justSaved, setJustSaved] = useState(false);
   const closeTimeoutRef = useRef<number | null>(null);
 
@@ -147,10 +148,14 @@ function EditProfileForm({
   }, []);
 
   const mutation = useMutation({
-    mutationFn: updateProfessionalProfile,
+    mutationFn: async (values: ProfessionalProfileUpdateValues) => {
+      await saveSkillSelection(savedSkills, skills, setSavedSkills);
+      return updateProfessionalProfile(values);
+    },
     onSuccess: (updated) => {
       // The PATCH answers with the whole stored profile, including the
-      // items already saved one by one, so it can replace the cache as is.
+      // skills and the items already saved one by one, so it can replace the
+      // cache as is.
       queryClient.setQueryData(professionalProfileQueryKey, updated);
 
       setJustSaved(true);
@@ -272,7 +277,11 @@ function EditProfileForm({
 
       <ExperienceFieldset experiences={experiences} onChange={setExperiences} />
       <EducationFieldset education={education} onChange={setEducation} />
-      <SkillsFieldset skills={skills} onChange={setSkills} />
+      <SkillSelection
+        selected={skills}
+        onChange={setSkills}
+        disabled={mutation.isPending || justSaved}
+      />
 
       <DialogFooter>
         <Button
@@ -854,202 +863,6 @@ function EducationFieldset({
           {editingId === "new" ? renderEditForm("new") : null}
         </div>
       )}
-    </div>
-  );
-}
-
-// ---------- Habilidades ----------
-
-const SKILL_SEARCH_DELAY_MS = 250;
-
-// Case- and accent-insensitive, like the catalog search on the backend.
-function comparableSkillName(name: string): string {
-  return name
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .trim()
-    .toLowerCase();
-}
-
-function SkillsFieldset({
-  skills,
-  onChange,
-}: {
-  skills: Skill[];
-  onChange: (skills: Skill[]) => void;
-}) {
-  const [draftName, setDraftName] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [itemError, setItemError] = useState<string | null>(null);
-  const inputId = useId();
-  const hintId = useId();
-
-  // Waits for a pause in typing so each keystroke does not become a request.
-  useEffect(() => {
-    const timeoutId = window.setTimeout(
-      () => setSearchTerm(draftName.trim()),
-      SKILL_SEARCH_DELAY_MS,
-    );
-    return () => window.clearTimeout(timeoutId);
-  }, [draftName]);
-
-  const catalog = useQuery({
-    queryKey: skillCatalogQueryKey(searchTerm),
-    queryFn: ({ signal }) => searchSkillCatalog(searchTerm, signal),
-    enabled: searchTerm.length > 0,
-    retry: false,
-  });
-
-  const addMutation = useMutation({ mutationFn: addProfileSkill });
-  const removeMutation = useMutation({ mutationFn: removeProfileSkill });
-  const isBusy = addMutation.isPending || removeMutation.isPending;
-
-  const linkedIds = new Set(skills.map((skill) => skill.id));
-  const suggestions =
-    searchTerm.length > 0 && catalog.data
-      ? catalog.data.filter((skill) => !linkedIds.has(skill.id))
-      : [];
-
-  async function addSkill(skill: Skill) {
-    setItemError(null);
-    try {
-      const added = await addMutation.mutateAsync(skill.id);
-      onChange([...skills, added]);
-      setDraftName("");
-      setSearchTerm("");
-    } catch (error) {
-      setItemError(profileSaveErrorMessage(error));
-    }
-  }
-
-  async function removeSkill(skill: Skill) {
-    setItemError(null);
-    try {
-      await removeMutation.mutateAsync(skill.id);
-      onChange(skills.filter((item) => item.id !== skill.id));
-    } catch (error) {
-      setItemError(profileSaveErrorMessage(error));
-    }
-  }
-
-  // Enter adds the suggestion whose name matches what was typed, or the only
-  // suggestion left; otherwise the person picks one from the list.
-  function addTypedSkill() {
-    const typed = comparableSkillName(draftName);
-    if (!typed) {
-      return;
-    }
-    const alreadyLinked = skills.some(
-      (skill) => comparableSkillName(skill.name) === typed,
-    );
-    if (alreadyLinked) {
-      setItemError("Esta habilidade já está no seu perfil.");
-      return;
-    }
-    const exactMatch = suggestions.find(
-      (skill) => comparableSkillName(skill.name) === typed,
-    );
-    const choice =
-      exactMatch ?? (suggestions.length === 1 ? suggestions[0] : undefined);
-    if (choice) {
-      void addSkill(choice);
-    }
-  }
-
-  function suggestionsStatus(): string | null {
-    if (searchTerm.length === 0) {
-      return null;
-    }
-    if (catalog.isFetching) {
-      return "Buscando habilidades...";
-    }
-    if (catalog.isError) {
-      return "Não foi possível buscar as habilidades. Tente novamente.";
-    }
-    if (suggestions.length === 0) {
-      return "Nenhuma habilidade encontrada no catálogo.";
-    }
-    return null;
-  }
-
-  const status = suggestionsStatus();
-
-  return (
-    <div>
-      <SectionHeading>Habilidades</SectionHeading>
-      <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-input p-3">
-        {skills.map((skill) => (
-          <span
-            key={skill.id}
-            className="flex items-center gap-1.5 rounded-full border border-border bg-accent px-3 py-1.5 text-base text-foreground"
-          >
-            {skill.name}
-            <button
-              type="button"
-              disabled={isBusy}
-              onClick={() => void removeSkill(skill)}
-              aria-label={`Remover habilidade ${skill.name}`}
-              className="rounded-full text-foreground-2 hover:text-destructive focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:text-disabled-foreground"
-            >
-              ×
-            </button>
-          </span>
-        ))}
-        <label htmlFor={inputId} className="sr-only">
-          Adicionar habilidade
-        </label>
-        <Input
-          id={inputId}
-          value={draftName}
-          disabled={addMutation.isPending}
-          onChange={(event) => {
-            setDraftName(event.target.value);
-            setItemError(null);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              addTypedSkill();
-            }
-          }}
-          placeholder="Busque uma habilidade"
-          aria-describedby={hintId}
-          className="h-9 w-56 border-none px-2 shadow-none focus-visible:ring-0"
-        />
-      </div>
-      {suggestions.length > 0 ? (
-        <ul
-          aria-label="Sugestões de habilidades"
-          className="mt-2 flex flex-wrap gap-2"
-        >
-          {suggestions.map((skill) => (
-            <li key={skill.id}>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isBusy}
-                onClick={() => void addSkill(skill)}
-              >
-                {skill.name}
-              </Button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      {status ? (
-        <p role="status" className="mt-2 text-base text-muted-foreground">
-          {status}
-        </p>
-      ) : null}
-      {itemError ? (
-        <p role="alert" className="mt-2 text-base text-destructive">
-          {itemError}
-        </p>
-      ) : null}
-      <p id={hintId} className="mt-2 text-base text-muted-foreground">
-        Escolha as habilidades do catálogo. São elas que a vaga compara para
-        dizer quantos requisitos você atende.
-      </p>
     </div>
   );
 }

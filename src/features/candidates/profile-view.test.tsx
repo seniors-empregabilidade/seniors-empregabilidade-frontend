@@ -53,6 +53,14 @@ const validProfile = {
   ],
 };
 
+// Opening the edit modal also loads the skill catalog, so the catalog
+// request is answered apart from the profile ones.
+function mockGet(profileResponses: () => Promise<unknown>) {
+  vi.spyOn(apiClient, "get").mockImplementation((url: string) =>
+    url === "/skills" ? Promise.resolve({ data: [] }) : profileResponses(),
+  );
+}
+
 function render(element: ReactElement) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -139,7 +147,11 @@ describe("ProfileView", () => {
 
   it("opens the edit profile modal, pre-filled, when the edit button is clicked", async () => {
     const user = userEvent.setup();
-    vi.spyOn(apiClient, "get").mockResolvedValueOnce({ data: validProfile });
+    mockGet(
+      vi
+        .fn<() => Promise<unknown>>()
+        .mockResolvedValueOnce({ data: validProfile }),
+    );
 
     render(<ProfileView />);
 
@@ -161,9 +173,12 @@ describe("ProfileView", () => {
     const client = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
-    vi.spyOn(apiClient, "get")
-      .mockResolvedValueOnce({ data: validProfile })
-      .mockRejectedValueOnce(new ApiError({ message: "Network Error" }));
+    mockGet(
+      vi
+        .fn<() => Promise<unknown>>()
+        .mockResolvedValueOnce({ data: validProfile })
+        .mockRejectedValueOnce(new ApiError({ message: "Network Error" })),
+    );
 
     renderComponent(
       <QueryClientProvider client={client}>

@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 
 import { apiClient } from "@/lib/api-client";
@@ -188,18 +188,14 @@ export async function deleteEducationById(id: string): Promise<void> {
 // candidate cannot create a new catalog entry, only pick an existing one.
 
 const SKILL_CATALOG_ENDPOINT = "/skills";
-const SKILL_SUGGESTION_LIMIT = 8;
-
-export function skillCatalogQueryKey(search: string) {
-  return ["skills", "catalog", search] as const;
-}
+export const SKILL_CATALOG_LIMIT = 20;
 
 export async function searchSkillCatalog(
   search: string,
   signal?: AbortSignal,
 ): Promise<Skill[]> {
   const response = await apiClient.get<unknown>(SKILL_CATALOG_ENDPOINT, {
-    params: { search, limit: SKILL_SUGGESTION_LIMIT },
+    params: { search, limit: SKILL_CATALOG_LIMIT },
     ...(signal ? { signal } : {}),
   });
   const parsed = z.array(skillSchema).safeParse(response.data);
@@ -210,6 +206,18 @@ export async function searchSkillCatalog(
     });
   }
   return parsed.data;
+}
+
+/** A blank search lists the catalog in alphabetical order. */
+export function skillCatalogQueryOptions(search: string) {
+  return queryOptions({
+    queryKey: ["skills", "catalog", search] as const,
+    queryFn: ({ signal }) => searchSkillCatalog(search, signal),
+    // The previous list stays on screen while the next search loads.
+    placeholderData: keepPreviousData,
+    staleTime: 60_000,
+    retry: false,
+  });
 }
 
 export async function addProfileSkill(skillId: string): Promise<Skill> {
@@ -228,4 +236,59 @@ export async function addProfileSkill(skillId: string): Promise<Skill> {
 
 export async function removeProfileSkill(skillId: string): Promise<void> {
   await apiClient.delete(`${PROFILE_ENDPOINT}/skills/${skillId}`);
+}
+
+function hasCode(error: unknown, code: string): boolean {
+  return error instanceof ApiError && error.code === code;
+}
+
+/**
+ * Brings the résumé's skills to the selection. The API links and unlinks one
+ * skill per request, and the requests run one after another because the first
+ * link of a candidate creates the résumé. `onSaved` receives what the server
+ * holds after each change, so a failure midway leaves the caller knowing what
+ * is still to be sent.
+ *
+ * A skill already linked, or already unlinked, for instance from another tab,
+ * counts as saved: the résumé is in the state the person chose.
+ */
+export async function saveSkillSelection(
+  saved: readonly Skill[],
+  selected: readonly Skill[],
+  onSaved: (skills: Skill[]) => void,
+): Promise<void> {
+  const selectedIds = new Set(selected.map((skill) => skill.id));
+  let current = [...saved];
+
+  for (const skill of saved) {
+    if (selectedIds.has(skill.id)) {
+      continue;
+    }
+    try {
+      await removeProfileSkill(skill.id);
+    } catch (error) {
+      if (!hasCode(error, "skill_not_found")) {
+        throw error;
+      }
+    }
+    current = current.filter((item) => item.id !== skill.id);
+    onSaved(current);
+  }
+
+  const savedIds = new Set(current.map((skill) => skill.id));
+  for (const skill of selected) {
+    if (savedIds.has(skill.id)) {
+      continue;
+    }
+    let linked = skill;
+    try {
+      linked = await addProfileSkill(skill.id);
+    } catch (error) {
+      if (!hasCode(error, "skill_already_added")) {
+        throw error;
+      }
+    }
+    current = [...current, linked];
+    onSaved(current);
+  }
 }
