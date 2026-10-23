@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -26,10 +26,18 @@ function renderButton() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  return render(
+  render(
     <QueryClientProvider client={client}>
       <NotificationsButton to="/candidato/notificacoes" />
     </QueryClientProvider>,
+  );
+  return client;
+}
+
+/** Waits for the counter query to settle, so no update lands after the test. */
+async function settled(client: QueryClient) {
+  await waitFor(() =>
+    expect(client.isFetching({ queryKey: ["notifications"] })).toBe(0),
   );
 }
 
@@ -74,18 +82,21 @@ describe("NotificationsButton", () => {
 
   it("shows no counter when everything is read", async () => {
     stubUnreadCount(0);
-    renderButton();
+    const client = renderButton();
 
-    const link = screen.getByRole("link", { name: "Notificações" });
-    await vi.waitFor(() => expect(stub?.requests).toHaveLength(1));
-    expect(link).toHaveTextContent(/^Notificações$/);
+    await settled(client);
+    expect(stub?.requests).toHaveLength(1);
+    expect(
+      screen.getByRole("link", { name: "Notificações" }),
+    ).toHaveTextContent(/^Notificações$/);
   });
 
   it("still opens the center when the counter cannot be loaded", async () => {
     stub = stubApiRoutes({ "GET /notifications/me": { status: 0 } });
-    renderButton();
+    const client = renderButton();
 
-    await vi.waitFor(() => expect(stub?.requests).toHaveLength(1));
+    await settled(client);
+    expect(stub?.requests).toHaveLength(1);
     expect(screen.getByRole("link", { name: "Notificações" })).toHaveAttribute(
       "href",
       "/candidato/notificacoes",

@@ -30,20 +30,25 @@ function unreadSummary(count: number): string {
 }
 
 interface PendingFocus {
+  /** A notification that stays on screen, such as the one just marked read. */
   id?: string;
+  /** A list position, such as the first item of a page still loading. */
+  index?: number;
 }
 
 function moveFocus(
   pending: RefObject<PendingFocus | null>,
+  listedIds: string[],
   items: RefObject<Map<string, HTMLLIElement>>,
   heading: RefObject<HTMLHeadingElement | null>,
 ) {
   const target = pending.current;
   if (target === null) return;
   pending.current = null;
+  const id = target.index === undefined ? target.id : listedIds[target.index];
   // The item may have left the list (for example under "Não lidas"), and a
-  // disabled button drops focus, so fall back to the page title.
-  const item = target.id ? items.current.get(target.id) : undefined;
+  // disabled or removed button drops focus, so fall back to the page title.
+  const item = id ? items.current.get(id) : undefined;
   (item ?? heading.current)?.focus();
 }
 
@@ -71,8 +76,20 @@ export default function NotificationsPage() {
   const unreadCount = notifications.data?.pages.at(-1)?.unread_count ?? 0;
 
   useEffect(() => {
-    moveFocus(pendingFocusRef, itemRefs, headingRef);
+    const listedIds =
+      notifications.data?.pages.flatMap((page) =>
+        page.items.map((item) => item.id),
+      ) ?? [];
+    moveFocus(pendingFocusRef, listedIds, itemRefs, headingRef);
   }, [notifications.data]);
+
+  async function loadMore() {
+    // The button leaves the page once the last page arrives, so focus the
+    // first new item instead of dropping to the document body.
+    pendingFocusRef.current = { index: items.length };
+    const result = await notifications.fetchNextPage();
+    if (result.isError) pendingFocusRef.current = null;
+  }
 
   async function refreshThenFocus(target: PendingFocus) {
     // Consumed by the effect above once the refreshed list renders. Not here:
@@ -182,24 +199,29 @@ export default function NotificationsPage() {
       ) : null}
 
       {notifications.isPending ? (
-        <div
-          role="status"
-          aria-label="Carregando notificações"
-          className="space-y-4"
-        >
+        <div role="status" className="space-y-4">
+          <span className="sr-only">Carregando notificações…</span>
           <Skeleton className="h-28 w-full rounded-lg" />
           <Skeleton className="h-28 w-full rounded-lg" />
         </div>
       ) : null}
 
-      {notifications.isError ? (
-        <p
+      {/* Only when nothing loaded: a failed "Carregar mais" also flags the
+          query as errored, but keeps the pages already on screen. */}
+      {notifications.isLoadingError ? (
+        <div
           role="alert"
-          className="rounded-md border border-destructive bg-background p-4 text-base text-destructive"
+          className="space-y-3 rounded-md border border-destructive bg-background p-4 text-base text-destructive"
         >
-          Não foi possível carregar suas notificações. Tente novamente mais
-          tarde.
-        </p>
+          <p>Não foi possível carregar suas notificações.</p>
+          <Button
+            variant="outline"
+            disabled={notifications.isFetching}
+            onClick={() => void notifications.refetch()}
+          >
+            Tentar novamente
+          </Button>
+        </div>
       ) : null}
 
       {notifications.isSuccess && items.length === 0 ? (
@@ -231,7 +253,7 @@ export default function NotificationsPage() {
         <Button
           variant="outline"
           disabled={notifications.isFetchingNextPage}
-          onClick={() => void notifications.fetchNextPage()}
+          onClick={() => void loadMore()}
         >
           {notifications.isFetchingNextPage ? "Carregando…" : "Carregar mais"}
         </Button>

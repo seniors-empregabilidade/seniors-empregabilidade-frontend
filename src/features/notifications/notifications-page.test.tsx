@@ -144,13 +144,36 @@ describe("NotificationsPage", () => {
     ).toBeDisabled();
   });
 
-  it("reports a failed load", async () => {
-    stub = stubApiRoutes({ "GET /notifications/me": { status: 0 } });
+  it("announces the initial load to screen readers", async () => {
+    stub = stubApiRoutes(fakeServer([makeNotification(1)]));
     renderPage();
+
+    // Announced through its text, not only an aria-label.
+    expect(
+      screen.getByText("Carregando notificações…").closest('[role="status"]'),
+    ).toBeInTheDocument();
+    await screen.findByText("Notificação sintética 1");
+  });
+
+  it("reports a failed load and lets the person try again", async () => {
+    let fail = true;
+    const list = fakeServer([makeNotification(1)])["GET /notifications/me"]!;
+    stub = stubApiRoutes({
+      "GET /notifications/me": (request) =>
+        fail ? { status: 0 } : list(request),
+    });
+    renderPage();
+    const user = userEvent.setup();
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Não foi possível carregar suas notificações.",
     );
+
+    fail = false;
+    await user.click(screen.getByRole("button", { name: "Tentar novamente" }));
+
+    expect(await screen.findByText("Notificação sintética 1")).toBeVisible();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("loads the next page through the cursor", async () => {
@@ -174,6 +197,35 @@ describe("NotificationsPage", () => {
     expect(
       screen.queryByRole("button", { name: "Carregar mais" }),
     ).not.toBeInTheDocument();
+    // The button left the page, so focus lands on the first new item.
+    await waitFor(() =>
+      expect(screen.getAllByRole("listitem")[2]).toHaveFocus(),
+    );
+  });
+
+  it("keeps the next page reachable when loading it fails", async () => {
+    const routes = fakeServer(
+      [1, 2, 3].map((index) => makeNotification(index)),
+      2,
+    );
+    const list = routes["GET /notifications/me"]!;
+    routes["GET /notifications/me"] = (request) =>
+      (request.params as { cursor?: string }).cursor
+        ? { status: 0 }
+        : list(request);
+    stub = stubApiRoutes(routes);
+    renderPage();
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByRole("button", { name: "Carregar mais" }),
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Não foi possível carregar mais notificações.",
+    );
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+    expect(screen.getByRole("button", { name: "Carregar mais" })).toBeEnabled();
   });
 
   it("marks one notification as read and keeps focus on it", async () => {
