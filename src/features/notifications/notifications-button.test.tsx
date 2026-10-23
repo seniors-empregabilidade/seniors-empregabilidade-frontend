@@ -56,10 +56,13 @@ describe("NotificationsButton", () => {
     renderButton();
 
     const link = await screen.findByRole("link", {
-      name: "Notificações, 3 não lidas",
+      name: "Notificações 3 não lidas",
     });
     expect(link).toHaveAttribute("href", "/candidato/notificacoes");
     expect(link).toHaveTextContent("3");
+    // WCAG 2.5.3: no aria-label replaces the text, so what is seen is what is
+    // announced (and what a voice command can target).
+    expect(link).not.toHaveAttribute("aria-label");
   });
 
   it("uses the singular for one unread notification", async () => {
@@ -67,16 +70,16 @@ describe("NotificationsButton", () => {
     renderButton();
 
     expect(
-      await screen.findByRole("link", { name: "Notificações, 1 não lida" }),
+      await screen.findByRole("link", { name: "Notificações 1 não lida" }),
     ).toBeVisible();
   });
 
-  it("caps the visible counter at 99+", async () => {
+  it("caps the counter at 99+ in both the text and the name", async () => {
     stubUnreadCount(150);
     renderButton();
 
     expect(
-      await screen.findByRole("link", { name: "Notificações, 150 não lidas" }),
+      await screen.findByRole("link", { name: "Notificações 99+ não lidas" }),
     ).toHaveTextContent("99+");
   });
 

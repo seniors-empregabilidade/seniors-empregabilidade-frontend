@@ -52,9 +52,9 @@ describe("role area shell", () => {
       cy.contains("button", "Sair").should("be.visible");
     });
     cy.contains("Olá!").should("be.visible");
-    cy.get('a[aria-label="Notificações, 3 não lidas"]')
+    cy.get('a[href="/candidato/notificacoes"]')
       .should("be.visible")
-      .and("have.attr", "href", "/candidato/notificacoes");
+      .and("contain.text", "Notificações 3 não lidas");
     cy.contains("Suporte no WhatsApp").should("be.visible");
   });
 
@@ -88,9 +88,9 @@ describe("role area shell", () => {
     // Companies receive notifications (new applications), so their area now
     // has the header that holds the notifications link.
     cy.contains("Olá!").should("be.visible");
-    cy.get('a[aria-label="Notificações, 3 não lidas"]')
+    cy.get('a[href="/empresa/notificacoes"]')
       .should("be.visible")
-      .and("have.attr", "href", "/empresa/notificacoes");
+      .and("contain.text", "Notificações 3 não lidas");
   });
 
   it("shows the administrator sidebar without the greeting header", () => {
