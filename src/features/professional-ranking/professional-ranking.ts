@@ -22,9 +22,15 @@ const applicantProfileSchema = z.object({
   state: z.string().nullable(),
 });
 
+// application: o profissional se candidatou. automatic_match: perfil compatível
+// (50% ou mais) que não se candidatou. A origem não altera o percentual.
+export const applicantOriginSchema = z.enum(["application", "automatic_match"]);
+
 export const jobApplicantSchema = z.object({
-  application_id: z.string(),
-  status: z.string(),
+  origin: applicantOriginSchema,
+  // Nulos em um match automático (não há candidatura).
+  application_id: z.string().nullable(),
+  status: z.string().nullable(),
   match_score: z.number().nullable(),
   // 0 a 100, duas casas. null quando a vaga não tem requisitos.
   compatibility_percentage: percentageSchema,
@@ -38,9 +44,11 @@ export const jobApplicantsSchema = z.object({
   job_id: z.string(),
   total_applicant_count: z.number().int(),
   full_match_count: z.number().int(),
+  automatic_match_count: z.number().int(),
   applicants: z.array(jobApplicantSchema),
 });
 
+export type ApplicantOrigin = z.infer<typeof applicantOriginSchema>;
 export type JobApplicant = z.infer<typeof jobApplicantSchema>;
 export type JobApplicants = z.infer<typeof jobApplicantsSchema>;
 

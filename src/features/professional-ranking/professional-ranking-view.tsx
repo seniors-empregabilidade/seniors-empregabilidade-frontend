@@ -25,7 +25,9 @@ export function ProfessionalRankingView({
 
   return (
     <section className="p-6 md:p-8">
-      <h1 className="text-3xl font-bold text-foreground">Candidatos da vaga</h1>
+      <h1 className="text-3xl font-bold text-foreground">
+        Profissionais da vaga
+      </h1>
       <p className="mt-2 mb-6 max-w-3xl text-lg text-foreground-2">
         Ordenados do maior para o menor percentual de compatibilidade. Perfis a
         partir de {HIGHLIGHT_THRESHOLD}% aparecem em destaque; os demais
@@ -56,7 +58,7 @@ function RankingTable({
   if (applicants.length === 0) {
     return (
       <p className="text-lg text-muted-foreground">
-        Ainda não há candidaturas para esta vaga.
+        Ainda não há profissionais compatíveis para esta vaga.
       </p>
     );
   }
@@ -86,7 +88,7 @@ function RankingTable({
         <tbody>
           {applicants.map((applicant, index) => (
             <RankingRow
-              key={applicant.application_id}
+              key={applicant.profile.candidate_id}
               applicant={applicant}
               position={index + 1}
               onViewResume={onViewResume}
@@ -130,6 +132,11 @@ function RankingRow({
         {location ? (
           <p className="text-base text-foreground-2">{location}</p>
         ) : null}
+        <p className="text-base text-muted-foreground">
+          {applicant.origin === "application"
+            ? "Candidatou-se à vaga"
+            : "Match automático"}
+        </p>
       </td>
       <td className="px-3 py-4">
         {percentage === null ? (
@@ -201,7 +208,7 @@ function RankingErrorState({ onRetry }: { onRetry: () => void }) {
         Erro
       </span>
       <p className="text-lg text-foreground">
-        Não foi possível carregar os candidatos. Tente novamente.
+        Não foi possível carregar os profissionais. Tente novamente.
       </p>
       <Button
         type="button"

@@ -19,10 +19,14 @@ function applicant(
   required: number,
   city: string | null = "Porto Alegre",
   state: string | null = "RS",
+  origin: "application" | "automatic_match" = "application",
 ) {
+  const automatic = origin === "automatic_match";
+
   return {
-    application_id: id,
-    status: "submitted",
+    origin,
+    application_id: automatic ? null : id,
+    status: automatic ? null : "submitted",
     match_score: null,
     compatibility_percentage: percentage,
     is_highlighted: percentage !== null && Number(percentage) >= 50,
@@ -37,6 +41,7 @@ const PAYLOAD = {
   job_id: "job-1",
   total_applicant_count: 5,
   full_match_count: 1,
+  automatic_match_count: 0,
   applicants: [
     applicant("a-5", "Antônio Ferraz", "20.00", 1, 5, null, null),
     applicant("a-2", "Camila Andrade Souza", "66.67", 4, 6),
@@ -121,6 +126,45 @@ describe("ProfessionalRankingView", () => {
     ).toBeEnabled();
   });
 
+  it("mostra a origem e aceita match automático sem candidatura", async () => {
+    getMock.mockResolvedValue({
+      data: {
+        ...PAYLOAD,
+        automatic_match_count: 1,
+        applicants: [
+          applicant("a-1", "Marcos Silveira", 100, 5, 5),
+          applicant(
+            "a-7",
+            "Paula Auto",
+            "60.00",
+            3,
+            5,
+            "Canoas",
+            "RS",
+            "automatic_match",
+          ),
+        ],
+      },
+    });
+
+    renderView();
+
+    const auto = (await screen.findByText("Paula Auto")).closest(
+      "tr",
+    ) as HTMLElement;
+    const applied = screen
+      .getByText("Marcos Silveira")
+      .closest("tr") as HTMLElement;
+
+    expect(within(auto).getByText("Match automático")).toBeInTheDocument();
+    expect(
+      within(applied).getByText("Candidatou-se à vaga"),
+    ).toBeInTheDocument();
+    expect(
+      within(auto).getByRole("button", { name: /Ver currículo/ }),
+    ).toBeEnabled();
+  });
+
   it("chama o endpoint de candidaturas da vaga", async () => {
     renderView();
 
@@ -152,7 +196,7 @@ describe("ProfessionalRankingView", () => {
     renderView();
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Não foi possível carregar os candidatos",
+      "Não foi possível carregar os profissionais",
     );
 
     await user.click(screen.getByRole("button", { name: "Tentar novamente" }));
