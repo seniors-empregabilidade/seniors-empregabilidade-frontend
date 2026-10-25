@@ -362,5 +362,36 @@ describe("SkillSelection", () => {
     expect(
       screen.getByRole("button", { name: "Remover habilidade Liderança" }),
     ).toBeDisabled();
+    expect(screen.getByLabelText("Buscar no catálogo")).toBeDisabled();
+  });
+
+  it("allows removing at the 100-skill limit before selecting another", async () => {
+    const user = userEvent.setup();
+    const initial: Skill[] = Array.from({ length: 100 }, (_, index) => ({
+      id: `existing-${index}`,
+      name: `Habilidade ${index}`,
+      type: "soft",
+    }));
+    const onChange = vi.fn();
+    const get = mockCatalog();
+    renderSelection({ initial, onChange });
+    const list = await findCatalog();
+    expect(within(list).getByRole("button", { name: "Excel" })).toBeDisabled();
+    await user.type(screen.getByLabelText("Buscar no catálogo"), "excel");
+    await waitFor(() =>
+      expect(get).toHaveBeenLastCalledWith(
+        "/skills",
+        expect.objectContaining({ params: { search: "excel", limit: 20 } }),
+      ),
+    );
+    await user.keyboard("{Enter}");
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByRole("status")).toHaveTextContent("até 100 habilidades");
+    await user.click(
+      screen.getByRole("button", { name: "Remover habilidade Habilidade 0" }),
+    );
+    await user.click(within(list).getByRole("button", { name: "Excel" }));
+    expect(onChange).toHaveBeenLastCalledWith(expect.arrayContaining([excel]));
+    expect(screen.getByText("Selecionadas (100)")).toBeVisible();
   });
 });

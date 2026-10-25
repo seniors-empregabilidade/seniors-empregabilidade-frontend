@@ -94,18 +94,11 @@ describe("résumé skill selection", () => {
         catalog.filter((skill) => comparable(skill.name).includes(search)),
       );
     }).as("catalog");
-    cy.intercept("POST", "**/professionals/me/skills", (req) => {
-      const { skill_id } = req.body as { skill_id: string };
-      const linked = catalog.find((skill) => skill.id === skill_id);
-      if (linked) {
-        skills = [...skills, linked];
-      }
-      req.reply({ statusCode: 201, body: linked });
-    }).as("link");
-    cy.intercept("DELETE", "**/professionals/me/skills/*", (req) => {
-      skills = skills.filter((skill) => !req.url.endsWith(skill.id));
-      req.reply({ statusCode: 204 });
-    }).as("unlink");
+    cy.intercept("PUT", "**/professionals/me/skills", (req) => {
+      const { skill_ids } = req.body as { skill_ids: string[] };
+      skills = catalog.filter((skill) => skill_ids.includes(skill.id));
+      req.reply(skills);
+    }).as("replace");
     cy.intercept("PATCH", "**/professionals/me", (req) => {
       req.reply({ ...profile(), ...(req.body as object) });
     }).as("save");
@@ -147,13 +140,13 @@ describe("résumé skill selection", () => {
     cy.get('[aria-label="Remover habilidade Liderança"]').click();
     cy.contains("Selecionadas (2)").should("be.visible");
     cy.checkA11y('[role="dialog"]', wcag, reportViolations);
-    cy.get("@link.all").should("have.length", 0);
-    cy.get("@unlink.all").should("have.length", 0);
+    cy.get("@replace.all").should("have.length", 0);
 
     cy.contains("button", "Salvar alterações").click();
 
-    cy.wait("@unlink");
-    cy.wait(["@link", "@link"]);
+    cy.wait("@replace")
+      .its("request.body.skill_ids")
+      .should("have.members", [negotiation.id, excel.id]);
     cy.wait("@save");
     cy.get('[role="dialog"]').should("not.exist");
     cy.contains("h3", "Habilidades")
@@ -165,19 +158,99 @@ describe("résumé skill selection", () => {
       });
   });
 
-  it("discards the selection when the edit is cancelled", () => {
+  it("confirms before discarding a selection and keeps it when editing continues", () => {
     cy.get('[aria-label="Catálogo de habilidades"]')
       .contains("button", "Excel")
       .click();
     cy.contains("button", "Cancelar").click();
 
+    cy.get('[role="alertdialog"]').should("be.visible");
+    cy.contains("button", "Continuar editando").should("have.focus").click();
+    cy.get('[aria-label="Remover habilidade Excel"]').should("be.visible");
+    cy.contains("button", "Cancelar").click();
+    cy.injectAxe();
+    cy.checkA11y('[role="alertdialog"]', wcag, reportViolations);
+    cy.contains("button", "Descartar alterações").click();
+
     cy.get('[role="dialog"]').should("not.exist");
-    cy.get("@link.all").should("have.length", 0);
+    cy.contains("button", "Editar perfil").should("have.focus");
+    cy.get("@replace.all").should("have.length", 0);
     cy.contains("h3", "Habilidades")
       .parent()
       .within(() => {
         cy.contains("Liderança").should("be.visible");
         cy.contains("Excel").should("not.exist");
       });
+  });
+
+  it("clears the search with Escape and confirms a second Escape", () => {
+    cy.get('[aria-label="Catálogo de habilidades"]')
+      .contains("button", "Excel")
+      .click();
+    cy.contains("label", "Buscar no catálogo").click();
+    cy.focused().type("exc{esc}").should("have.value", "");
+    cy.get('[role="alertdialog"]').should("not.exist");
+    cy.focused().type("{esc}");
+    cy.get('[role="alertdialog"]').should("be.visible");
+    cy.focused().should("have.text", "Continuar editando");
+    cy.realPress("Escape");
+    cy.get('[role="alertdialog"]').should("not.exist");
+    cy.contains("label", "Buscar no catálogo")
+      .invoke("attr", "for")
+      .then((id) => {
+        cy.get(`[id="${String(id)}"]`).should("have.focus");
+      });
+  });
+
+  it("focuses a visible save error on mobile and preserves the draft", () => {
+    cy.viewport(390, 844);
+    cy.intercept("PUT", "**/professionals/me/skills", {
+      statusCode: 404,
+      body: { code: "skill_not_found", title: "Not Found", status: 404 },
+      delay: 300,
+    }).as("failedSkills");
+    cy.get('[aria-label="Catálogo de habilidades"]')
+      .contains("button", "Excel")
+      .click();
+    cy.contains("button", "Salvar alterações").click();
+    cy.contains("button", "Salvando...").should("be.disabled");
+    cy.wait("@failedSkills");
+    cy.get('[role="alert"]')
+      .should("be.visible")
+      .and("have.focus")
+      .and("contain.text", "Revise a seleção");
+    cy.get('[aria-label="Remover habilidade Excel"]').should("exist");
+    cy.get('[role="dialog"]').then(($dialog) => {
+      expect($dialog[0]!.scrollWidth).to.be.at.most(
+        $dialog[0]!.clientWidth + 1,
+      );
+    });
+    // Audit settled colors after the save button leaves its disabled state.
+    cy.get('button[type="submit"]').should(($button) => {
+      expect($button[0]!.getAnimations()).to.have.length(0);
+    });
+    cy.injectAxe();
+    cy.checkA11y('[role="dialog"]', wcag, reportViolations);
+  });
+
+  it("explains partial success and reloads persisted skills after closing", () => {
+    cy.intercept("PATCH", "**/professionals/me", {
+      statusCode: 503,
+      body: { code: "unavailable", title: "Unavailable", status: 503 },
+    }).as("failedProfile");
+    cy.get('[aria-label="Catálogo de habilidades"]')
+      .contains("button", "Excel")
+      .click();
+    cy.contains("button", "Salvar alterações").click();
+    cy.wait("@replace");
+    cy.wait("@failedProfile");
+    cy.get('[role="alert"]')
+      .should("be.visible")
+      .and("have.focus")
+      .and("contain.text", "As habilidades foram salvas.");
+    cy.contains("button", "Cancelar").click();
+    cy.get('[role="dialog"]').should("not.exist");
+    cy.wait("@profile");
+    cy.contains("h3", "Habilidades").parent().should("contain.text", "Excel");
   });
 });

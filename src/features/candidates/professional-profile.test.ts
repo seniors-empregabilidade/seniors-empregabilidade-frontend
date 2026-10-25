@@ -15,12 +15,11 @@ import {
   professionalProfileQueryKey,
   removeProfileSkill,
   saveSkillSelection,
-  searchSkillCatalog,
   skillCatalogQueryOptions,
+  searchSkillCatalog,
   updateCertificationById,
   uploadCertificationDocument,
 } from "./professional-profile";
-import type { Skill } from "./professional-profile-schema";
 
 vi.mock("@/lib/api-client", () => ({
   apiClient: {
@@ -32,9 +31,7 @@ vi.mock("@/lib/api-client", () => ({
   },
 }));
 
-afterEach(() => {
-  vi.resetAllMocks();
-});
+afterEach(() => vi.resetAllMocks());
 
 const validProfile = {
   id: "00000000-0000-4000-8000-000000000001",
@@ -93,6 +90,11 @@ describe("professionalProfileQueryKey", () => {
 });
 
 describe("skill catalog and profile skills", () => {
+  it("keeps catalog searches separate and retains their previous page", () => {
+    const options = skillCatalogQueryOptions("excel");
+    expect(options.queryKey).toEqual(["skills", "catalog", "excel"]);
+    expect(options.placeholderData).toBeDefined();
+  });
   it("searches the catalog with the typed text", async () => {
     const skills = [{ id: "s2", name: "Negociação", type: "soft" }];
     const get = vi.spyOn(apiClient, "get").mockResolvedValueOnce({
@@ -103,13 +105,6 @@ describe("skill catalog and profile skills", () => {
     expect(get).toHaveBeenCalledWith("/skills", {
       params: { search: "neg", limit: 20 },
     });
-  });
-
-  it("keys each catalog search apart and keeps the last list while loading", () => {
-    const options = skillCatalogQueryOptions("neg");
-
-    expect(options.queryKey).toEqual(["skills", "catalog", "neg"]);
-    expect(options.placeholderData).toBeDefined();
   });
 
   it("rejects a catalog response with an unexpected shape", async () => {
@@ -149,100 +144,46 @@ describe("skill catalog and profile skills", () => {
   });
 });
 
-describe("saveSkillSelection", () => {
-  const leadership: Skill = { id: "s1", name: "Liderança", type: "soft" };
-  const negotiation: Skill = { id: "s2", name: "Negociação", type: "soft" };
-  const excel: Skill = { id: "s3", name: "Excel", type: "hard" };
+describe("bulk skill selection", () => {
+  const skill = { id: "s1", name: "Liderança", type: "soft" as const };
 
-  it("unlinks the skills left out and links the new ones, one at a time", async () => {
-    const order: string[] = [];
-    vi.spyOn(apiClient, "delete").mockImplementation((url: string) => {
-      order.push(`DELETE ${url}`);
-      return Promise.resolve({ data: undefined });
-    });
-    vi.spyOn(apiClient, "post").mockImplementation(
-      (url: string, body: unknown) => {
-        order.push(`POST ${url}`);
-        const { skill_id } = body as { skill_id: string };
-        return Promise.resolve({
-          data: [negotiation, excel].find((skill) => skill.id === skill_id),
-        });
-      },
-    );
-    const onSaved = vi.fn();
-
-    await saveSkillSelection(
-      [leadership, negotiation],
-      [negotiation, excel],
-      onSaved,
-    );
-
-    expect(order).toEqual([
-      "DELETE /professionals/me/skills/s1",
-      "POST /professionals/me/skills",
-    ]);
-    expect(onSaved).toHaveBeenNthCalledWith(1, [negotiation]);
-    expect(onSaved).toHaveBeenLastCalledWith([negotiation, excel]);
-  });
-
-  it("sends nothing when the selection matches the résumé", async () => {
+  it("replaces the entire selection with one request", async () => {
     const post = vi.spyOn(apiClient, "post");
     const remove = vi.spyOn(apiClient, "delete");
-    const onSaved = vi.fn();
-
-    await saveSkillSelection([leadership], [leadership], onSaved);
-
+    const put = vi
+      .spyOn(apiClient, "put")
+      .mockResolvedValueOnce({ data: [skill] });
+    await expect(saveSkillSelection([skill])).resolves.toEqual([skill]);
+    expect(put).toHaveBeenCalledExactlyOnceWith("/professionals/me/skills", {
+      skill_ids: ["s1"],
+    });
     expect(post).not.toHaveBeenCalled();
     expect(remove).not.toHaveBeenCalled();
-    expect(onSaved).not.toHaveBeenCalled();
   });
 
-  it("counts a skill already linked or already unlinked as saved", async () => {
-    vi.spyOn(apiClient, "delete").mockRejectedValueOnce(
-      new ApiError({
-        message: "Not found",
-        status: 404,
-        code: "skill_not_found",
-      }),
-    );
-    vi.spyOn(apiClient, "post").mockRejectedValueOnce(
-      new ApiError({
-        message: "Conflict",
-        status: 409,
-        code: "skill_already_added",
-      }),
-    );
-    const onSaved = vi.fn();
-
-    await saveSkillSelection([leadership], [excel], onSaved);
-
-    expect(onSaved).toHaveBeenLastCalledWith([excel]);
+  it("can clear all selected skills", async () => {
+    const put = vi.spyOn(apiClient, "put").mockResolvedValueOnce({ data: [] });
+    await expect(saveSkillSelection([])).resolves.toEqual([]);
+    expect(put).toHaveBeenCalledWith("/professionals/me/skills", {
+      skill_ids: [],
+    });
   });
 
-  it("stops at the first failure, having reported what was saved before it", async () => {
-    const failure = new ApiError({ message: "Network Error" });
-    vi.spyOn(apiClient, "delete").mockResolvedValueOnce({ data: undefined });
-    const post = vi.spyOn(apiClient, "post").mockRejectedValueOnce(failure);
-    const onSaved = vi.fn();
-
-    await expect(
-      saveSkillSelection([leadership], [negotiation, excel], onSaved),
-    ).rejects.toBe(failure);
-
-    expect(post).toHaveBeenCalledTimes(1);
-    expect(onSaved).toHaveBeenCalledTimes(1);
-    expect(onSaved).toHaveBeenCalledWith([]);
+  it("rejects an invalid saved selection response", async () => {
+    vi.spyOn(apiClient, "put").mockResolvedValueOnce({ data: ["Liderança"] });
+    await expect(saveSkillSelection([skill])).rejects.toMatchObject({
+      code: "invalid_skill_response",
+    });
   });
 
-  it("does not hide a failed unlink", async () => {
-    const failure = new ApiError({ message: "Network Error" });
-    vi.spyOn(apiClient, "delete").mockRejectedValueOnce(failure);
-    const onSaved = vi.fn();
-
-    await expect(saveSkillSelection([leadership], [], onSaved)).rejects.toBe(
-      failure,
-    );
-    expect(onSaved).not.toHaveBeenCalled();
+  it("preserves the backend failure for the editor to handle", async () => {
+    const failure = new ApiError({
+      message: "Not found",
+      code: "skill_not_found",
+      status: 404,
+    });
+    vi.spyOn(apiClient, "put").mockRejectedValueOnce(failure);
+    await expect(saveSkillSelection([skill])).rejects.toBe(failure);
   });
 });
 

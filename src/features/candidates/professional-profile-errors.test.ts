@@ -45,7 +45,7 @@ describe("profileSaveErrorMessage", () => {
     });
 
     expect(profileSaveErrorMessage(error)).toBe(
-      "Uma das habilidades escolhidas saiu do catálogo. Feche e abra o perfil novamente.",
+      "Uma das habilidades escolhidas não está mais disponível. Revise a seleção no catálogo e tente salvar novamente.",
     );
   });
 

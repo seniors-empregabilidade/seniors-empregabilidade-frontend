@@ -375,57 +375,30 @@ export async function removeProfileSkill(skillId: string): Promise<void> {
   await apiClient.delete(`${PROFILE_ENDPOINT}/skills/${skillId}`);
 }
 
-function hasCode(error: unknown, code: string): boolean {
-  return error instanceof ApiError && error.code === code;
+/** Compare catalog IDs; display order does not change the saved selection. */
+export function sameSkillSelection(
+  left: readonly Skill[],
+  right: readonly Skill[],
+): boolean {
+  const ids = new Set(left.map((skill) => skill.id));
+  return ids.size === right.length && right.every((skill) => ids.has(skill.id));
 }
 
-/**
- * Brings the résumé's skills to the selection. The API links and unlinks one
- * skill per request, and the requests run one after another because the first
- * link of a candidate creates the résumé. `onSaved` receives what the server
- * holds after each change, so a failure midway leaves the caller knowing what
- * is still to be sent.
- *
- * A skill already linked, or already unlinked, for instance from another tab,
- * counts as saved: the résumé is in the state the person chose.
- */
+export const MAX_SELECTED_SKILLS = 100;
+
+/** Replace the whole skill set in one backend transaction. */
 export async function saveSkillSelection(
-  saved: readonly Skill[],
   selected: readonly Skill[],
-  onSaved: (skills: Skill[]) => void,
-): Promise<void> {
-  const selectedIds = new Set(selected.map((skill) => skill.id));
-  let current = [...saved];
-
-  for (const skill of saved) {
-    if (selectedIds.has(skill.id)) {
-      continue;
-    }
-    try {
-      await removeProfileSkill(skill.id);
-    } catch (error) {
-      if (!hasCode(error, "skill_not_found")) {
-        throw error;
-      }
-    }
-    current = current.filter((item) => item.id !== skill.id);
-    onSaved(current);
+): Promise<Skill[]> {
+  const response = await apiClient.put<unknown>(`${PROFILE_ENDPOINT}/skills`, {
+    skill_ids: selected.map((skill) => skill.id),
+  });
+  const parsed = z.array(skillSchema).safeParse(response.data);
+  if (!parsed.success) {
+    throw new ApiError({
+      message: "Não foi possível validar as habilidades salvas.",
+      code: "invalid_skill_response",
+    });
   }
-
-  const savedIds = new Set(current.map((skill) => skill.id));
-  for (const skill of selected) {
-    if (savedIds.has(skill.id)) {
-      continue;
-    }
-    let linked = skill;
-    try {
-      linked = await addProfileSkill(skill.id);
-    } catch (error) {
-      if (!hasCode(error, "skill_already_added")) {
-        throw error;
-      }
-    }
-    current = [...current, linked];
-    onSaved(current);
-  }
+  return parsed.data;
 }

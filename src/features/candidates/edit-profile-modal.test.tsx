@@ -260,12 +260,9 @@ describe("EditProfileModal", () => {
     it("saves the chosen skills together with the résumé", async () => {
       const user = userEvent.setup();
       const client = new QueryClient();
-      const remove = vi
-        .spyOn(apiClient, "delete")
-        .mockResolvedValueOnce({ data: undefined });
-      const post = vi
-        .spyOn(apiClient, "post")
-        .mockResolvedValueOnce({ data: negotiation });
+      const put = vi
+        .spyOn(apiClient, "put")
+        .mockResolvedValueOnce({ data: [negotiation] });
       const saved = { ...baseProfile, skills: [negotiation] };
       const patch = vi
         .spyOn(apiClient, "patch")
@@ -277,25 +274,23 @@ describe("EditProfileModal", () => {
       );
 
       await chooseNegotiationInsteadOfLeadership(user);
-      expect(remove).not.toHaveBeenCalled();
-      expect(post).not.toHaveBeenCalled();
+      expect(put).not.toHaveBeenCalled();
 
       await user.click(
         screen.getByRole("button", { name: /salvar alterações/i }),
       );
 
       await screen.findByText("Perfil atualizado com sucesso.");
-      expect(remove).toHaveBeenCalledWith("/professionals/me/skills/s1");
-      expect(post).toHaveBeenCalledWith("/professionals/me/skills", {
-        skill_id: "s2",
+      expect(put).toHaveBeenCalledWith("/professionals/me/skills", {
+        skill_ids: ["s2"],
       });
       expect(patch.mock.invocationCallOrder[0]).toBeGreaterThan(
-        post.mock.invocationCallOrder[0]!,
+        put.mock.invocationCallOrder[0]!,
       );
       expect(client.getQueryData(profileQueryKey)).toEqual(saved);
     });
 
-    it("discards the chosen skills when the edit is cancelled", async () => {
+    it("confirms before discarding the chosen skills", async () => {
       const user = userEvent.setup();
       const onOpenChange = vi.fn();
       const remove = vi.spyOn(apiClient, "delete");
@@ -312,21 +307,22 @@ describe("EditProfileModal", () => {
       await chooseNegotiationInsteadOfLeadership(user);
       await user.click(screen.getByRole("button", { name: /^cancelar$/i }));
 
+      expect(onOpenChange).not.toHaveBeenCalled();
+      await user.click(
+        screen.getByRole("button", { name: "Descartar alterações" }),
+      );
       expect(onOpenChange).toHaveBeenCalledWith(false);
       expect(remove).not.toHaveBeenCalled();
       expect(post).not.toHaveBeenCalled();
     });
 
-    it("keeps the modal open when a skill fails and resends only what is missing", async () => {
+    it("keeps the selection when bulk saving fails and retries the whole set", async () => {
       const user = userEvent.setup();
       const onOpenChange = vi.fn();
-      const remove = vi
-        .spyOn(apiClient, "delete")
-        .mockResolvedValueOnce({ data: undefined });
-      const post = vi
-        .spyOn(apiClient, "post")
+      const put = vi
+        .spyOn(apiClient, "put")
         .mockRejectedValueOnce(new ApiError({ message: "Network Error" }))
-        .mockResolvedValueOnce({ data: negotiation });
+        .mockResolvedValueOnce({ data: [negotiation] });
       const patch = vi.spyOn(apiClient, "patch").mockResolvedValueOnce({
         data: { ...baseProfile, skills: [negotiation] },
       });
@@ -355,8 +351,10 @@ describe("EditProfileModal", () => {
       );
 
       await screen.findByText("Perfil atualizado com sucesso.");
-      expect(remove).toHaveBeenCalledTimes(1);
-      expect(post).toHaveBeenCalledTimes(2);
+      expect(put).toHaveBeenCalledTimes(2);
+      expect(put).toHaveBeenNthCalledWith(2, "/professionals/me/skills", {
+        skill_ids: ["s2"],
+      });
       expect(patch).toHaveBeenCalledTimes(1);
     });
   });

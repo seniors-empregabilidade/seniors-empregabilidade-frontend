@@ -10,9 +10,11 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 import {
   SKILL_CATALOG_LIMIT,
+  MAX_SELECTED_SKILLS,
   skillCatalogQueryOptions,
 } from "./professional-profile";
 import type { Skill } from "./professional-profile-schema";
+import { SectionHeading } from "./section-heading";
 
 const SEARCH_DELAY_MS = 250;
 const LOADING_PLACEHOLDERS = 6;
@@ -54,17 +56,21 @@ export function SkillSelection({
 
   const selectedIds = new Set(selected.map((skill) => skill.id));
   const results = catalog.data ?? [];
+  const atLimit = selected.length >= MAX_SELECTED_SKILLS;
 
   function deselect(skill: Skill) {
+    if (disabled) return;
     setNotice(null);
     onChange(selected.filter((item) => item.id !== skill.id));
   }
 
   function toggle(skill: Skill) {
+    if (disabled) return;
     if (selectedIds.has(skill.id)) {
       deselect(skill);
       return;
     }
+    if (atLimit) return;
     setNotice(null);
     onChange([...selected, skill]);
   }
@@ -72,6 +78,7 @@ export function SkillSelection({
   // Enter picks the catalog skill named as typed, or the only one the search
   // found, instead of submitting the whole résumé.
   function selectTypedSkill() {
+    if (disabled) return;
     const typed = comparableSkillName(term);
     if (!typed) {
       return;
@@ -86,6 +93,12 @@ export function SkillSelection({
     }
     if (selectedIds.has(choice.id)) {
       setNotice(`${choice.name} já está entre as selecionadas.`);
+      return;
+    }
+    if (atLimit) {
+      setNotice(
+        `Você pode selecionar até ${MAX_SELECTED_SKILLS} habilidades. Remova uma para escolher outra.`,
+      );
       return;
     }
     onChange([...selected, choice]);
@@ -121,13 +134,11 @@ export function SkillSelection({
 
   return (
     <div role="group" aria-labelledby={headingId}>
-      <h3 id={headingId} className="text-xl font-bold text-foreground">
-        Habilidades
-      </h3>
+      <SectionHeading id={headingId}>Habilidades</SectionHeading>
       <p id={hintId} className="mt-1 text-base text-muted-foreground">
-        Escolha no catálogo quantas habilidades quiser. As vagas comparam essas
-        habilidades com os requisitos de cada uma. Elas são salvas junto com o
-        perfil, em “Salvar alterações”.
+        Escolha até {MAX_SELECTED_SKILLS} habilidades do catálogo. As vagas
+        comparam essas habilidades com os requisitos de cada uma. Elas são
+        salvas junto com o perfil, em “Salvar alterações”.
       </p>
 
       <p
@@ -169,6 +180,7 @@ export function SkillSelection({
         <FieldLabel htmlFor={inputId}>Buscar no catálogo</FieldLabel>
         <Input
           id={inputId}
+          disabled={disabled}
           value={term}
           autoComplete="off"
           placeholder="Ex.: Excel, atendimento ao cliente"
@@ -178,6 +190,13 @@ export function SkillSelection({
             setNotice(null);
           }}
           onKeyDown={(event) => {
+            if (event.key === "Escape" && term) {
+              event.preventDefault();
+              event.stopPropagation();
+              setTerm("");
+              setNotice(null);
+              return;
+            }
             if (event.key === "Enter") {
               event.preventDefault();
               selectTypedSkill();
@@ -226,7 +245,7 @@ export function SkillSelection({
                   type="button"
                   variant="outline"
                   aria-pressed={isSelected}
-                  disabled={disabled}
+                  disabled={disabled || (atLimit && !isSelected)}
                   onClick={() => toggle(skill)}
                   className="h-auto min-h-11 rounded-full text-left whitespace-normal aria-pressed:border-foreground aria-pressed:bg-accent"
                 >
@@ -247,7 +266,10 @@ export function SkillSelection({
         role="status"
         className="mt-2 text-base text-muted-foreground empty:mt-0"
       >
-        {notice ?? catalogStatus()}
+        {notice ??
+          (atLimit
+            ? `Você pode selecionar até ${MAX_SELECTED_SKILLS} habilidades. Remova uma para escolher outra.`
+            : catalogStatus())}
       </p>
     </div>
   );

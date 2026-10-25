@@ -31,9 +31,9 @@ const saveMessages: Record<string, string> = {
   document_too_large: "O arquivo pode ter no máximo 5 MB.",
   document_storage_unavailable:
     "O envio de arquivos está indisponível agora. Tente novamente mais tarde.",
-  skill_already_added: "Esta habilidade já está no seu perfil.",
   skill_not_found:
-    "Uma das habilidades escolhidas saiu do catálogo. Feche e abra o perfil novamente.",
+    "Uma das habilidades escolhidas não está mais disponível. Revise a seleção no catálogo e tente salvar novamente.",
+  skill_already_added: "Esta habilidade já está no seu perfil.",
 };
 
 function translate(
