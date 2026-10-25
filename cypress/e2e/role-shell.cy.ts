@@ -6,38 +6,36 @@ const WCAG = {
   },
 };
 
-function stubSignIn(userType: string): void {
-  cy.intercept("POST", "**/auth/login", {
-    statusCode: 200,
-    body: {
-      access_token: "e2e-access-token",
-      id_token: "e2e-id-token",
-      refresh_token: null,
-      expires_in: 900,
-      token_type: "Bearer",
-      user_id: USER_ID,
-      user_type: userType,
-    },
-  }).as("login");
-
+function stubCurrentUser(userType: string): void {
   cy.intercept("GET", "**/auth/me", {
     statusCode: 200,
     body: { id: USER_ID, user_type: userType, company_status: null },
   }).as("currentUser");
 }
 
-function signIn(userType: string): void {
-  stubSignIn(userType);
-  cy.visit("/login");
-  cy.get("#email").type("pessoa@exemplo.com");
-  cy.get("#password").type("senha-sintetica");
-  cy.contains("button", "Entrar").click();
-  cy.wait("@login");
+function visitRoleArea(
+  userType: "candidate" | "company" | "administrator",
+): void {
+  const homePaths = {
+    candidate: "/candidato",
+    company: "/empresa",
+    administrator: "/administrador",
+  };
+  stubCurrentUser(userType);
+  cy.visit(homePaths[userType], {
+    onBeforeLoad(window) {
+      window.sessionStorage.setItem("seniors.access-token", "e2e-access-token");
+    },
+  });
+  cy.wait("@currentUser")
+    .its("request.headers.authorization")
+    .should("eq", "Bearer e2e-access-token");
+  cy.get("aside").should("be.visible");
 }
 
 describe("role area shell", () => {
   it("shows the candidate sidebar and the greeting header", () => {
-    signIn("candidate");
+    visitRoleArea("candidate");
 
     cy.get("aside").within(() => {
       cy.contains("Seniors").should("be.visible");
@@ -50,7 +48,7 @@ describe("role area shell", () => {
   });
 
   it("navigates from Relatórios to Meu perfil, staying inside the shell", () => {
-    signIn("candidate");
+    visitRoleArea("candidate");
 
     cy.contains("a", "Relatórios").should("have.attr", "aria-current", "page");
     cy.contains("a", "Página inicial").should("not.exist");
@@ -70,7 +68,7 @@ describe("role area shell", () => {
   });
 
   it("shows the company sidebar without the greeting header", () => {
-    signIn("company");
+    visitRoleArea("company");
 
     cy.get("aside").within(() => {
       cy.contains("Área da empresa").should("be.visible");
@@ -80,7 +78,7 @@ describe("role area shell", () => {
   });
 
   it("shows the administrator sidebar without the greeting header", () => {
-    signIn("administrator");
+    visitRoleArea("administrator");
 
     cy.get("aside").within(() => {
       cy.contains("Administração").should("be.visible");
@@ -90,7 +88,7 @@ describe("role area shell", () => {
   });
 
   it("signs out back to the login screen", () => {
-    signIn("candidate");
+    visitRoleArea("candidate");
 
     cy.contains("button", "Sair").click();
 
@@ -101,7 +99,7 @@ describe("role area shell", () => {
 
   it("reflows without horizontal scroll at 320px (WCAG 1.4.10)", () => {
     cy.viewport(320, 720);
-    signIn("candidate");
+    visitRoleArea("candidate");
 
     cy.document().then((doc) => {
       expect(doc.documentElement.scrollWidth).to.be.at.most(320);
@@ -114,19 +112,19 @@ describe("role area shell", () => {
   });
 
   it("has no detectable WCAG 2.2 AA violations on the candidate shell", () => {
-    signIn("candidate");
+    visitRoleArea("candidate");
     cy.injectAxe();
     cy.checkA11y(undefined, WCAG);
   });
 
   it("has no detectable WCAG 2.2 AA violations on the company shell", () => {
-    signIn("company");
+    visitRoleArea("company");
     cy.injectAxe();
     cy.checkA11y(undefined, WCAG);
   });
 
   it("has no detectable WCAG 2.2 AA violations on the administrator shell", () => {
-    signIn("administrator");
+    visitRoleArea("administrator");
     cy.injectAxe();
     cy.checkA11y(undefined, WCAG);
   });
