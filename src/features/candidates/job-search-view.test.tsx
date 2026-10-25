@@ -146,9 +146,10 @@ describe("JobSearchView", () => {
     render(<JobSearchView />);
     await screen.findByRole("heading", { name: "Supervisor de Logística" });
 
-    await user.click(
-      screen.getByRole("button", { name: "Ver vaga Supervisor de Logística" }),
-    );
+    const opener = screen.getByRole("button", {
+      name: "Ver vaga Supervisor de Logística",
+    });
+    await user.click(opener);
 
     const dialog = await screen.findByRole("dialog");
     expect(
@@ -171,5 +172,7 @@ describe("JobSearchView", () => {
     expect(within(dialog).getByText(jobDetail.description)).toBeVisible();
     expect(get.mock.calls[1]?.[0]).toBe(`/jobs/${jobDetail.id}`);
     expect(get.mock.calls[1]?.[1]?.signal).toBeInstanceOf(AbortSignal);
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(opener).toHaveFocus());
   });
 });

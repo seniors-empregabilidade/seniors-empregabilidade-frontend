@@ -36,7 +36,8 @@ A detail `404` displays an unavailable message. Other detail failures offer
 manual retry. Server exception text is never displayed. Loading, refresh,
 success and failure messages use live regions.
 
-The existing Base UI dialog provides modal keyboard behavior. Content scrolls
+The existing Base UI dialog provides modal keyboard behavior. Its `finalFocus`
+reference explicitly returns focus to the job button that opened it. Content scrolls
 within the viewport so long descriptions do not hide the footer. Interface
 copy is Brazilian Portuguese and uses the existing design tokens.
 

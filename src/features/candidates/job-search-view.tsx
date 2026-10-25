@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { CompanyBadge } from "@/components/ui/company-badge";
@@ -34,6 +34,7 @@ function useDebouncedValue(value: string, delayMs: number): string {
 export function JobSearchView() {
   const [term, setTerm] = useState("");
   const [selectedJob, setSelectedJob] = useState<JobSearchResult | null>(null);
+  const detailTriggerRef = useRef<HTMLButtonElement | null>(null);
   const debouncedTerm = useDebouncedValue(term, SEARCH_DEBOUNCE_MS);
 
   const {
@@ -68,12 +69,16 @@ export function JobSearchView() {
         <JobSearchResults
           jobs={jobs}
           term={debouncedTerm}
-          onView={setSelectedJob}
+          onView={(job, trigger) => {
+            detailTriggerRef.current = trigger;
+            setSelectedJob(job);
+          }}
         />
       )}
 
       <JobVacancyDetailModal
         jobId={selectedJob?.id ?? null}
+        returnFocusRef={detailTriggerRef}
         {...(selectedJob
           ? {
               salaryMax: selectedJob.salary_max,
@@ -102,7 +107,7 @@ function JobSearchResults({
 }: {
   jobs: JobSearchResult[];
   term: string;
-  onView: (job: JobSearchResult) => void;
+  onView: (job: JobSearchResult, trigger: HTMLButtonElement) => void;
 }) {
   return (
     <div>
@@ -133,7 +138,7 @@ function JobCard({
   onView,
 }: {
   job: JobSearchResult;
-  onView: (job: JobSearchResult) => void;
+  onView: (job: JobSearchResult, trigger: HTMLButtonElement) => void;
 }) {
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border bg-background p-6">
@@ -168,7 +173,7 @@ function JobCard({
         type="button"
         className="w-fit"
         aria-label={`Ver vaga ${job.title}`}
-        onClick={() => onView(job)}
+        onClick={(event) => onView(job, event.currentTarget)}
       >
         Ver vaga
       </Button>

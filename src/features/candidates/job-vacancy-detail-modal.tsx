@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { XIcon } from "lucide-react";
-import { useId } from "react";
+import { useId, type RefObject } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +30,7 @@ interface JobVacancyDetailModalProps {
   jobId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  returnFocusRef?: RefObject<HTMLElement | null>;
   salaryMax?: number | null;
   matchSummary?: JobVacancyMatchSummary;
 }
@@ -38,12 +39,14 @@ export function JobVacancyDetailModal({
   jobId,
   open,
   onOpenChange,
+  returnFocusRef,
   ...summary
 }: JobVacancyDetailModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
+        finalFocus={returnFocusRef}
         className="max-h-[calc(100dvh-2rem)] w-[min(100%-2rem,40rem)] max-w-none gap-6 overflow-y-auto p-6 sm:p-8"
       >
         {open && jobId ? (
