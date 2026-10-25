@@ -18,12 +18,7 @@ import { jobDetailQueryKey, jobDetailQueryOptions } from "./job-detail";
 import type { JobDetail } from "./job-detail-schema";
 import { applyToJobVacancy } from "./job-vacancies-api";
 import { applyToJobVacancyErrorMessage } from "./job-vacancy-errors";
-import {
-  companyInitials,
-  formatPublishedLabel,
-  formatSalaryRange,
-  formatWorkMode,
-} from "./job-vacancy-format";
+import { companyInitials, formatVacancyMeta } from "./job-vacancy-format";
 
 interface JobVacancyMatchSummary {
   matchedCount: number;
@@ -102,18 +97,10 @@ function VacancyDetail({
   const vacancy = detail.data;
   const unavailable =
     detail.error instanceof ApiError && detail.error.status === 404;
-  const meta = vacancy
-    ? [
-        vacancy.location,
-        formatWorkMode(vacancy.work_mode),
-        formatSalaryRange(null, salaryMax ?? null),
-        vacancy.published_at
-          ? formatPublishedLabel(vacancy.published_at)
-          : null,
-      ]
-        .filter(Boolean)
-        .join(" · ")
-    : "Consulte as informações e o prazo para candidatura.";
+  const meta =
+    vacancy && !detail.isError
+      ? formatVacancyMeta(vacancy, salaryMax)
+      : "Consulte as informações e o prazo para candidatura.";
 
   return (
     <>
