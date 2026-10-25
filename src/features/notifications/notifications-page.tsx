@@ -138,6 +138,14 @@ export default function NotificationsPage() {
 
   const isBusy = markOne.isPending || markAll.isPending;
 
+  function changeFilter(next: boolean) {
+    // The status and alert messages describe the last action, not the current
+    // list, so a filter change must retire them from the live regions.
+    setNotice("");
+    setActionError("");
+    setUnreadOnly(next);
+  }
+
   return (
     <div className="space-y-6 bg-background p-4 md:p-8">
       <div className="space-y-2">
@@ -164,14 +172,14 @@ export default function NotificationsPage() {
           <Button
             variant={unreadOnly ? "outline" : "default"}
             aria-pressed={!unreadOnly}
-            onClick={() => setUnreadOnly(false)}
+            onClick={() => changeFilter(false)}
           >
             Todas
           </Button>
           <Button
             variant={unreadOnly ? "default" : "outline"}
             aria-pressed={unreadOnly}
-            onClick={() => setUnreadOnly(true)}
+            onClick={() => changeFilter(true)}
           >
             Não lidas
           </Button>

@@ -252,6 +252,30 @@ describe("NotificationsPage", () => {
     expect(screen.getByText("Você tem 1 notificação não lida.")).toBeVisible();
   });
 
+  it("clears the status message when the filter changes", async () => {
+    stub = stubApiRoutes(
+      fakeServer([makeNotification(1), makeNotification(2)]),
+    );
+    renderPage();
+    const user = userEvent.setup();
+
+    const [first] = await screen.findAllByRole("listitem");
+    await user.click(
+      within(first!).getByRole("button", { name: "Marcar como lida" }),
+    );
+    expect(
+      await screen.findByText("Notificação marcada como lida."),
+    ).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "Não lidas" }));
+
+    await waitFor(() =>
+      expect(
+        screen.queryByText("Notificação marcada como lida."),
+      ).not.toBeInTheDocument(),
+    );
+  });
+
   it("moves focus to the title when the read item leaves the unread list", async () => {
     stub = stubApiRoutes(
       fakeServer([makeNotification(1), makeNotification(2)]),
