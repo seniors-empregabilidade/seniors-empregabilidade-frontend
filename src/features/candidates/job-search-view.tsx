@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { jobSearchQueryOptions } from "./job-search";
 import type { JobSearchResult, WorkMode } from "./job-search-schema";
 import { JobVacancyDetailModal } from "./job-vacancy-detail-modal";
-import type { JobVacancy } from "./job-vacancy-schema";
 
 const WORK_MODE_LABELS: Record<WorkMode, string> = {
   onsite: "Presencial",
@@ -74,9 +73,10 @@ export function JobSearchView() {
       )}
 
       <JobVacancyDetailModal
-        vacancy={selectedJob ? toJobVacancy(selectedJob) : null}
+        jobId={selectedJob?.id ?? null}
         {...(selectedJob
           ? {
+              salaryMax: selectedJob.salary_max,
               matchSummary: {
                 matchedCount: selectedJob.matched_skill_count,
                 requiredCount: selectedJob.required_skill_count,
@@ -93,24 +93,6 @@ export function JobSearchView() {
       />
     </main>
   );
-}
-
-function toJobVacancy(job: JobSearchResult): JobVacancy {
-  return {
-    id: job.id,
-    title: job.title,
-    description: "",
-    company_name: job.company_name,
-    city: job.location,
-    state: null,
-    work_mode: job.work_mode,
-    salary_min: null,
-    salary_max: job.salary_max,
-    published_at: job.published_at ?? "",
-    status: "open",
-    has_applied: false,
-    skills: job.missing_skills.map((skill) => skill.name),
-  };
 }
 
 function JobSearchResults({
