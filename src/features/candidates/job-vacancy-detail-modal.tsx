@@ -165,7 +165,7 @@ function VacancyDetail({
           Carregando detalhes da vaga…
         </p>
       ) : detail.isError ? (
-        <div role="alert" className="flex flex-col gap-3 text-lg">
+        <div id={errorId} role="alert" className="flex flex-col gap-3 text-lg">
           <p>
             {unavailable
               ? "Esta vaga não está disponível."

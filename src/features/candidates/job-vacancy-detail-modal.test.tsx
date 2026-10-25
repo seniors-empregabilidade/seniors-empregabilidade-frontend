@@ -291,6 +291,25 @@ describe("JobVacancyDetailModal", () => {
     },
   );
 
+  it("announces a job removed during submission without a dangling error description", async () => {
+    applicationResponse = () => {
+      detailResponse = problem(404, "job_not_found");
+      return problem(404, "job_not_found");
+    };
+    mount();
+    await loaded();
+    await userEvent.click(
+      screen.getByRole("button", { name: "Candidatar-se" }),
+    );
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Esta vaga não está disponível.");
+    const button = screen.getByRole("button", { name: "Candidatar-se" });
+    await waitFor(() =>
+      expect(button).toHaveAttribute("aria-describedby", alert.id),
+    );
+    expect(button).toBeDisabled();
+  });
+
   it("handles missing optional metadata and an empty description and skills", async () => {
     detailResponse = {
       status: 200,
