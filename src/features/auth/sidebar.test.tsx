@@ -127,7 +127,7 @@ describe("Sidebar", () => {
     });
   });
 
-  it("links Cadastros and Candidatos and keeps the remaining administrator items static", () => {
+  it("links administrator pages and keeps the remaining items static", () => {
     render(<Sidebar userType="administrator" />);
 
     expect(screen.getByRole("link", { name: "Candidatos" })).toHaveAttribute(

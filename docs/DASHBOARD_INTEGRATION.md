@@ -56,10 +56,10 @@ the final validation results.
 
 ## Delivery
 
-The corrected backend #54 must be available before this dashboard. The frontend
-branch is based on #79 to preserve the completed US-23 integration; merge #79
-first, then retarget this pull request to main if necessary. The shared backend
-completeness helper is identical to #57, avoiding incompatible calculations.
+The corrected backend #54 must be available before this dashboard. Frontend #79
+is already integrated into main; this branch includes those US-23 changes and
+targets main directly. The shared backend completeness helper is identical to
+#57, avoiding incompatible calculations.
 
 No new dependency or schema migration is required. US-25 CSV exports, production
 Cognito validation and final human acceptance remain separate work.
