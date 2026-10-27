@@ -4,6 +4,7 @@ import {
   cleanup,
   render as renderComponent,
   screen,
+  waitFor,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -261,6 +262,99 @@ describe("ProfileView", () => {
 
     expect(startDownload).toHaveBeenCalledWith(
       "https://storage.example.invalid/c1?sig=1",
+    );
+  });
+
+  it("shows no completeness notice when the backend omits missing_fields", async () => {
+    vi.spyOn(apiClient, "get").mockResolvedValueOnce({ data: validProfile });
+
+    render(<ProfileView />);
+
+    await screen.findByText("Marcos Silveira");
+    expect(
+      screen.queryByRole("heading", { name: /currículo completo/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: /complete seu currículo/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("tells the professional the résumé is complete", async () => {
+    vi.spyOn(apiClient, "get").mockResolvedValueOnce({
+      data: { ...validProfile, missing_fields: [] },
+    });
+
+    render(<ProfileView />);
+
+    expect(
+      await screen.findByRole("heading", { name: "Currículo completo" }),
+    ).toBeVisible();
+  });
+
+  it("lists each pending field and opens the editor on it", async () => {
+    const user = userEvent.setup();
+    mockGet(() =>
+      Promise.resolve({
+        data: {
+          ...validProfile,
+          city: null,
+          skills: [],
+          missing_fields: ["city", "skills"],
+        },
+      }),
+    );
+
+    render(<ProfileView />);
+
+    const notice = (
+      await screen.findByRole("heading", { name: "Complete seu currículo" })
+    ).closest("section")!;
+    expect(notice).toHaveTextContent("Cidade");
+    expect(notice).toHaveTextContent("Habilidades");
+
+    await user.click(screen.getByRole("button", { name: "Completar Cidade" }));
+    await screen.findByRole("dialog", { name: /editar perfil/i });
+    await waitFor(() => expect(screen.getByLabelText("Cidade")).toHaveFocus());
+  });
+
+  it("returns focus to the edit button once saving clears the pending item", async () => {
+    const user = userEvent.setup();
+    const incomplete = {
+      ...validProfile,
+      city: null,
+      missing_fields: ["city"],
+    };
+    let stored: object = incomplete;
+    mockGet(() => Promise.resolve({ data: stored }));
+    vi.spyOn(apiClient, "patch").mockImplementationOnce(() => {
+      stored = { ...incomplete, city: "Porto Alegre", missing_fields: [] };
+      return Promise.resolve({ data: stored });
+    });
+
+    render(<ProfileView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Completar Cidade" }),
+    );
+    await waitFor(() => expect(screen.getByLabelText("Cidade")).toHaveFocus());
+    await user.type(screen.getByLabelText("Cidade"), "Porto Alegre");
+    await user.click(
+      screen.getByRole("button", { name: /salvar alterações/i }),
+    );
+
+    expect(
+      await screen.findByRole(
+        "heading",
+        { name: "Currículo completo" },
+        { timeout: 3000 },
+      ),
+    ).toBeVisible();
+    await waitFor(
+      () =>
+        expect(
+          screen.getByRole("button", { name: /editar perfil/i }),
+        ).toHaveFocus(),
+      { timeout: 3000 },
     );
   });
 
