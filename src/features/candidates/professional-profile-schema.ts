@@ -55,6 +55,8 @@ export const professionalProfileSchema = z.object({
   // Defaults to empty while a backend without certifications is deployed.
   certifications: z.array(certificationSchema).default([]),
   skills: z.array(skillSchema),
+  // Absent from an older backend: show nothing rather than a false "complete".
+  missing_fields: z.array(z.string()).optional(),
 });
 
 export type Experience = z.infer<typeof experienceSchema>;
