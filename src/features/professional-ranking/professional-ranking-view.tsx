@@ -59,6 +59,7 @@ export function ProfessionalRankingView({
             }}
           />
           <RankingTable
+            hasApplicants={data.applicants.length > 0}
             applicants={sortByCompatibility(data.applicants).filter(
               (item) => originFilter === "all" || item.origin === originFilter,
             )}
@@ -72,15 +73,19 @@ export function ProfessionalRankingView({
 
 function RankingTable({
   applicants,
+  hasApplicants,
   onViewResume,
 }: {
   applicants: JobApplicant[];
+  hasApplicants: boolean;
   onViewResume: ((applicant: JobApplicant) => void) | undefined;
 }) {
   if (applicants.length === 0) {
     return (
       <p className="text-lg text-muted-foreground">
-        Ainda não há profissionais compatíveis para esta vaga.
+        {hasApplicants
+          ? "Nenhum profissional encontrado para esta origem."
+          : "Ainda não há profissionais compatíveis para esta vaga."}
       </p>
     );
   }

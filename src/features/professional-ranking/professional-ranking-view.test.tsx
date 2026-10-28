@@ -206,6 +206,66 @@ describe("ProfessionalRankingView", () => {
     expect(bodyRows()).toHaveLength(2);
   });
 
+  it("explains an empty origin filter and restores all applicants", async () => {
+    const user = userEvent.setup();
+    renderView();
+    await screen.findByText("Marcos Silveira");
+
+    await user.click(
+      screen.getByRole("button", { name: "Matches automáticos (0)" }),
+    );
+
+    expect(
+      screen.getByText("Nenhum profissional encontrado para esta origem."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        "Ainda não há profissionais compatíveis para esta vaga.",
+      ),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Todos (5)" }));
+
+    expect(bodyRows()).toHaveLength(5);
+    expect(screen.getByText("Marcos Silveira")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Nenhum profissional encontrado para esta origem."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("preserves the empty vacancy message when changing origin filters", async () => {
+    getMock.mockResolvedValue({
+      data: {
+        ...PAYLOAD,
+        total_applicant_count: 0,
+        full_match_count: 0,
+        applicants: [],
+      },
+    });
+    const user = userEvent.setup();
+    renderView();
+
+    expect(
+      await screen.findByText(
+        "Ainda não há profissionais compatíveis para esta vaga.",
+      ),
+    ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Matches automáticos (0)" }),
+    );
+
+    expect(
+      screen.getByText(
+        "Ainda não há profissionais compatíveis para esta vaga.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Nenhum profissional encontrado para esta origem."),
+    ).not.toBeInTheDocument();
+  });
+
   it("não exibe contato nem dados sensíveis", async () => {
     renderView();
     await screen.findByText("Marcos Silveira");
