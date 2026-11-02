@@ -164,7 +164,7 @@ function CourseSearchError({ onRetry }: { onRetry: () => void }) {
       role="alert"
       className="flex max-w-md flex-col gap-4 rounded-lg border border-destructive bg-background p-6"
     >
-      <span className="font-mono text-[13px] font-semibold tracking-wide text-destructive uppercase">
+      <span className="font-mono text-base font-semibold tracking-wide text-destructive uppercase">
         Erro
       </span>
       <p className="text-lg text-foreground">
