@@ -1,4 +1,5 @@
 import type * as axe from "axe-core";
+import type { ProfessionalProfile } from "../../src/features/candidates/professional-profile-schema";
 
 const professionalId = "00000000-0000-4000-8000-000000000001";
 const administratorId = "00000000-0000-4000-8000-000000000009";
@@ -106,7 +107,7 @@ describe("résumé assistance end to end", () => {
   });
 
   it("shows the professional the same pending fields and a shortcut to each", () => {
-    cy.intercept("GET", "**/professionals/me", {
+    const profile: ProfessionalProfile = {
       id: professionalId,
       full_name: "Pessoa Sintética",
       age: 58,
@@ -120,7 +121,28 @@ describe("résumé assistance end to end", () => {
       certifications: [],
       skills: [],
       missing_fields: missingFields,
+    };
+    cy.intercept("GET", "**/professionals/me", (request) => {
+      request.reply({ body: profile });
     }).as("profile");
+    cy.intercept("POST", "**/professionals/me/experiences", (request) => {
+      const values = request.body as {
+        role: string;
+        company_name: string;
+        start_date: string;
+      };
+      const experience = {
+        id: "80000000-0000-4000-8000-000000000001",
+        role: values.role,
+        company_name: values.company_name,
+        start_date: values.start_date,
+        end_date: null,
+        description: null,
+      };
+      profile.experiences = [experience];
+      profile.missing_fields = ["summary"];
+      request.reply({ statusCode: 201, body: experience });
+    }).as("createExperience");
     cy.intercept({ method: "GET", pathname: "**/skills" }, []);
 
     visitAs(professionalId, "candidate", "/candidato");
@@ -139,13 +161,17 @@ describe("résumé assistance end to end", () => {
 
     cy.get('[aria-label="Completar Experiência profissional"]').click();
     cy.focused().should("have.text", "Adicionar experiência");
+    cy.focused().click();
+    cy.get("#exp-role-new").type("Assistente de logística");
+    cy.get("#exp-company-new").type("Empresa Sintética");
+    cy.get("#exp-start-new").type("2024-01-01");
+    cy.contains("button", "Concluir").click();
+    cy.wait("@createExperience");
     cy.contains("button", "Cancelar").click();
+    cy.wait("@profile");
     cy.get('[role="dialog"]').should("not.exist");
-    cy.focused().should(
-      "have.attr",
-      "aria-label",
-      "Completar Experiência profissional",
-    );
+    cy.focused().should("have.text", "Editar perfil");
+    cy.contains("li", "Experiência profissional").should("not.exist");
 
     cy.get('[aria-label="Completar Resumo profissional"]').click();
     cy.focused().should("have.attr", "id", "summary");

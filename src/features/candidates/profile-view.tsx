@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { missingFieldLabel } from "@/lib/resume-completeness";
 
+import { AutomaticApplicationSection } from "./automatic-application-section";
 import { startDownload } from "./certification-download";
 import { EditProfileModal } from "./edit-profile-modal";
 import {
@@ -30,11 +31,18 @@ export function ProfileView() {
     isError,
     error,
     refetch,
+    isFetching,
+    dataUpdatedAt,
+    failureCount,
   } = useQuery(professionalProfileQueryOptions);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [focusField, setFocusField] = useState<string>();
   const editButtonRef = useRef<HTMLButtonElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
+  const focusReturnRef = useRef<{
+    dataUpdatedAt: number;
+    failureCount: number;
+  } | null>(null);
 
   function openEditor(opener: HTMLElement, field?: string) {
     openerRef.current = opener;
@@ -42,14 +50,28 @@ export function ProfileView() {
     setIsEditOpen(true);
   }
 
+  function handleEditorOpenChange(open: boolean) {
+    if (!open) {
+      focusReturnRef.current = { dataUpdatedAt, failureCount };
+    }
+    setIsEditOpen(open);
+  }
+
   // The editor unmounts while the page is still inert, so the dialog's own
   // return focus lands on <body>. Saving can also remove the opener.
   useEffect(() => {
     const opener = openerRef.current;
-    if (isEditOpen || !opener) return;
+    const previousQuery = focusReturnRef.current;
+    if (isEditOpen || !opener || !previousQuery || isFetching) return;
+    const querySettled =
+      dataUpdatedAt > previousQuery.dataUpdatedAt ||
+      failureCount > previousQuery.failureCount;
+    if (!querySettled) return;
+
     (opener.isConnected ? opener : editButtonRef.current)?.focus();
     openerRef.current = null;
-  }, [isEditOpen]);
+    focusReturnRef.current = null;
+  }, [dataUpdatedAt, failureCount, isEditOpen, isFetching]);
 
   // isPending cobre tanto "carregando" quanto "sem dados ainda porque a
   // query está pausada" (ex.: offline, com networkMode padrão) — usar
@@ -85,7 +107,7 @@ export function ProfileView() {
 
       <EditProfileModal
         open={isEditOpen}
-        onOpenChange={setIsEditOpen}
+        onOpenChange={handleEditorOpenChange}
         profile={profile}
         focusField={focusField}
       />
@@ -120,6 +142,13 @@ export function ProfileView() {
           <section className="rounded-lg border border-border bg-background p-6">
             <SkillsSection skills={profile.skills} />
           </section>
+          {profile.accepts_automatic_application === undefined ? null : (
+            <section className="rounded-lg border border-border bg-background p-6">
+              <AutomaticApplicationSection
+                enabled={profile.accepts_automatic_application}
+              />
+            </section>
+          )}
         </div>
       </div>
     </main>
