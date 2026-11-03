@@ -16,7 +16,7 @@ import { startDownload } from "./certification-download";
 import { ProfileView } from "./profile-view";
 
 vi.mock("@/lib/api-client", () => ({
-  apiClient: { get: vi.fn(), patch: vi.fn() },
+  apiClient: { get: vi.fn(), patch: vi.fn(), post: vi.fn() },
 }));
 vi.mock("./certification-download", () => ({ startDownload: vi.fn() }));
 
@@ -357,6 +357,86 @@ describe("ProfileView", () => {
       { timeout: 3000 },
     );
   });
+
+  it.each([
+    {
+      field: "experiences",
+      label: "Experiência profissional",
+      addButton: "Adicionar experiência",
+      inputs: [
+        ["Cargo", "Analista de operações"],
+        ["Empresa", "Log Brasil"],
+        ["Início", "2019-01-01"],
+      ] as [string, string][],
+      item: {
+        id: "exp-2",
+        role: "Analista de operações",
+        company_name: "Log Brasil",
+        start_date: "2019-01-01",
+        end_date: null,
+        description: null,
+      },
+    },
+    {
+      field: "education",
+      label: "Formação",
+      addButton: "Adicionar formação",
+      inputs: [["Instituição", "Universidade Exemplo"]] as [string, string][],
+      item: {
+        id: "edu-2",
+        institution: "Universidade Exemplo",
+        degree: null,
+        field: null,
+        start_date: null,
+        end_date: null,
+      },
+    },
+  ])(
+    "returns focus to Editar perfil after completing $label and closing the editor",
+    async ({ field, label, addButton, inputs, item }) => {
+      const user = userEvent.setup();
+      const incomplete = {
+        ...validProfile,
+        [field]: [],
+        missing_fields: [field],
+      };
+      let stored: object = incomplete;
+      mockGet(() => Promise.resolve({ data: stored }));
+      const createItem = vi
+        .spyOn(apiClient, "post")
+        .mockImplementationOnce(() => {
+          stored = {
+            ...incomplete,
+            [field]: [item],
+            missing_fields: [],
+          };
+          return Promise.resolve({ data: item });
+        });
+
+      render(<ProfileView />);
+
+      await user.click(
+        await screen.findByRole("button", { name: `Completar ${label}` }),
+      );
+      await user.click(await screen.findByRole("button", { name: addButton }));
+      for (const [name, value] of inputs) {
+        await user.type(screen.getByLabelText(name), value);
+      }
+      await user.click(screen.getByRole("button", { name: "Concluir" }));
+
+      await waitFor(() => expect(createItem).toHaveBeenCalledOnce());
+      await user.click(screen.getByRole("button", { name: "Cancelar" }));
+
+      expect(
+        await screen.findByRole("heading", { name: "Currículo completo" }),
+      ).toBeVisible();
+      await waitFor(() =>
+        expect(
+          screen.getByRole("button", { name: /editar perfil/i }),
+        ).toHaveFocus(),
+      );
+    },
+  );
 
   it("explains a failed download", async () => {
     const user = userEvent.setup();
