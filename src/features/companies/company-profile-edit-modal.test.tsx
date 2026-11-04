@@ -300,6 +300,55 @@ describe("Company profile edit modal", () => {
     });
   });
 
+  it("brings back the saved address when the CEP goes back to the saved one", async () => {
+    let lookups = 0;
+    const { user } = mount({
+      [LOOKUP]: () => {
+        lookups += 1;
+        return { status: 200, data: postalAddress };
+      },
+    });
+    await openModal(user);
+
+    await replace(user, "CEP *", NEW_ZIP);
+    await waitFor(() =>
+      expect(screen.getByLabelText("Cidade *")).toHaveValue("Cidade Exemplo"),
+    );
+    await replace(user, "Número *", "500");
+    await replace(user, "CEP *", profile.address.zip_code);
+
+    expect(screen.getByLabelText("CEP *")).toHaveValue("90010-000");
+    expect(screen.getByLabelText("Logradouro *")).toHaveValue("Rua das Flores");
+    expect(screen.getByLabelText("Bairro *")).toHaveValue("Centro");
+    expect(screen.getByLabelText("Cidade *")).toHaveValue("Porto Alegre");
+    expect(screen.getByLabelText("Estado (UF) *")).toHaveValue("RS");
+    expect(screen.getByLabelText("Número *")).toHaveValue("500");
+    expect(
+      screen.getByText("Endereço cadastrado restaurado: Porto Alegre - RS."),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Salvar" }));
+
+    await expectClosed();
+    expect(lookups).toBe(1);
+    expect(requests(PUT_PROFILE)[0]?.body).toEqual({
+      ...unchanged,
+      address: { ...profile.address, number: "500" },
+    });
+  });
+
+  it("keeps a street typed by hand when the saved CEP is retyped", async () => {
+    const { user } = mount();
+    await openModal(user);
+
+    await replace(user, "Logradouro *", "Rua Manual");
+    await user.type(screen.getByLabelText("CEP *"), "{backspace}0");
+
+    expect(screen.getByLabelText("CEP *")).toHaveValue("90010-000");
+    expect(screen.getByLabelText("Logradouro *")).toHaveValue("Rua Manual");
+    expect(screen.queryByText(/Endereço cadastrado restaurado/)).toBeNull();
+  });
+
   it("keeps the address editable by hand when the CEP lookup fails, and retries", async () => {
     let lookups = 0;
     const { user } = mount({

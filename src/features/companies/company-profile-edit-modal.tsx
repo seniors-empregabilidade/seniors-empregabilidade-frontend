@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { type FieldPath, useForm, useWatch } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
@@ -120,6 +120,12 @@ export function CompanyProfileEditModal({
 
 const legendClassName = "mb-4 text-xl font-bold text-foreground";
 
+/** The address fields a CEP determines; number and complement stay as typed. */
+type AddressFromZipCode = Pick<
+  CompanyProfileFormValues["address"],
+  "street" | "neighborhood" | "city" | "state"
+>;
+
 interface CompanyProfileFormProps {
   profile: CompanyProfile;
   pending: boolean;
@@ -153,6 +159,7 @@ function CompanyProfileForm({
 
   // The saved CEP is not looked up again on opening: the address already on
   // the profile, possibly typed by hand, must not be overwritten.
+  const savedAddress = profile.address ? toFormValues(profile).address : null;
   const savedZipCode = digits(profile.address?.zip_code ?? "");
   const zipCode = digits(useWatch({ control, name: "address.zip_code" }));
   const lookUpZipCode = /^\d{8}$/.test(zipCode) && zipCode !== savedZipCode;
@@ -167,28 +174,61 @@ function CompanyProfileForm({
   const foundAddress = lookUpZipCode ? postalAddress.data : undefined;
   const lookingUp = lookUpZipCode && postalAddress.isFetching;
   const lookupFailed = lookUpZipCode && postalAddress.isError;
+  // Whether a lookup replaced the saved street, neighborhood, city and state.
+  const filledByLookup = useRef(false);
+  const [restoredSavedAddress, setRestoredSavedAddress] = useState(false);
+
+  const fillAddress = useCallback(
+    (address: AddressFromZipCode) => {
+      const options = { shouldDirty: true };
+      setValue("address.street", address.street, options);
+      setValue("address.neighborhood", address.neighborhood, options);
+      setValue("address.city", address.city, options);
+      setValue("address.state", address.state, options);
+      clearErrors([
+        "address.street",
+        "address.neighborhood",
+        "address.city",
+        "address.state",
+      ]);
+    },
+    [setValue, clearErrors],
+  );
 
   useEffect(() => {
     if (!foundAddress) return;
-    const options = { shouldDirty: true };
-    setValue("address.street", foundAddress.logradouro, options);
-    setValue("address.neighborhood", foundAddress.bairro, options);
-    setValue("address.city", foundAddress.localidade, options);
-    setValue("address.state", foundAddress.uf, options);
-    clearErrors([
-      "address.street",
-      "address.neighborhood",
-      "address.city",
-      "address.state",
-    ]);
-  }, [foundAddress, setValue, clearErrors]);
+    fillAddress({
+      street: foundAddress.logradouro,
+      neighborhood: foundAddress.bairro,
+      city: foundAddress.localidade,
+      state: foundAddress.uf,
+    });
+    filledByLookup.current = true;
+  }, [foundAddress, fillAddress]);
+
+  // Going back to the saved CEP after another one filled the address brings
+  // the saved address back, so the saved CEP is never sent with the street
+  // and city of a different one.
+  function onZipCodeTyped(typedZipCode: string) {
+    const backToSaved =
+      savedAddress !== null &&
+      typedZipCode === savedZipCode &&
+      filledByLookup.current;
+    if (backToSaved) {
+      filledByLookup.current = false;
+      fillAddress(savedAddress);
+    }
+    setRestoredSavedAddress(backToSaved);
+  }
 
   const busy = pending || formState.isSubmitting;
   const postalAnnouncement = lookingUp
     ? "Consultando CEP…"
     : foundAddress
       ? `Endereço preenchido pelo CEP: ${foundAddress.localidade} - ${foundAddress.uf}.`
-      : "";
+      : restoredSavedAddress && savedAddress
+        ? `Endereço cadastrado restaurado: ${savedAddress.city} - ${savedAddress.state}.`
+        : "";
 
   async function submit(values: CompanyProfileFormValues) {
     setGeneralError(null);
@@ -240,6 +280,38 @@ function CompanyProfileForm({
   const zipError = formState.errors.address?.zip_code;
   const cnpjId = fieldId("cnpj");
 
+  // Registered where it renders, so a failed submit still focuses the first
+  // invalid field in reading order.
+  function zipCodeInput() {
+    const zipCodeField = register("address.zip_code");
+    return (
+      <Input
+        {...zipCodeField}
+        onChange={(event) => {
+          void zipCodeField.onChange(event);
+          const input = event.target;
+          const caret = input.selectionStart ?? input.value.length;
+          const typedBeforeCaret = digits(input.value.slice(0, caret)).length;
+          const masked = maskZipCode(input.value);
+          setValue("address.zip_code", masked);
+          onZipCodeTyped(digits(masked));
+          const position = maskedCaret(masked, typedBeforeCaret);
+          requestAnimationFrame(() => {
+            if (document.activeElement === input)
+              input.setSelectionRange(position, position);
+          });
+        }}
+        id={zipId}
+        inputMode="numeric"
+        maxLength={9}
+        autoComplete="postal-code"
+        aria-required="true"
+        aria-invalid={Boolean(zipError) || lookupFailed}
+        aria-describedby={`${zipId}-feedback`}
+      />
+    );
+  }
+
   return (
     <form
       noValidate
@@ -288,31 +360,7 @@ function CompanyProfileForm({
         <legend className={legendClassName}>Endereço</legend>
         <div className="space-y-2">
           <Label htmlFor={zipId}>CEP *</Label>
-          <Input
-            {...register("address.zip_code", {
-              onChange: (event: React.ChangeEvent<HTMLInputElement>) => {
-                const input = event.target;
-                const caret = input.selectionStart ?? input.value.length;
-                const typedBeforeCaret = digits(
-                  input.value.slice(0, caret),
-                ).length;
-                const masked = maskZipCode(input.value);
-                setValue("address.zip_code", masked);
-                const position = maskedCaret(masked, typedBeforeCaret);
-                requestAnimationFrame(() => {
-                  if (document.activeElement === input)
-                    input.setSelectionRange(position, position);
-                });
-              },
-            })}
-            id={zipId}
-            inputMode="numeric"
-            maxLength={9}
-            autoComplete="postal-code"
-            aria-required="true"
-            aria-invalid={Boolean(zipError) || lookupFailed}
-            aria-describedby={`${zipId}-feedback`}
-          />
+          {zipCodeInput()}
           <div id={`${zipId}-feedback`} className="space-y-2">
             {zipError ? (
               <p role="alert" className="text-destructive">
