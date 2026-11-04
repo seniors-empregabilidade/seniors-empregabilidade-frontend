@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { CompanyBadge } from "@/components/ui/company-badge";
@@ -11,16 +11,50 @@ import {
   type CompanyAddress,
   type CompanyProfile,
 } from "./company-profile";
+import { CompanyProfileEditModal } from "./company-profile-edit-modal";
 import { maskCnpj, maskZipCode } from "./registration-schema";
 
 export function CompanyProfilePage() {
+  const [notice, setNotice] = useState<{ id: number; message: string } | null>(
+    null,
+  );
   const profile = useQuery(companyProfileQueryOptions);
+
+  // A new id renders the notice again, so a second save is announced again.
+  function announce(message: string) {
+    setNotice((current) => ({ id: (current?.id ?? 0) + 1, message }));
+  }
 
   return (
     <div className="min-h-full bg-muted p-4 md:p-8">
-      <h1 className="mb-6 text-3xl font-bold text-foreground">
-        Perfil da empresa
-      </h1>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-3xl font-bold text-foreground">
+          Perfil da empresa
+        </h1>
+        {profile.data ? (
+          <CompanyProfileEditModal
+            profile={profile.data}
+            onSaved={() =>
+              announce("Perfil atualizado. As alterações já aparecem abaixo.")
+            }
+          />
+        ) : null}
+      </div>
+
+      {/* Rendered empty from the start so the confirmation is announced. */}
+      <div role="status">
+        {notice ? (
+          <div
+            key={notice.id}
+            className="mb-6 flex flex-col gap-1 rounded-lg border border-success bg-background p-4"
+          >
+            <span className="font-mono text-base font-semibold tracking-wide text-success uppercase">
+              Sucesso
+            </span>
+            <p className="text-lg text-foreground">{notice.message}</p>
+          </div>
+        ) : null}
+      </div>
 
       {profile.isPending ? (
         <ProfileSkeleton />

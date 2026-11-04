@@ -49,6 +49,41 @@ export async function fetchCompanyProfile(
   return parsed.data;
 }
 
+/** Mirrors CompanyProfileUpdateRequest: the whole editable profile at once. */
+export interface CompanyProfileUpdate {
+  display_name: string;
+  legal_name: string;
+  industry: string | null;
+  address: {
+    street: string;
+    number: string;
+    complement: string | null;
+    neighborhood: string;
+    city: string;
+    state: string;
+    zip_code: string;
+  };
+  contact_email: string;
+  contact_phone: string | null;
+}
+
+export async function updateCompanyProfile(
+  update: CompanyProfileUpdate,
+): Promise<CompanyProfile> {
+  const response = await apiClient.put<unknown>(
+    "/companies/me/profile",
+    update,
+  );
+  const parsed = companyProfileSchema.safeParse(response.data);
+  if (!parsed.success) {
+    throw new ApiError({
+      message: "Não foi possível validar o perfil salvo.",
+      code: "invalid_company_profile_response",
+    });
+  }
+  return parsed.data;
+}
+
 export const companyProfileQueryOptions = queryOptions({
   queryKey: companyProfileQueryKey,
   queryFn: ({ signal }) => fetchCompanyProfile(signal),
