@@ -298,6 +298,12 @@ describe("CandidateHome", () => {
     );
 
     expect(await within(applications).findByText("Vaga 1")).toBeVisible();
+    // The retry button is gone; focus stays in the card instead of the body.
+    expect(
+      within(applications).getByRole("heading", {
+        name: "Candidaturas recentes",
+      }),
+    ).toHaveFocus();
   });
 
   it("falls back to a generic heading when the profile fails", async () => {

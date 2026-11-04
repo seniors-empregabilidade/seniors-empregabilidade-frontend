@@ -98,7 +98,9 @@ function HomeSection({
       className="flex flex-col gap-4 rounded-lg border border-border bg-background p-6"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id={id} className="text-xl font-bold text-foreground">
+        {/* Focusable from script only: a retry moves focus here, since its
+            button disappears once the card loads. */}
+        <h2 id={id} tabIndex={-1} className="text-xl font-bold text-foreground">
           {title}
         </h2>
         {action}
@@ -129,7 +131,17 @@ function SectionError({
   return (
     <div role="alert" className="flex flex-col items-start gap-3">
       <p className="text-lg text-foreground">{message}</p>
-      <Button type="button" variant="outline" onClick={onRetry}>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={(event) => {
+          event.currentTarget
+            .closest("section")
+            ?.querySelector<HTMLElement>("h2")
+            ?.focus();
+          onRetry();
+        }}
+      >
         Tentar novamente
       </Button>
     </div>
