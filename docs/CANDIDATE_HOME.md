@@ -1,4 +1,4 @@
-# Candidate home (US-32-T02)
+# Candidate home (US-32)
 
 `/candidato` is the first screen a professional sees after signing in. It sits
 inside the existing `RoleShell`, so the sidebar, the header with the
@@ -34,4 +34,23 @@ perform (profile edits, withdrawal) reach the cards too.
 The heading reads "Área do candidato" until the profile arrives, and keeps it
 when the profile card fails, so the page always has a level-1 heading.
 
-The end-to-end check against the real backend belongs to US-32-T03.
+## End-to-end integration (US-32-T03)
+
+`cypress/e2e/candidate-home.cy.ts` answers every request with the shapes of the
+backend contract (US-32-T01) and checks:
+
+- the greeting, the three cards, the `limit=3` requests and axe (WCAG 2.2 AA);
+- each shortcut opening its source screen: Meu perfil, Candidaturas, the job
+  search and the job detail (US-11);
+- coherence after leaving and returning through the sidebar: a profile edit
+  (33% → 50%, the pending item gone), a status changed by the company, a new
+  application sent from the job detail and a withdrawal from Candidaturas;
+- a complete profile and empty sources with their guidance;
+- one failing source keeping the other cards, and its retry;
+- a 375 px viewport without horizontal scrolling.
+
+Wiring the page to the real backend exposed that applying called
+`POST /job-postings/{id}/applications`, a route the backend never had. Applying
+now sends `POST /applications` with `{ "job_id": "<id>" }`, and the conflict
+codes the detail reconciles are the backend's `application_already_exists`
+and `job_not_open` (see [JOB_DETAIL.md](JOB_DETAIL.md)).
