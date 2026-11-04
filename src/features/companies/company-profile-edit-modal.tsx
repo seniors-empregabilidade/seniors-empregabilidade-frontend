@@ -101,7 +101,9 @@ export function CompanyProfileEditModal({
     >
       <DialogTrigger render={<Button type="button">Editar perfil</Button>} />
       <DialogContent className="max-h-[calc(100svh-2rem)] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader>
+        {/* Room for the close button, so the title wraps before reaching it
+            on narrow screens. */}
+        <DialogHeader className="pr-8">
           <DialogTitle>Editar perfil da empresa</DialogTitle>
           <DialogDescription>
             Os campos marcados com * são obrigatórios.
