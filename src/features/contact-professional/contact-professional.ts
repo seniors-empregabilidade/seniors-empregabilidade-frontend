@@ -34,17 +34,13 @@ export async function contactProfessional(
   return contactResponseSchema.parse(data);
 }
 
-const errorShapeSchema = z.object({
-  status: z.number().optional(),
-  response: z.object({ status: z.number().optional() }).optional(),
-});
+// O apiClient sempre rejeita com ApiError, que traz o `.status` HTTP plano.
+const errorShapeSchema = z.object({ status: z.number().optional() });
 
 /** Traduz a falha do POST /contacts em uma mensagem que a empresa entenda. */
 export function contactErrorMessage(error: unknown): string {
   const parsed = errorShapeSchema.safeParse(error);
-  const status = parsed.success
-    ? (parsed.data.response?.status ?? parsed.data.status)
-    : undefined;
+  const status = parsed.success ? parsed.data.status : undefined;
 
   switch (status) {
     case 403:
