@@ -53,6 +53,7 @@ function fakeApi() {
           {
             origin: "application",
             application_id: APPLICATION_ID,
+            application_type: "active",
             status,
             match_score: null,
             compatibility_percentage: "100.00",
@@ -71,6 +72,7 @@ function fakeApi() {
           {
             origin: "automatic_match",
             application_id: null,
+            application_type: null,
             status: null,
             match_score: null,
             compatibility_percentage: "100.00",
