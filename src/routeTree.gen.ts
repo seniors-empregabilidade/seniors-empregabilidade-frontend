@@ -25,12 +25,14 @@ import { Route as AdministradorCompetenciasRouteImport } from './routes/administ
 import { Route as AdministradorContasRouteImport } from './routes/administrador.contas'
 import { Route as CandidatoIndexRouteImport } from './routes/candidato.index'
 import { Route as CandidatoCandidaturasRouteImport } from './routes/candidato.candidaturas'
+import { Route as CandidatoComoUsarRouteImport } from './routes/candidato.como-usar'
 import { Route as CandidatoNotificacoesRouteImport } from './routes/candidato.notificacoes'
 import { Route as CandidatoPerfilRouteImport } from './routes/candidato.perfil'
 import { Route as CandidatoVagasRouteImport } from './routes/candidato.vagas'
 import { Route as EmpresaIndexRouteImport } from './routes/empresa.index'
 import { Route as EmpresaCandidatosRouteImport } from './routes/empresa.candidatos'
 import { Route as EmpresaNotificacoesRouteImport } from './routes/empresa.notificacoes'
+import { Route as EmpresaPerfilRouteImport } from './routes/empresa.perfil'
 import { Route as EmpresaVagasRouteImport } from './routes/empresa.vagas'
 import { Route as UsersRegisterRouteImport } from './routes/users/register'
 import { Route as CandidatoVagasJobIdRouteImport } from './routes/candidato.vagas_.$jobId'
@@ -117,6 +119,11 @@ const CandidatoCandidaturasRoute = CandidatoCandidaturasRouteImport.update({
   path: '/candidaturas',
   getParentRoute: () => CandidatoRoute,
 } as any)
+const CandidatoComoUsarRoute = CandidatoComoUsarRouteImport.update({
+  id: '/como-usar',
+  path: '/como-usar',
+  getParentRoute: () => CandidatoRoute,
+} as any)
 const CandidatoNotificacoesRoute = CandidatoNotificacoesRouteImport.update({
   id: '/notificacoes',
   path: '/notificacoes',
@@ -145,6 +152,11 @@ const EmpresaCandidatosRoute = EmpresaCandidatosRouteImport.update({
 const EmpresaNotificacoesRoute = EmpresaNotificacoesRouteImport.update({
   id: '/notificacoes',
   path: '/notificacoes',
+  getParentRoute: () => EmpresaRoute,
+} as any)
+const EmpresaPerfilRoute = EmpresaPerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
   getParentRoute: () => EmpresaRoute,
 } as any)
 const EmpresaVagasRoute = EmpresaVagasRouteImport.update({
@@ -184,11 +196,13 @@ export interface FileRoutesByFullPath {
   '/administrador/competencias': typeof AdministradorCompetenciasRoute
   '/administrador/contas': typeof AdministradorContasRoute
   '/candidato/candidaturas': typeof CandidatoCandidaturasRoute
+  '/candidato/como-usar': typeof CandidatoComoUsarRoute
   '/candidato/notificacoes': typeof CandidatoNotificacoesRoute
   '/candidato/perfil': typeof CandidatoPerfilRoute
   '/candidato/vagas': typeof CandidatoVagasRoute
   '/empresa/candidatos': typeof EmpresaCandidatosRoute
   '/empresa/notificacoes': typeof EmpresaNotificacoesRoute
+  '/empresa/perfil': typeof EmpresaPerfilRoute
   '/empresa/vagas': typeof EmpresaVagasRoute
   '/users/register': typeof UsersRegisterRoute
   '/administrador/': typeof AdministradorIndexRoute
@@ -209,11 +223,13 @@ export interface FileRoutesByTo {
   '/administrador/competencias': typeof AdministradorCompetenciasRoute
   '/administrador/contas': typeof AdministradorContasRoute
   '/candidato/candidaturas': typeof CandidatoCandidaturasRoute
+  '/candidato/como-usar': typeof CandidatoComoUsarRoute
   '/candidato/notificacoes': typeof CandidatoNotificacoesRoute
   '/candidato/perfil': typeof CandidatoPerfilRoute
   '/candidato/vagas': typeof CandidatoVagasRoute
   '/empresa/candidatos': typeof EmpresaCandidatosRoute
   '/empresa/notificacoes': typeof EmpresaNotificacoesRoute
+  '/empresa/perfil': typeof EmpresaPerfilRoute
   '/empresa/vagas': typeof EmpresaVagasRoute
   '/users/register': typeof UsersRegisterRoute
   '/administrador': typeof AdministradorIndexRoute
@@ -238,11 +254,13 @@ export interface FileRoutesById {
   '/administrador/competencias': typeof AdministradorCompetenciasRoute
   '/administrador/contas': typeof AdministradorContasRoute
   '/candidato/candidaturas': typeof CandidatoCandidaturasRoute
+  '/candidato/como-usar': typeof CandidatoComoUsarRoute
   '/candidato/notificacoes': typeof CandidatoNotificacoesRoute
   '/candidato/perfil': typeof CandidatoPerfilRoute
   '/candidato/vagas': typeof CandidatoVagasRoute
   '/empresa/candidatos': typeof EmpresaCandidatosRoute
   '/empresa/notificacoes': typeof EmpresaNotificacoesRoute
+  '/empresa/perfil': typeof EmpresaPerfilRoute
   '/empresa/vagas': typeof EmpresaVagasRoute
   '/users/register': typeof UsersRegisterRoute
   '/administrador/': typeof AdministradorIndexRoute
@@ -268,11 +286,13 @@ export interface FileRouteTypes {
     | '/administrador/competencias'
     | '/administrador/contas'
     | '/candidato/candidaturas'
+    | '/candidato/como-usar'
     | '/candidato/notificacoes'
     | '/candidato/perfil'
     | '/candidato/vagas'
     | '/empresa/candidatos'
     | '/empresa/notificacoes'
+    | '/empresa/perfil'
     | '/empresa/vagas'
     | '/users/register'
     | '/administrador/'
@@ -293,11 +313,13 @@ export interface FileRouteTypes {
     | '/administrador/competencias'
     | '/administrador/contas'
     | '/candidato/candidaturas'
+    | '/candidato/como-usar'
     | '/candidato/notificacoes'
     | '/candidato/perfil'
     | '/candidato/vagas'
     | '/empresa/candidatos'
     | '/empresa/notificacoes'
+    | '/empresa/perfil'
     | '/empresa/vagas'
     | '/users/register'
     | '/administrador'
@@ -321,11 +343,13 @@ export interface FileRouteTypes {
     | '/administrador/competencias'
     | '/administrador/contas'
     | '/candidato/candidaturas'
+    | '/candidato/como-usar'
     | '/candidato/notificacoes'
     | '/candidato/perfil'
     | '/candidato/vagas'
     | '/empresa/candidatos'
     | '/empresa/notificacoes'
+    | '/empresa/perfil'
     | '/empresa/vagas'
     | '/users/register'
     | '/administrador/'
@@ -463,6 +487,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CandidatoCandidaturasRouteImport
       parentRoute: typeof CandidatoRoute
     }
+    '/candidato/como-usar': {
+      id: '/candidato/como-usar'
+      path: '/como-usar'
+      fullPath: '/candidato/como-usar'
+      preLoaderRoute: typeof CandidatoComoUsarRouteImport
+      parentRoute: typeof CandidatoRoute
+    }
     '/candidato/notificacoes': {
       id: '/candidato/notificacoes'
       path: '/notificacoes'
@@ -503,6 +534,13 @@ declare module '@tanstack/react-router' {
       path: '/notificacoes'
       fullPath: '/empresa/notificacoes'
       preLoaderRoute: typeof EmpresaNotificacoesRouteImport
+      parentRoute: typeof EmpresaRoute
+    }
+    '/empresa/perfil': {
+      id: '/empresa/perfil'
+      path: '/perfil'
+      fullPath: '/empresa/perfil'
+      preLoaderRoute: typeof EmpresaPerfilRouteImport
       parentRoute: typeof EmpresaRoute
     }
     '/empresa/vagas': {
@@ -556,6 +594,7 @@ const AdministradorRouteWithChildren = AdministradorRoute._addFileChildren(
 
 interface CandidatoRouteChildren {
   CandidatoCandidaturasRoute: typeof CandidatoCandidaturasRoute
+  CandidatoComoUsarRoute: typeof CandidatoComoUsarRoute
   CandidatoNotificacoesRoute: typeof CandidatoNotificacoesRoute
   CandidatoPerfilRoute: typeof CandidatoPerfilRoute
   CandidatoVagasRoute: typeof CandidatoVagasRoute
@@ -565,6 +604,7 @@ interface CandidatoRouteChildren {
 
 const CandidatoRouteChildren: CandidatoRouteChildren = {
   CandidatoCandidaturasRoute: CandidatoCandidaturasRoute,
+  CandidatoComoUsarRoute: CandidatoComoUsarRoute,
   CandidatoNotificacoesRoute: CandidatoNotificacoesRoute,
   CandidatoPerfilRoute: CandidatoPerfilRoute,
   CandidatoVagasRoute: CandidatoVagasRoute,
@@ -579,6 +619,7 @@ const CandidatoRouteWithChildren = CandidatoRoute._addFileChildren(
 interface EmpresaRouteChildren {
   EmpresaCandidatosRoute: typeof EmpresaCandidatosRoute
   EmpresaNotificacoesRoute: typeof EmpresaNotificacoesRoute
+  EmpresaPerfilRoute: typeof EmpresaPerfilRoute
   EmpresaVagasRoute: typeof EmpresaVagasRoute
   EmpresaIndexRoute: typeof EmpresaIndexRoute
   EmpresaVagasJobIdCandidatosRoute: typeof EmpresaVagasJobIdCandidatosRoute
@@ -587,6 +628,7 @@ interface EmpresaRouteChildren {
 const EmpresaRouteChildren: EmpresaRouteChildren = {
   EmpresaCandidatosRoute: EmpresaCandidatosRoute,
   EmpresaNotificacoesRoute: EmpresaNotificacoesRoute,
+  EmpresaPerfilRoute: EmpresaPerfilRoute,
   EmpresaVagasRoute: EmpresaVagasRoute,
   EmpresaIndexRoute: EmpresaIndexRoute,
   EmpresaVagasJobIdCandidatosRoute: EmpresaVagasJobIdCandidatosRoute,
