@@ -14,6 +14,7 @@ import {
   courseSearchQueryOptions,
   SKILL_SEARCH_MAX_LENGTH,
   type Course,
+  type CourseSearchPage,
   type TrainingMode,
 } from "./trainings-api";
 
@@ -58,24 +59,30 @@ export function CourseSearchView() {
       ) : courses.isError ? (
         <CourseSearchError onRetry={() => void courses.refetch()} />
       ) : (
-        <CourseSearchResults courses={courses.data} skill={debouncedSkill} />
+        <CourseSearchResults page={courses.data} skill={debouncedSkill} />
       )}
     </div>
   );
 }
 
 function CourseSearchResults({
-  courses,
+  page,
   skill,
 }: {
-  courses: Course[];
+  page: CourseSearchPage;
   skill: string;
 }) {
+  const courses = page.items;
+
   return (
     <div>
       <p role="status" className="mb-4 text-lg text-foreground">
-        <strong>{courses.length}</strong> {courseCountLabel(courses.length)}
+        <strong>{page.total}</strong> {courseCountLabel(page.total)}
         {skill === "" ? null : <> para “{skill}”</>}
+        {/* Only the first page is loaded; say so instead of hiding the rest. */}
+        {page.total > courses.length ? (
+          <>. Mostrando os {courses.length} primeiros.</>
+        ) : null}
       </p>
 
       {courses.length === 0 ? (
@@ -102,14 +109,10 @@ function courseCountLabel(count: number): string {
 }
 
 function courseDetails(course: Course): string {
-  const provider = course.provider?.trim() ?? "";
+  const institution = course.institution?.trim() ?? "";
   return [
-    provider === "" ? null : provider,
-    course.training_mode === null
-      ? null
-      : TRAINING_MODE_LABELS[course.training_mode],
-    course.workload_hours === null ? null : `${course.workload_hours}h`,
-    course.free ? "gratuito" : "pago",
+    institution === "" ? null : institution,
+    course.mode === null ? null : TRAINING_MODE_LABELS[course.mode],
   ]
     .filter((part) => part !== null)
     .join(" · ");
@@ -117,11 +120,20 @@ function courseDetails(course: Course): string {
 
 function CourseCard({ course }: { course: Course }) {
   const href = safeExternalUrl(course.external_link);
+  const details = courseDetails(course);
 
   return (
     <article className="flex h-full flex-col gap-3 rounded-lg border border-border bg-background p-6">
       <h2 className="text-xl font-bold text-foreground">{course.title}</h2>
-      <p className="text-base text-muted-foreground">{courseDetails(course)}</p>
+      {details === "" ? null : (
+        <p className="text-base text-muted-foreground">{details}</p>
+      )}
+      {course.skills.length === 0 ? null : (
+        <p className="text-base text-foreground">
+          <span className="font-semibold">Habilidades:</span>{" "}
+          {course.skills.map((skill) => skill.name).join(", ")}
+        </p>
+      )}
       {href === null ? (
         <p className="text-base text-muted-foreground">
           O link deste curso não está disponível.

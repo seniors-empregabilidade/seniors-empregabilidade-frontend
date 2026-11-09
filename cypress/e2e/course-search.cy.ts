@@ -1,22 +1,31 @@
 const course = {
   id: "11111111-1111-4111-8111-111111111111",
   title: "NR-11: movimentação de cargas",
-  provider: "SENAI",
-  training_mode: "onsite",
-  workload_hours: 16,
-  free: true,
+  institution: "SENAI",
+  mode: "onsite",
   external_link: "https://example.com/nr-11",
+  skills: [
+    {
+      id: "33333333-3333-4333-8333-333333333333",
+      name: "Operação de empilhadeira",
+      type: "hard",
+    },
+  ],
 };
 
 const unsafeCourse = {
   id: "22222222-2222-4222-8222-222222222222",
   title: "Curso sem link seguro",
-  provider: "SENAC",
-  training_mode: "online",
-  workload_hours: 8,
-  free: true,
+  institution: "SENAC",
+  mode: "online",
   external_link: "javascript:alert(1)",
+  skills: [],
 };
+
+// Same shape as `GET /trainings`: one page of courses and the total matches.
+function coursePage(items: (typeof course | typeof unsafeCourse)[]) {
+  return { items, total: items.length };
+}
 
 const wcag = {
   runOnly: {
@@ -47,7 +56,7 @@ describe("course search", () => {
     cy.intercept("GET", "**/trainings*", (request) => {
       const skill = new URL(request.url).searchParams.get("skill");
       request.reply({
-        body: skill === "Excel" ? [] : [course, unsafeCourse],
+        body: coursePage(skill === "Excel" ? [] : [course, unsafeCourse]),
       });
     }).as("courses");
 
@@ -57,8 +66,9 @@ describe("course search", () => {
     cy.contains("h1", "Capacitação").should("be.visible");
     cy.contains("a", "Capacitação").should("have.attr", "aria-current", "page");
     cy.contains("NR-11: movimentação de cargas").should("be.visible");
-    cy.contains("SENAI · Presencial · 16h · gratuito").should("be.visible");
-    cy.contains("SENAC · Online · 8h · gratuito").should("be.visible");
+    cy.contains("SENAI · Presencial").should("be.visible");
+    cy.contains("Habilidades: Operação de empilhadeira").should("be.visible");
+    cy.contains("SENAC · Online").should("be.visible");
     cy.contains("O link deste curso não está disponível.").should("be.visible");
 
     cy.contains("a", "Acessar curso")
@@ -90,7 +100,7 @@ describe("course search", () => {
         });
         return;
       }
-      request.reply({ body: [course] });
+      request.reply({ body: coursePage([course]) });
     }).as("courses");
 
     visitCourseSearch();
@@ -105,7 +115,9 @@ describe("course search", () => {
   });
 
   it("has no detectable WCAG 2.2 AA violations", () => {
-    cy.intercept("GET", "**/trainings*", { body: [course] }).as("courses");
+    cy.intercept("GET", "**/trainings*", { body: coursePage([course]) }).as(
+      "courses",
+    );
     visitCourseSearch();
     cy.wait("@courses");
     cy.contains("NR-11: movimentação de cargas").should("be.visible");

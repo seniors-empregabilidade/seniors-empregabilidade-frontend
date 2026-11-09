@@ -12,12 +12,19 @@ import {
 const course: Course = {
   id: "11111111-1111-4111-8111-111111111111",
   title: "NR-11: movimentação de cargas",
-  provider: "SENAI",
-  training_mode: "onsite",
-  workload_hours: 16,
-  free: true,
+  institution: "SENAI",
+  mode: "onsite",
   external_link: "https://example.com/nr-11",
+  skills: [
+    {
+      id: "33333333-3333-4333-8333-333333333333",
+      name: "Operação de empilhadeira",
+      type: "hard",
+    },
+  ],
 };
+
+const coursePage = { items: [course], total: 1 };
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -27,9 +34,9 @@ describe("fetchCourses", () => {
   it("lists published courses and omits a blank skill filter", async () => {
     const get = vi
       .spyOn(apiClient, "get")
-      .mockResolvedValue({ data: [course] });
+      .mockResolvedValue({ data: coursePage });
 
-    await expect(fetchCourses("   ")).resolves.toEqual([course]);
+    await expect(fetchCourses("   ")).resolves.toEqual(coursePage);
 
     expect(get).toHaveBeenCalledWith("/trainings", {
       params: { limit: 20, offset: 0 },
@@ -39,7 +46,7 @@ describe("fetchCourses", () => {
   it("sends the trimmed skill and the abort signal", async () => {
     const get = vi
       .spyOn(apiClient, "get")
-      .mockResolvedValue({ data: [course] });
+      .mockResolvedValue({ data: coursePage });
     const controller = new AbortController();
 
     await fetchCourses("  Excel  ", controller.signal);
@@ -50,9 +57,17 @@ describe("fetchCourses", () => {
     });
   });
 
+  it("rejects a bare array, the shape before the paginated contract", async () => {
+    vi.spyOn(apiClient, "get").mockResolvedValue({ data: [course] });
+
+    await expect(fetchCourses("")).rejects.toMatchObject({
+      code: "invalid_course_search_response",
+    });
+  });
+
   it("rejects a payload that does not match the training contract", async () => {
     vi.spyOn(apiClient, "get").mockResolvedValue({
-      data: [{ title: "Curso sem contrato" }],
+      data: { items: [{ title: "Curso sem contrato" }], total: 1 },
     });
 
     await expect(fetchCourses("")).rejects.toBeInstanceOf(ApiError);
