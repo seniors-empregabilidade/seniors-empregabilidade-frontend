@@ -14,6 +14,12 @@ The company route guard and backend ownership checks protect access.
 - Automatic matches have `origin: automatic_match`, no application ID and no
   status. Management reports their separate count and shows only actual
   applications as actionable profiles. No application is invented for a match.
+- Every application carries `application_type`: `active` when the professional
+  applied, `automatic` when the platform applied on their behalf (US-20). The
+  ranking badge reads "Candidatou-se à vaga" or "Candidatura automática", and the
+  management card of an automatic application says the platform made it. Both
+  types are managed the same way. The backend must be deployed before this
+  frontend, since the field is required.
 - `GET /applications/{application_id}/profile` returns professional summary,
   skills, experience, education and certification metadata. It excludes age,
   contacts, personal identification numbers and certificate documents. A foreign application returns
@@ -53,6 +59,11 @@ this does not change the repository's Chrome CI configuration.
 - `cypress/e2e/candidate-management.cy.ts` follows both hiring and rejection across
   company/candidate sessions, with desktop/mobile and axe checks. Its API is
   stateful and controlled; it does not call production.
+- `cypress/e2e/applicant-origin-flow.cy.ts` (US-20-T03) shows each origin to the
+  company (own application, automatic application, automatic match), then has a
+  matched professional apply from the job page and checks that the company now
+  sees an application with the same percentage. The backend counterpart is
+  `tests/jobs/test_applicant_origin_end_to_end_integration.py`.
 - Backend PostgreSQL integration tests exercise real submission, ownership,
   profiles, decisions, candidate feedback and terminal-state enforcement. Run
   the backend suite against a fresh isolated database: the existing seed tests

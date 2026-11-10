@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Sparkles, UserCheck } from "lucide-react";
+import { Send, Sparkles, UserCheck } from "lucide-react";
 import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -102,7 +102,15 @@ function RankingTable({
   const hasActions = Boolean(onViewResume ?? onContact);
 
   return (
-    <div className="overflow-x-auto">
+    <div
+      role="region"
+      aria-label="Tabela de profissionais da vaga"
+      // On a phone the table scrolls sideways; a focusable region lets the
+      // keyboard scroll it too (axe scrollable-region-focusable).
+      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+      tabIndex={0}
+      className="overflow-x-auto focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+    >
       <table className="w-full min-w-[680px] border-collapse text-left text-lg">
         <caption className="sr-only">
           Candidatos ordenados por compatibilidade, do maior para o menor
@@ -147,17 +155,26 @@ function skillNames(skills: JobApplicant["matched_skills"]): string {
   return skills.map((skill) => skill.name).join(", ");
 }
 
-// Texto e ícone distinguem a origem; a cor é só reforço.
-function OriginBadge({ origin }: { origin: ApplicantOrigin }) {
-  return origin === "application" ? (
+// Texto e ícone distinguem a origem; a cor é só reforço. Uma candidatura
+// automática foi feita pela plataforma, então não diz que a pessoa se candidatou.
+function OriginBadge({ applicant }: { applicant: JobApplicant }) {
+  if (applicant.origin === "automatic_match") {
+    return (
+      <Badge variant="secondary" className="mt-1">
+        <Sparkles />
+        Match automático
+      </Badge>
+    );
+  }
+  return applicant.application_type === "automatic" ? (
+    <Badge variant="outline" className="mt-1">
+      <Send />
+      Candidatura automática
+    </Badge>
+  ) : (
     <Badge variant="outline" className="mt-1">
       <UserCheck />
       Candidatou-se à vaga
-    </Badge>
-  ) : (
-    <Badge variant="secondary" className="mt-1">
-      <Sparkles />
-      Match automático
     </Badge>
   );
 }
@@ -234,7 +251,7 @@ function RankingRow({
         {location ? (
           <p className="text-base text-foreground-2">{location}</p>
         ) : null}
-        <OriginBadge origin={applicant.origin} />
+        <OriginBadge applicant={applicant} />
       </td>
       <td className="px-3 py-4">
         {percentage === null ? (

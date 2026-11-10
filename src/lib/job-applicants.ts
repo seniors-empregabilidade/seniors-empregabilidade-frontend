@@ -21,6 +21,10 @@ const applicantProfileSchema = z.object({
 
 export const applicantOriginSchema = z.enum(["application", "automatic_match"]);
 
+// Who made an application: the professional ("active") or the platform on
+// their behalf ("automatic", US-20). Both are real applications.
+export const applicationTypeSchema = z.enum(["active", "automatic"]);
+
 const applicantFields = {
   compatibility_percentage: percentageSchema,
   is_highlighted: z.boolean(),
@@ -40,6 +44,7 @@ export const jobApplicantSchema = z.discriminatedUnion("origin", [
     ...applicantFields,
     origin: z.literal("application"),
     application_id: z.string().min(1),
+    application_type: applicationTypeSchema,
     status: applicationStatusSchema,
     match_score: z.number().nullable(),
   }),
@@ -47,6 +52,7 @@ export const jobApplicantSchema = z.discriminatedUnion("origin", [
     ...applicantFields,
     origin: z.literal("automatic_match"),
     application_id: z.null(),
+    application_type: z.null(),
     status: z.null(),
     match_score: z.null(),
   }),
@@ -61,6 +67,7 @@ export const jobApplicantsSchema = z.object({
 });
 
 export type ApplicantOrigin = z.infer<typeof applicantOriginSchema>;
+export type ApplicationType = z.infer<typeof applicationTypeSchema>;
 export type JobApplicant = z.infer<typeof jobApplicantSchema>;
 export type JobApplicants = z.infer<typeof jobApplicantsSchema>;
 

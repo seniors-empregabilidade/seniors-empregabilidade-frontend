@@ -32,6 +32,7 @@ const applicant = {
   compatibility_percentage: "100.00",
   is_highlighted: true,
   application_id: applicationId,
+  application_type: "active",
   status: "applied",
   match_score: null,
   matched_skill_count: 2,
@@ -243,6 +244,7 @@ describe("JobCandidatesPage", () => {
             ...applicant,
             origin: "automatic_match",
             application_id: null,
+            application_type: null,
             status: null,
             profile: {
               ...applicant.profile,
@@ -261,6 +263,47 @@ describe("JobCandidatesPage", () => {
     expect(screen.queryByText("Perfil automático")).not.toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Ver perfil" })).toHaveLength(
       1,
+    );
+  });
+
+  it("tells an automatic application apart from one the professional made", async () => {
+    const responses = routes();
+    responses[`GET /jobs/${jobId}/applications`] = {
+      status: 200,
+      data: {
+        ...summary,
+        total_applicant_count: 2,
+        applicants: [
+          applicant,
+          {
+            ...applicant,
+            application_id: skillId,
+            application_type: "automatic",
+            status: "under_review",
+            profile: {
+              ...applicant.profile,
+              candidate_id: skillId,
+              full_name: "Pessoa Automática",
+            },
+          },
+        ],
+      },
+    };
+    const user = mount(responses);
+    await openCandidates(user);
+    const note =
+      "Candidatura automática: a plataforma candidatou este profissional pela compatibilidade com a vaga.";
+    const automaticCard = screen
+      .getByRole("heading", { name: "Pessoa Automática" })
+      .closest("article");
+    const activeCard = screen
+      .getByRole("heading", { name: "Pessoa Exemplo" })
+      .closest("article");
+    expect(automaticCard).toHaveTextContent(note);
+    expect(activeCard).not.toHaveTextContent("Candidatura automática");
+    // An automatic application is a real one: the company manages it as usual.
+    expect(screen.getAllByRole("button", { name: "Ver perfil" })).toHaveLength(
+      2,
     );
   });
 

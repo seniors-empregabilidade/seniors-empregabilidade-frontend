@@ -20,12 +20,14 @@ function applicant(
   city: string | null = "Porto Alegre",
   state: string | null = "RS",
   origin: "application" | "automatic_match" = "application",
+  applicationType: "active" | "automatic" = "active",
 ) {
   const automatic = origin === "automatic_match";
 
   return {
     origin,
     application_id: automatic ? null : id,
+    application_type: automatic ? null : applicationType,
     status: automatic ? null : "applied",
     match_score: null,
     compatibility_percentage: percentage,
@@ -332,6 +334,54 @@ describe("ProfessionalRankingView", () => {
     expect(
       within(applied).getByText("Candidatou-se à vaga"),
     ).toBeInTheDocument();
+  });
+
+  it("não diz que se candidatou quem foi candidatado pela plataforma", async () => {
+    getMock.mockResolvedValue({
+      data: {
+        ...PAYLOAD,
+        total_applicant_count: 2,
+        applicants: [
+          applicant("a-1", "Marcos Silveira", 100, 5, 5),
+          applicant(
+            "a-8",
+            "Rita Automática",
+            100,
+            5,
+            5,
+            "Canoas",
+            "RS",
+            "application",
+            "automatic",
+          ),
+        ],
+      },
+    });
+    const user = userEvent.setup();
+
+    renderView();
+
+    const automaticRow = (await screen.findByText("Rita Automática")).closest(
+      "tr",
+    ) as HTMLElement;
+    const activeRow = screen
+      .getByText("Marcos Silveira")
+      .closest("tr") as HTMLElement;
+    expect(
+      within(automaticRow).getByText("Candidatura automática"),
+    ).toBeInTheDocument();
+    expect(
+      within(automaticRow).queryByText("Candidatou-se à vaga"),
+    ).not.toBeInTheDocument();
+    expect(
+      within(activeRow).getByText("Candidatou-se à vaga"),
+    ).toBeInTheDocument();
+    // A mesma compatibilidade, seja quem for que fez a candidatura.
+    expect(within(automaticRow).getByText("100%")).toBeInTheDocument();
+    expect(within(activeRow).getByText("100%")).toBeInTheDocument();
+    // Continua sendo uma candidatura: entra no filtro de candidaturas.
+    await user.click(screen.getByRole("button", { name: "Candidaturas (2)" }));
+    expect(bodyRows()).toHaveLength(2);
   });
 
   it("filtra a lista por origem e informa as quantidades", async () => {
