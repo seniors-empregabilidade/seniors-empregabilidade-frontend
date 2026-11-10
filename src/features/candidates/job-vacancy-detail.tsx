@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { XIcon } from "lucide-react";
 import { useId, type ReactNode } from "react";
 
+import { LoadingSkeleton } from "@/components/loading-skeleton";
 import { Button } from "@/components/ui/button";
 import {
   DialogClose,
@@ -149,9 +150,7 @@ export function JobVacancyDetail({
       ) : null}
 
       {detail.isPending ? (
-        <p role="status" className="text-lg">
-          Carregando detalhes da vaga…
-        </p>
+        <LoadingSkeleton label="Carregando detalhes da vaga…" />
       ) : detail.isError ? (
         <div id={errorId} role="alert" className="flex flex-col gap-3 text-lg">
           <p>

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useId, useState } from "react";
 import { useForm } from "react-hook-form";
 
+import { LoadingSkeleton } from "@/components/loading-skeleton";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -111,7 +112,7 @@ export function IncompleteResumesPage() {
       </div>
 
       {resumes.isPending ? (
-        <p className="text-lg text-muted-foreground">Carregando currículos…</p>
+        <LoadingSkeleton label="Carregando currículos…" />
       ) : resumes.isError ? (
         <div
           role="alert"

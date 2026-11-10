@@ -14,6 +14,7 @@ import {
 import { toApiError } from "@/lib/api-error";
 import { requirementCountLabel } from "@/lib/requirement-count";
 
+import { LoadingSkeleton } from "@/components/loading-skeleton";
 import { Button } from "@/components/ui/button";
 
 import { isOpenToCandidates } from "./job-status";
@@ -186,9 +187,7 @@ export function JobCandidatesPage({
       )}
 
       {jobs.isPending ? (
-        <p role="status" className="mt-8 text-lg">
-          Carregando candidatos…
-        </p>
+        <LoadingSkeleton label="Carregando candidatos…" className="mt-8" />
       ) : jobs.isError ? (
         <div
           role="alert"
@@ -337,9 +336,7 @@ export function JobCandidatesPage({
             </AlertDialogDescription>
           </AlertDialogHeader>
           {profile.isPending ? (
-            <p role="status" className="text-lg">
-              Carregando perfil…
-            </p>
+            <LoadingSkeleton label="Carregando perfil…" />
           ) : profile.isError ? (
             <div role="alert" className="text-lg">
               <p>Não foi possível carregar o perfil.</p>
