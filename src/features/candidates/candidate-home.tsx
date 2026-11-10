@@ -2,10 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
+import { LoadingSkeleton } from "@/components/loading-skeleton";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { CompanyBadge } from "@/components/ui/company-badge";
 import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
 import { applicationStatusLabel } from "@/lib/application-status";
 import { requirementCountLabel } from "@/lib/requirement-count";
 import { missingFieldLabel } from "@/lib/resume-completeness";
@@ -116,17 +116,6 @@ function HomeSection({
   );
 }
 
-function SectionLoading({ label }: { label: string }) {
-  return (
-    <div role="status" className="flex flex-col gap-3">
-      <span className="sr-only">{label}</span>
-      <Skeleton className="h-6 w-2/3 motion-reduce:animate-none" />
-      <Skeleton className="h-6 w-full motion-reduce:animate-none" />
-      <Skeleton className="h-6 w-1/2 motion-reduce:animate-none" />
-    </div>
-  );
-}
-
 function SectionError({
   message,
   onRetry,
@@ -164,7 +153,7 @@ function ProfileCard({
   return (
     <HomeSection id="home-profile" title="Seu perfil">
       {query.isPending ? (
-        <SectionLoading label="Carregando seu perfil..." />
+        <LoadingSkeleton label="Carregando seu perfil..." />
       ) : query.isError || !query.data ? (
         <SectionError
           message="Não foi possível carregar o resumo do seu perfil."
@@ -244,7 +233,7 @@ function RecentApplicationsCard({
       }
     >
       {query.isPending ? (
-        <SectionLoading label="Carregando suas candidaturas..." />
+        <LoadingSkeleton label="Carregando suas candidaturas..." />
       ) : query.isError || !query.data ? (
         <SectionError
           message="Não foi possível carregar suas candidaturas."
@@ -305,7 +294,7 @@ function OpenJobsCard({
       }
     >
       {query.isPending ? (
-        <SectionLoading label="Carregando vagas abertas..." />
+        <LoadingSkeleton label="Carregando vagas abertas..." />
       ) : query.isError || !query.data ? (
         <SectionError
           message="Não foi possível carregar as vagas abertas."

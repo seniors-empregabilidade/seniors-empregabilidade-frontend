@@ -85,7 +85,9 @@ describe("SkillCatalogPage", () => {
   it("lists the catalog with type, status and the actions of each skill", async () => {
     mount();
 
-    expect(screen.getByText("Carregando competências…")).toBeVisible();
+    expect(
+      screen.getByText("Carregando competências…").closest('[role="status"]'),
+    ).not.toBeNull();
     await shown("Trabalho em grupo");
     expect(
       screen.getByRole("heading", { level: 1, name: "Competências" }),
