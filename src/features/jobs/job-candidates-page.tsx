@@ -325,14 +325,13 @@ export function JobCandidatesPage({
               {openProfile?.profile.city && openProfile.profile.state
                 ? `${openProfile.profile.city}, ${openProfile.profile.state}`
                 : "Localização não informada"}
-              . Compatibilidade: atende{" "}
-              {openProfile
-                ? requirementCountLabel(
+              .
+              {openProfile && openProfile.required_skill_count > 0
+                ? ` Compatibilidade: atende ${requirementCountLabel(
                     openProfile.matched_skill_count,
                     openProfile.required_skill_count,
-                  )
+                  )}.`
                 : null}
-              .
             </AlertDialogDescription>
           </AlertDialogHeader>
           {profile.isPending ? (
@@ -575,13 +574,15 @@ function ApplicantCard({
               pela compatibilidade com a vaga.
             </p>
           )}
-          <p className="mt-2 text-lg">
-            Atende{" "}
-            {requirementCountLabel(
-              applicant.matched_skill_count,
-              applicant.required_skill_count,
-            )}
-          </p>
+          {applicant.required_skill_count > 0 ? (
+            <p className="mt-2 text-lg">
+              Atende{" "}
+              {requirementCountLabel(
+                applicant.matched_skill_count,
+                applicant.required_skill_count,
+              )}
+            </p>
+          ) : null}
           {applicant.matched_skills.length > 0 && (
             <p className="mt-2 text-base">
               Atende:{" "}

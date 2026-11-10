@@ -57,7 +57,7 @@ export function JobSearchView() {
       <h1 className="mb-6 text-3xl font-bold text-foreground">Vagas</h1>
 
       <Field className="mb-6 max-w-xl">
-        <FieldLabel htmlFor="job-search">Buscar por vaga</FieldLabel>
+        <FieldLabel htmlFor="job-search">Buscar pelo título da vaga</FieldLabel>
         <Input
           id="job-search"
           value={term}

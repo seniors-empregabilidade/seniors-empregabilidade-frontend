@@ -192,7 +192,8 @@ export function JobVacancyDetail({
               </p>
             )}
           </section>
-          {matchSummary ? (
+          {/* A job without requirements already says so in the section above. */}
+          {matchSummary && matchSummary.requiredCount > 0 ? (
             <section>
               <h3 className="mb-2 text-lg font-bold">Como você se encaixa</h3>
               <p className="text-lg">

@@ -143,6 +143,25 @@ async function openCandidates(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("JobCandidatesPage", () => {
+  it("counts several applicants and full matches in the plural", async () => {
+    mount({
+      ...routes(),
+      [`GET /jobs/${jobId}/applications`]: {
+        status: 200,
+        data: {
+          ...summary,
+          total_applicant_count: 2,
+          full_match_count: 0,
+          applicants: [applicant],
+        },
+      },
+    });
+
+    expect(
+      await screen.findByText("2 candidatos · 0 atendem a todos os requisitos"),
+    ).toBeVisible();
+  });
+
   it("shows job counts, current compatibility criteria, and the safe professional profile", async () => {
     const user = mount();
     expect(

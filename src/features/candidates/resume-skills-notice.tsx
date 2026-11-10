@@ -16,10 +16,7 @@ export function ResumeSkillsNotice({
   }
 
   return (
-    <p
-      role="status"
-      className="mb-4 rounded-lg border border-border bg-background p-4 text-lg text-foreground"
-    >
+    <p className="mb-4 rounded-lg border border-border bg-background p-4 text-lg text-foreground">
       Seu currículo ainda não tem habilidades.{" "}
       <Link
         to="/candidato/perfil"

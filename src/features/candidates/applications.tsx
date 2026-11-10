@@ -309,7 +309,9 @@ function ApplicationCard({
                       ? "vaga parecida"
                       : "vagas parecidas"}
                   </strong>{" "}
-                  abertas agora.
+                  {application.similar_jobs.length === 1
+                    ? "aberta agora."
+                    : "abertas agora."}
                 </p>
               )}
           </div>

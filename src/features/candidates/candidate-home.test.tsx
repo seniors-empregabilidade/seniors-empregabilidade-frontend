@@ -260,7 +260,6 @@ describe("CandidateHome", () => {
     const notice = within(card).getByText(
       /Seu currículo ainda não tem habilidades/,
     );
-    expect(notice).toHaveAttribute("role", "status");
     expect(
       within(notice).getByRole("link", {
         name: "Cadastre suas habilidades em Meu perfil",

@@ -97,6 +97,10 @@ describe("JobSearchView", () => {
     expect(screen.getByText(/Falta certificação NR-11/)).toBeVisible();
     // The role shell already provides the page's only main landmark.
     expect(screen.queryByRole("main")).not.toBeInTheDocument();
+    // The default profile has skills, so the empty résumé notice stays out.
+    expect(
+      screen.queryByText(/Seu currículo ainda não tem habilidades/),
+    ).not.toBeInTheDocument();
   });
 
   it("counts a single requirement in the singular and explains a job without requirements", async () => {
@@ -153,7 +157,6 @@ describe("JobSearchView", () => {
 
     expect(await screen.findByText("Supervisor de Logística")).toBeVisible();
     const notice = screen.getByText(/Seu currículo ainda não tem habilidades/);
-    expect(notice).toHaveAttribute("role", "status");
     expect(
       within(notice).getByRole("link", {
         name: "Cadastre suas habilidades em Meu perfil",
@@ -213,7 +216,10 @@ describe("JobSearchView", () => {
     await screen.findByText("Supervisor de Logística");
     get.mockClear();
 
-    await user.type(screen.getByLabelText(/buscar por vaga/i), "supervisor");
+    await user.type(
+      screen.getByLabelText(/buscar pelo título da vaga/i),
+      "supervisor",
+    );
 
     // Ainda dentro do debounce: não deve ter chamado de novo pra cada tecla.
     expect(get).not.toHaveBeenCalled();

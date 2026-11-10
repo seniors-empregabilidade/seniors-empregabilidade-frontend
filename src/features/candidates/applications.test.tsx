@@ -172,6 +172,23 @@ describe("ApplicationsPage", () => {
     ).toBeVisible();
   });
 
+  it("must agree the similar jobs sentence with a single open job", async () => {
+    const rejected = mockApplications[1]!;
+    vi.spyOn(applicationsApi, "fetchApplications").mockResolvedValue([
+      { ...rejected, similar_jobs: [rejected.similar_jobs[0]!] },
+    ]);
+
+    renderWithClient(<ApplicationsPage />);
+
+    expect(
+      await screen.findByText(
+        (_, element) =>
+          element?.tagName === "P" &&
+          element.textContent === "Há 1 vaga parecida aberta agora.",
+      ),
+    ).toBeVisible();
+  });
+
   it.each([
     {
       status: "in_selection_process" as const,
