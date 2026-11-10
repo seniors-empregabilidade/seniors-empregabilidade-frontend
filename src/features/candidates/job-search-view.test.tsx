@@ -1,4 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRouter,
+  RouterContextProvider,
+} from "@tanstack/react-router";
 import type { ReactElement } from "react";
 import {
   cleanup,
@@ -19,6 +25,24 @@ import { JobSearchView } from "./job-search-view";
 vi.mock("@/lib/api-client", () => ({
   apiClient: { get: vi.fn() },
 }));
+
+// The profile is loaded apart from the job list, so the job requests keep the
+// order these tests stub them in.
+const mocks = vi.hoisted(() => ({
+  skills: [{ id: "00000000-0000-4000-8000-0000000000aa", name: "Logística" }],
+}));
+
+vi.mock("./professional-profile", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("./professional-profile")>();
+  return {
+    ...actual,
+    professionalProfileQueryOptions: {
+      ...actual.professionalProfileQueryOptions,
+      queryFn: () => Promise.resolve({ skills: mocks.skills }),
+    },
+  };
+});
 
 const baseJob = {
   id: jobDetail.id,
@@ -48,6 +72,9 @@ function render(element: ReactElement) {
 afterEach(() => {
   cleanup();
   vi.resetAllMocks();
+  mocks.skills = [
+    { id: "00000000-0000-4000-8000-0000000000aa", name: "Logística" },
+  ];
 });
 
 describe("JobSearchView", () => {
@@ -106,6 +133,30 @@ describe("JobSearchView", () => {
     expect(
       screen.getByText("Esta vaga ainda não listou requisitos de habilidades."),
     ).toBeVisible();
+  });
+
+  it("explains how to see met requirements when the résumé has no skills", async () => {
+    mocks.skills = [];
+    vi.spyOn(apiClient, "get").mockResolvedValueOnce({ data: [baseJob] });
+    const router = createRouter({
+      routeTree: createRootRoute(),
+      history: createMemoryHistory({ initialEntries: ["/candidato/vagas"] }),
+    });
+
+    render(
+      <RouterContextProvider router={router}>
+        <JobSearchView />
+      </RouterContextProvider>,
+    );
+
+    expect(await screen.findByText("Supervisor de Logística")).toBeVisible();
+    const notice = screen.getByText(/Seu currículo ainda não tem habilidades/);
+    expect(notice).toHaveAttribute("role", "status");
+    expect(
+      within(notice).getByRole("link", {
+        name: "Cadastre suas habilidades em Meu perfil",
+      }),
+    ).toHaveAttribute("href", "/candidato/perfil");
   });
 
   it("shows the company's industry and city when it has them", async () => {

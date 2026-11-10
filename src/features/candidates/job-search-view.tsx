@@ -14,6 +14,8 @@ import {
   formatCompanyContext,
   formatMissingSkills,
 } from "./job-vacancy-format";
+import { professionalProfileQueryOptions } from "./professional-profile";
+import { ResumeSkillsNotice } from "./resume-skills-notice";
 
 const WORK_MODE_LABELS: Record<WorkMode, string> = {
   onsite: "Presencial",
@@ -48,6 +50,7 @@ export function JobSearchView() {
     isError,
     refetch,
   } = useQuery(jobSearchQueryOptions(debouncedTerm));
+  const profile = useQuery(professionalProfileQueryOptions);
 
   return (
     <main className="min-h-full bg-muted p-4 md:p-8">
@@ -71,14 +74,19 @@ export function JobSearchView() {
           onRetry={() => void refetch()}
         />
       ) : (
-        <JobSearchResults
-          jobs={jobs}
-          term={debouncedTerm}
-          onView={(job, trigger) => {
-            detailTriggerRef.current = trigger;
-            setSelectedJob(job);
-          }}
-        />
+        <>
+          {jobs.length > 0 ? (
+            <ResumeSkillsNotice profile={profile.data} />
+          ) : null}
+          <JobSearchResults
+            jobs={jobs}
+            term={debouncedTerm}
+            onView={(job, trigger) => {
+              detailTriggerRef.current = trigger;
+              setSelectedJob(job);
+            }}
+          />
+        </>
       )}
 
       <JobVacancyDetailModal

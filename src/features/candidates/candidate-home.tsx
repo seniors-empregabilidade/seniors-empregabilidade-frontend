@@ -25,6 +25,7 @@ import {
 } from "./job-vacancy-format";
 import { professionalProfileQueryOptions } from "./professional-profile";
 import type { ProfessionalProfile } from "./professional-profile-schema";
+import { ResumeSkillsNotice } from "./resume-skills-notice";
 
 // The home page shows a preview; the full lists live on their own screens.
 const HOME_PREVIEW_SIZE = 3;
@@ -69,7 +70,11 @@ export function CandidateHome() {
           />
         </div>
         <div className="flex min-w-0 flex-col gap-6 lg:flex-1">
-          <OpenJobsCard query={jobs} onRetry={() => void jobs.refetch()} />
+          <OpenJobsCard
+            query={jobs}
+            profile={profile.data}
+            onRetry={() => void jobs.refetch()}
+          />
         </div>
       </div>
     </div>
@@ -279,9 +284,11 @@ function RecentApplicationsCard({
 
 function OpenJobsCard({
   query,
+  profile,
   onRetry,
 }: {
   query: SectionQuery<JobSearchResult[]>;
+  profile: ProfessionalProfile | undefined;
   onRetry: () => void;
 }) {
   return (
@@ -310,13 +317,16 @@ function OpenJobsCard({
           volte em breve para ver novas oportunidades.
         </p>
       ) : (
-        <ul className="flex flex-col gap-4">
-          {query.data.slice(0, HOME_PREVIEW_SIZE).map((job) => (
-            <li key={job.id}>
-              <JobPreview job={job} />
-            </li>
-          ))}
-        </ul>
+        <>
+          <ResumeSkillsNotice profile={profile} />
+          <ul className="flex flex-col gap-4">
+            {query.data.slice(0, HOME_PREVIEW_SIZE).map((job) => (
+              <li key={job.id}>
+                <JobPreview job={job} />
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </HomeSection>
   );
