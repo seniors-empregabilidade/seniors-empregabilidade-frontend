@@ -53,7 +53,7 @@ export function JobSearchView() {
   const profile = useQuery(professionalProfileQueryOptions);
 
   return (
-    <main className="min-h-full bg-muted p-4 md:p-8">
+    <div className="min-h-full bg-muted p-4 md:p-8">
       <h1 className="mb-6 text-3xl font-bold text-foreground">Vagas</h1>
 
       <Field className="mb-6 max-w-xl">
@@ -109,7 +109,7 @@ export function JobSearchView() {
           if (!open) setSelectedJob(null);
         }}
       />
-    </main>
+    </div>
   );
 }
 

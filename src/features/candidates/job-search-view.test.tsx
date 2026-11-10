@@ -95,6 +95,8 @@ describe("JobSearchView", () => {
       ),
     ).toBeVisible();
     expect(screen.getByText(/Falta certificação NR-11/)).toBeVisible();
+    // The role shell already provides the page's only main landmark.
+    expect(screen.queryByRole("main")).not.toBeInTheDocument();
   });
 
   it("counts a single requirement in the singular and explains a job without requirements", async () => {
