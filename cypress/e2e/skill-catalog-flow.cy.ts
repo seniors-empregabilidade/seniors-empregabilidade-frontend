@@ -186,6 +186,7 @@ function fakeApi(resumeSkillIds: string[]) {
         {
           origin: "application",
           application_id: APPLICATION_ID,
+          application_type: "active",
           status: "applied",
           match_score: null,
           compatibility_percentage: percentage.toFixed(2),

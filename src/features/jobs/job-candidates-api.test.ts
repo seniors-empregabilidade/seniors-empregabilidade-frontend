@@ -28,6 +28,7 @@ const profile = {
 const automatic = {
   origin: "automatic_match",
   application_id: null,
+  application_type: null,
   status: null,
   match_score: null,
   compatibility_percentage: "66.67",
@@ -64,10 +65,60 @@ describe("candidate management API boundaries", () => {
     });
   });
 
+  it("keeps who made each application", async () => {
+    const application = {
+      ...automatic,
+      origin: "application",
+      application_id: id,
+      status: "under_review",
+    };
+    stub = stubApi(200, {
+      ...summary,
+      applicants: [
+        { ...application, application_type: "active" },
+        { ...application, application_type: "automatic" },
+      ],
+    });
+    const result = await fetchJobApplicants(id);
+    expect(result.applicants.map((item) => item.application_type)).toEqual([
+      "active",
+      "automatic",
+    ]);
+  });
+
+  it.each([
+    ["an application without its type", "application", undefined],
+    ["an application with an unknown type", "application", "imported"],
+    [
+      "an automatic match with an application type",
+      "automatic_match",
+      "active",
+    ],
+  ])("rejects %s", async (_case, origin, applicationType) => {
+    stub = stubApi(200, {
+      ...summary,
+      applicants: [
+        {
+          ...automatic,
+          origin,
+          application_type: applicationType,
+          ...(origin === "application"
+            ? { application_id: id, status: "under_review" }
+            : {}),
+        },
+      ],
+    });
+    await expect(fetchJobApplicants(id)).rejects.toMatchObject({
+      code: "invalid_job_applicants_response",
+    });
+  });
+
   it("rejects an application whose identifier or status is missing", async () => {
     stub = stubApi(200, {
       ...summary,
-      applicants: [{ ...automatic, origin: "application" }],
+      applicants: [
+        { ...automatic, origin: "application", application_type: "active" },
+      ],
     });
     await expect(fetchJobApplicants(id)).rejects.toMatchObject({
       code: "invalid_job_applicants_response",

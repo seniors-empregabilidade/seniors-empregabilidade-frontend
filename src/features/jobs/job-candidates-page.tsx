@@ -558,6 +558,12 @@ function ApplicantCard({
           <p className="mt-1 text-base text-muted-foreground">
             {statusLabels[applicant.status]}
           </p>
+          {applicant.application_type === "automatic" && (
+            <p className="mt-1 text-base text-foreground-2">
+              Candidatura automática: a plataforma candidatou este profissional
+              pela compatibilidade com a vaga.
+            </p>
+          )}
           <p className="mt-2 text-lg">
             Atende {applicant.matched_skill_count} de{" "}
             {applicant.required_skill_count} requisitos
