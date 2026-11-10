@@ -12,7 +12,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toApiError } from "@/lib/api-error";
+import { requirementCountLabel } from "@/lib/requirement-count";
 
+import { LoadingSkeleton } from "@/components/loading-skeleton";
 import { Button } from "@/components/ui/button";
 
 import { isOpenToCandidates } from "./job-status";
@@ -185,9 +187,7 @@ export function JobCandidatesPage({
       )}
 
       {jobs.isPending ? (
-        <p role="status" className="mt-8 text-lg">
-          Carregando candidatos…
-        </p>
+        <LoadingSkeleton label="Carregando candidatos…" className="mt-8" />
       ) : jobs.isError ? (
         <div
           role="alert"
@@ -233,14 +233,21 @@ export function JobCandidatesPage({
                       <div>
                         <h3 className="text-xl font-bold">{job.title}</h3>
                         <p className="mt-1 text-base text-muted-foreground">
-                          {candidates.total_applicant_count} candidatos ·{" "}
-                          {candidates.full_match_count} atendem a todos os
-                          requisitos
+                          {candidates.total_applicant_count === 1
+                            ? "1 candidato"
+                            : `${candidates.total_applicant_count} candidatos`}{" "}
+                          ·{" "}
+                          {candidates.full_match_count === 1
+                            ? "1 atende"
+                            : `${candidates.full_match_count} atendem`}{" "}
+                          a todos os requisitos
                         </p>
                         {candidates.automatic_match_count > 0 && (
                           <p className="mt-1 text-base text-muted-foreground">
-                            {candidates.automatic_match_count} perfis com match
-                            automático, sem candidatura.
+                            {candidates.automatic_match_count === 1
+                              ? "1 perfil"
+                              : `${candidates.automatic_match_count} perfis`}{" "}
+                            com match automático, sem candidatura.
                           </p>
                         )}
                       </div>
@@ -318,14 +325,17 @@ export function JobCandidatesPage({
               {openProfile?.profile.city && openProfile.profile.state
                 ? `${openProfile.profile.city}, ${openProfile.profile.state}`
                 : "Localização não informada"}
-              . Compatibilidade: atende {openProfile?.matched_skill_count} de{" "}
-              {openProfile?.required_skill_count} requisitos.
+              .
+              {openProfile && openProfile.required_skill_count > 0
+                ? ` Compatibilidade: atende ${requirementCountLabel(
+                    openProfile.matched_skill_count,
+                    openProfile.required_skill_count,
+                  )}.`
+                : null}
             </AlertDialogDescription>
           </AlertDialogHeader>
           {profile.isPending ? (
-            <p role="status" className="text-lg">
-              Carregando perfil…
-            </p>
+            <LoadingSkeleton label="Carregando perfil…" />
           ) : profile.isError ? (
             <div role="alert" className="text-lg">
               <p>Não foi possível carregar o perfil.</p>
@@ -564,10 +574,15 @@ function ApplicantCard({
               pela compatibilidade com a vaga.
             </p>
           )}
-          <p className="mt-2 text-lg">
-            Atende {applicant.matched_skill_count} de{" "}
-            {applicant.required_skill_count} requisitos
-          </p>
+          {applicant.required_skill_count > 0 ? (
+            <p className="mt-2 text-lg">
+              Atende{" "}
+              {requirementCountLabel(
+                applicant.matched_skill_count,
+                applicant.required_skill_count,
+              )}
+            </p>
+          ) : null}
           {applicant.matched_skills.length > 0 && (
             <p className="mt-2 text-base">
               Atende:{" "}

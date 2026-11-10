@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CompanyBadge } from "@/components/ui/company-badge";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { requirementCountLabel } from "@/lib/requirement-count";
 
 import { jobSearchQueryOptions } from "./job-search";
 import type { JobSearchResult, WorkMode } from "./job-search-schema";
@@ -13,6 +14,8 @@ import {
   formatCompanyContext,
   formatMissingSkills,
 } from "./job-vacancy-format";
+import { professionalProfileQueryOptions } from "./professional-profile";
+import { ResumeSkillsNotice } from "./resume-skills-notice";
 
 const WORK_MODE_LABELS: Record<WorkMode, string> = {
   onsite: "Presencial",
@@ -47,18 +50,19 @@ export function JobSearchView() {
     isError,
     refetch,
   } = useQuery(jobSearchQueryOptions(debouncedTerm));
+  const profile = useQuery(professionalProfileQueryOptions);
 
   return (
-    <main className="min-h-full bg-muted p-4 md:p-8">
+    <div className="min-h-full bg-muted p-4 md:p-8">
       <h1 className="mb-6 text-3xl font-bold text-foreground">Vagas</h1>
 
       <Field className="mb-6 max-w-xl">
-        <FieldLabel htmlFor="job-search">Buscar por vaga</FieldLabel>
+        <FieldLabel htmlFor="job-search">Buscar pelo título da vaga</FieldLabel>
         <Input
           id="job-search"
           value={term}
           onChange={(event) => setTerm(event.target.value)}
-          placeholder="Cargo, empresa..."
+          placeholder="Ex.: Analista administrativo"
         />
       </Field>
 
@@ -70,14 +74,19 @@ export function JobSearchView() {
           onRetry={() => void refetch()}
         />
       ) : (
-        <JobSearchResults
-          jobs={jobs}
-          term={debouncedTerm}
-          onView={(job, trigger) => {
-            detailTriggerRef.current = trigger;
-            setSelectedJob(job);
-          }}
-        />
+        <>
+          {jobs.length > 0 ? (
+            <ResumeSkillsNotice profile={profile.data} />
+          ) : null}
+          <JobSearchResults
+            jobs={jobs}
+            term={debouncedTerm}
+            onView={(job, trigger) => {
+              detailTriggerRef.current = trigger;
+              setSelectedJob(job);
+            }}
+          />
+        </>
       )}
 
       <JobVacancyDetailModal
@@ -100,7 +109,7 @@ export function JobSearchView() {
           if (!open) setSelectedJob(null);
         }}
       />
-    </main>
+    </div>
   );
 }
 
@@ -174,11 +183,21 @@ function JobCard({
       </p>
 
       <p className="text-lg text-foreground">
-        Você atende{" "}
-        <strong>
-          {job.matched_skill_count} dos {job.required_skill_count} requisitos
-        </strong>
-        . {formatMissingSkills(job.missing_skills.map((skill) => skill.name))}
+        {job.required_skill_count === 0 ? (
+          "Esta vaga ainda não listou requisitos de habilidades."
+        ) : (
+          <>
+            Você atende{" "}
+            <strong>
+              {requirementCountLabel(
+                job.matched_skill_count,
+                job.required_skill_count,
+              )}
+            </strong>
+            .{" "}
+            {formatMissingSkills(job.missing_skills.map((skill) => skill.name))}
+          </>
+        )}
       </p>
 
       <Button

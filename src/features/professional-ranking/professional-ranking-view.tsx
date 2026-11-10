@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { requirementCountLabel } from "@/lib/requirement-count";
 
 import {
   type ApplicantOrigin,
@@ -279,10 +280,15 @@ function RankingRow({
         )}
       </td>
       <td className="px-3 py-4">
-        <p className="text-base text-foreground">
-          {applicant.matched_skill_count} de {applicant.required_skill_count}{" "}
-          requisitos
-        </p>
+        {/* Without requirements the compatibility cell already explains it. */}
+        {applicant.required_skill_count > 0 ? (
+          <p className="text-base text-foreground">
+            {requirementCountLabel(
+              applicant.matched_skill_count,
+              applicant.required_skill_count,
+            )}
+          </p>
+        ) : null}
         {/* Os critérios que formam o percentual (US-19). */}
         {applicant.matched_skills.length > 0 ? (
           <p className="mt-1 text-base text-foreground">

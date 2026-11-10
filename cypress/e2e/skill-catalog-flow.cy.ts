@@ -254,7 +254,7 @@ describe("skill catalog from the administrator to the match", () => {
   it("shows a selected skill on the profile and in the company's compatibility", () => {
     fakeApi([teamwork.id]);
     companyCompatibility().within(() => {
-      cy.contains("Atende 0 de 1 requisitos").should("be.visible");
+      cy.contains("Atende 0 de 1 requisito").should("be.visible");
       cy.contains("Falta: Operação de empilhadeira.").should("be.visible");
     });
 
@@ -276,7 +276,7 @@ describe("skill catalog from the administrator to the match", () => {
     });
 
     companyCompatibility().within(() => {
-      cy.contains("Atende 1 de 1 requisitos").should("be.visible");
+      cy.contains("Atende 1 de 1 requisito").should("be.visible");
       cy.contains("Atende: Operação de empilhadeira.").should("be.visible");
       cy.contains("Falta:").should("not.exist");
     });
@@ -325,7 +325,7 @@ describe("skill catalog from the administrator to the match", () => {
     });
 
     companyCompatibility().within(() => {
-      cy.contains("Atende 1 de 1 requisitos").should("be.visible");
+      cy.contains("Atende 1 de 1 requisito").should("be.visible");
       cy.contains("Atende: Operação de empilhadeira.").should("be.visible");
     });
   });

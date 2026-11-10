@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { XIcon } from "lucide-react";
 import { useId, type ReactNode } from "react";
 
+import { LoadingSkeleton } from "@/components/loading-skeleton";
 import { Button } from "@/components/ui/button";
 import {
   DialogClose,
@@ -11,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ApiError } from "@/lib/api-error";
+import { requirementCountLabel } from "@/lib/requirement-count";
 
 import { jobDetailQueryKey, jobDetailQueryOptions } from "./job-detail";
 import type { JobDetail } from "./job-detail-schema";
@@ -148,9 +150,7 @@ export function JobVacancyDetail({
       ) : null}
 
       {detail.isPending ? (
-        <p role="status" className="text-lg">
-          Carregando detalhes da vaga…
-        </p>
+        <LoadingSkeleton label="Carregando detalhes da vaga…" />
       ) : detail.isError ? (
         <div id={errorId} role="alert" className="flex flex-col gap-3 text-lg">
           <p>
@@ -192,12 +192,16 @@ export function JobVacancyDetail({
               </p>
             )}
           </section>
-          {matchSummary ? (
+          {/* A job without requirements already says so in the section above. */}
+          {matchSummary && matchSummary.requiredCount > 0 ? (
             <section>
               <h3 className="mb-2 text-lg font-bold">Como você se encaixa</h3>
               <p className="text-lg">
-                Você atende {matchSummary.matchedCount} de{" "}
-                {matchSummary.requiredCount} requisitos
+                Você atende{" "}
+                {requirementCountLabel(
+                  matchSummary.matchedCount,
+                  matchSummary.requiredCount,
+                )}
               </p>
               {matchSummary.missingNames.length ? (
                 <p className="mt-2 text-lg">

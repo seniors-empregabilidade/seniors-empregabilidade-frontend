@@ -2,11 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
+import { LoadingSkeleton } from "@/components/loading-skeleton";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { CompanyBadge } from "@/components/ui/company-badge";
 import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
 import { applicationStatusLabel } from "@/lib/application-status";
+import { requirementCountLabel } from "@/lib/requirement-count";
 import { missingFieldLabel } from "@/lib/resume-completeness";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +25,7 @@ import {
 } from "./job-vacancy-format";
 import { professionalProfileQueryOptions } from "./professional-profile";
 import type { ProfessionalProfile } from "./professional-profile-schema";
+import { ResumeSkillsNotice } from "./resume-skills-notice";
 
 // The home page shows a preview; the full lists live on their own screens.
 const HOME_PREVIEW_SIZE = 3;
@@ -68,7 +70,11 @@ export function CandidateHome() {
           />
         </div>
         <div className="flex min-w-0 flex-col gap-6 lg:flex-1">
-          <OpenJobsCard query={jobs} onRetry={() => void jobs.refetch()} />
+          <OpenJobsCard
+            query={jobs}
+            profile={profile.data}
+            onRetry={() => void jobs.refetch()}
+          />
         </div>
       </div>
     </div>
@@ -110,17 +116,6 @@ function HomeSection({
   );
 }
 
-function SectionLoading({ label }: { label: string }) {
-  return (
-    <div role="status" className="flex flex-col gap-3">
-      <span className="sr-only">{label}</span>
-      <Skeleton className="h-6 w-2/3 motion-reduce:animate-none" />
-      <Skeleton className="h-6 w-full motion-reduce:animate-none" />
-      <Skeleton className="h-6 w-1/2 motion-reduce:animate-none" />
-    </div>
-  );
-}
-
 function SectionError({
   message,
   onRetry,
@@ -158,7 +153,7 @@ function ProfileCard({
   return (
     <HomeSection id="home-profile" title="Seu perfil">
       {query.isPending ? (
-        <SectionLoading label="Carregando seu perfil..." />
+        <LoadingSkeleton label="Carregando seu perfil..." />
       ) : query.isError || !query.data ? (
         <SectionError
           message="Não foi possível carregar o resumo do seu perfil."
@@ -238,7 +233,7 @@ function RecentApplicationsCard({
       }
     >
       {query.isPending ? (
-        <SectionLoading label="Carregando suas candidaturas..." />
+        <LoadingSkeleton label="Carregando suas candidaturas..." />
       ) : query.isError || !query.data ? (
         <SectionError
           message="Não foi possível carregar suas candidaturas."
@@ -278,9 +273,11 @@ function RecentApplicationsCard({
 
 function OpenJobsCard({
   query,
+  profile,
   onRetry,
 }: {
   query: SectionQuery<JobSearchResult[]>;
+  profile: ProfessionalProfile | undefined;
   onRetry: () => void;
 }) {
   return (
@@ -297,7 +294,7 @@ function OpenJobsCard({
       }
     >
       {query.isPending ? (
-        <SectionLoading label="Carregando vagas abertas..." />
+        <LoadingSkeleton label="Carregando vagas abertas..." />
       ) : query.isError || !query.data ? (
         <SectionError
           message="Não foi possível carregar as vagas abertas."
@@ -309,13 +306,16 @@ function OpenJobsCard({
           volte em breve para ver novas oportunidades.
         </p>
       ) : (
-        <ul className="flex flex-col gap-4">
-          {query.data.slice(0, HOME_PREVIEW_SIZE).map((job) => (
-            <li key={job.id}>
-              <JobPreview job={job} />
-            </li>
-          ))}
-        </ul>
+        <>
+          <ResumeSkillsNotice profile={profile} />
+          <ul className="flex flex-col gap-4">
+            {query.data.slice(0, HOME_PREVIEW_SIZE).map((job) => (
+              <li key={job.id}>
+                <JobPreview job={job} />
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </HomeSection>
   );
@@ -348,11 +348,21 @@ function JobPreview({ job }: { job: JobSearchResult }) {
           .join(" · ")}
       </p>
       <p className="text-base text-foreground">
-        Você atende{" "}
-        <strong>
-          {job.matched_skill_count} dos {job.required_skill_count} requisitos
-        </strong>
-        . {formatMissingSkills(job.missing_skills.map((skill) => skill.name))}
+        {job.required_skill_count === 0 ? (
+          "Esta vaga ainda não listou requisitos de habilidades."
+        ) : (
+          <>
+            Você atende{" "}
+            <strong>
+              {requirementCountLabel(
+                job.matched_skill_count,
+                job.required_skill_count,
+              )}
+            </strong>
+            .{" "}
+            {formatMissingSkills(job.missing_skills.map((skill) => skill.name))}
+          </>
+        )}
       </p>
       <Link
         to="/candidato/vagas/$jobId"

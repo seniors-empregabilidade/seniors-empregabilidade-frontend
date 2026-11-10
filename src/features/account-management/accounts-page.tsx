@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { ExportDataButton } from "@/components/export-data-button";
+import { LoadingSkeleton } from "@/components/loading-skeleton";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -181,7 +182,7 @@ export function AccountsPage() {
       </div>
 
       {accounts.isPending ? (
-        <p className="text-lg text-muted-foreground">Carregando contas…</p>
+        <LoadingSkeleton label="Carregando contas…" />
       ) : accounts.isError ? (
         <div
           role="alert"
@@ -438,9 +439,7 @@ function AccountDialog({
             className="min-h-0 overflow-y-auto rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
           >
             {detailQuery.isPending && !detail ? (
-              <p className="text-lg text-muted-foreground">
-                Carregando cadastro…
-              </p>
+              <LoadingSkeleton label="Carregando cadastro…" />
             ) : detailQuery.isError && !detail ? (
               <p role="alert" className="text-lg text-destructive">
                 {accountsErrorMessage(detailQuery.error)}
