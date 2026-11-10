@@ -70,6 +70,44 @@ describe("JobSearchView", () => {
     expect(screen.getByText(/Falta certificação NR-11/)).toBeVisible();
   });
 
+  it("counts a single requirement in the singular and explains a job without requirements", async () => {
+    vi.spyOn(apiClient, "get").mockResolvedValueOnce({
+      data: [
+        {
+          ...baseJob,
+          id: "00000000-0000-4000-8000-000000000101",
+          title: "Vaga com um requisito",
+          matched_skill_count: 1,
+          required_skill_count: 1,
+          missing_skills: [],
+        },
+        {
+          ...baseJob,
+          id: "00000000-0000-4000-8000-000000000102",
+          title: "Vaga sem requisitos",
+          matched_skill_count: 0,
+          required_skill_count: 0,
+          missing_skills: [],
+        },
+      ],
+    });
+
+    render(<JobSearchView />);
+
+    expect(await screen.findByText("Vaga com um requisito")).toBeVisible();
+    expect(
+      screen.getByText(
+        (_, element) =>
+          element?.tagName === "P" &&
+          element.textContent ===
+            "Você atende 1 de 1 requisito. Você atende todos os requisitos.",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.getByText("Esta vaga ainda não listou requisitos de habilidades."),
+    ).toBeVisible();
+  });
+
   it("shows the company's industry and city when it has them", async () => {
     vi.spyOn(apiClient, "get").mockResolvedValueOnce({
       data: [

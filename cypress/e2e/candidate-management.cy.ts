@@ -166,10 +166,10 @@ describe("company candidate management", () => {
     cy.location("pathname").should("eq", "/empresa/candidatos");
     cy.wait("@applicants");
     cy.contains("Candidatos — Analista de operações").should("be.visible");
-    cy.contains("1 candidatos · 1 atendem a todos os requisitos").should(
+    cy.contains("1 candidato · 1 atende a todos os requisitos").should(
       "be.visible",
     );
-    cy.contains("1 perfis com match automático, sem candidatura.").should(
+    cy.contains("1 perfil com match automático, sem candidatura.").should(
       "be.visible",
     );
     cy.contains("Perfil automático").should("not.exist");

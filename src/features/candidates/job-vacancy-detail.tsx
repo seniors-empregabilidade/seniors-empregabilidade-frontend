@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ApiError } from "@/lib/api-error";
+import { requirementCountLabel } from "@/lib/requirement-count";
 
 import { jobDetailQueryKey, jobDetailQueryOptions } from "./job-detail";
 import type { JobDetail } from "./job-detail-schema";
@@ -196,8 +197,11 @@ export function JobVacancyDetail({
             <section>
               <h3 className="mb-2 text-lg font-bold">Como você se encaixa</h3>
               <p className="text-lg">
-                Você atende {matchSummary.matchedCount} de{" "}
-                {matchSummary.requiredCount} requisitos
+                Você atende{" "}
+                {requirementCountLabel(
+                  matchSummary.matchedCount,
+                  matchSummary.requiredCount,
+                )}
               </p>
               {matchSummary.missingNames.length ? (
                 <p className="mt-2 text-lg">

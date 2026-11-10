@@ -160,6 +160,18 @@ describe("ApplicationsPage", () => {
     ).toBeInTheDocument();
   });
 
+  it("must count a single day in process in the singular", async () => {
+    vi.spyOn(applicationsApi, "fetchApplications").mockResolvedValue([
+      { ...mockApplications[0]!, days_in_process: 1 },
+    ]);
+
+    renderWithClient(<ApplicationsPage />);
+
+    expect(
+      await screen.findByText("Enviada em 4 de agosto · 1 dia em processo."),
+    ).toBeVisible();
+  });
+
   it.each([
     {
       status: "in_selection_process" as const,

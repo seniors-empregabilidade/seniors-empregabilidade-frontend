@@ -236,7 +236,7 @@ describe("CandidateHome", () => {
       within(preview).getByText(/São Paulo, SP · Híbrido · até R\$\s?8\.000/),
     ).toBeVisible();
     expect(preview).toHaveTextContent(
-      "Você atende 2 dos 3 requisitos. Falta Excel.",
+      "Você atende 2 de 3 requisitos. Falta Excel.",
     );
     expect(
       within(preview).getByRole("link", {

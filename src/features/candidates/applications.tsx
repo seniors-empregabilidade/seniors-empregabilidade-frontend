@@ -400,15 +400,20 @@ function getCompanyInitials(companyName: string): string {
 function getApplicationDescription(application: Application): string {
   const submittedDate = formatSubmittedDate(application.submitted_at);
 
+  const daysInProcess =
+    application.days_in_process === 1
+      ? "1 dia em processo"
+      : `${application.days_in_process} dias em processo`;
+
   switch (application.status) {
     case "applied":
-      return `Enviada em ${submittedDate} · ${application.days_in_process} dias em processo.`;
+      return `Enviada em ${submittedDate} · ${daysInProcess}.`;
 
     case "under_review":
-      return `Enviada em ${submittedDate} · ${application.days_in_process} dias em processo.`;
+      return `Enviada em ${submittedDate} · ${daysInProcess}.`;
 
     case "in_selection_process":
-      return `Enviada em ${submittedDate} · ${application.days_in_process} dias em processo.`;
+      return `Enviada em ${submittedDate} · ${daysInProcess}.`;
 
     case "hired":
       return `Enviada em ${submittedDate}. A empresa selecionou você para a oportunidade.`;

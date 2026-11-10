@@ -197,7 +197,7 @@ describe("candidate home", () => {
     card("Vagas abertas").within(() => {
       cy.contains("h3", "Supervisor de Logística").should("be.visible");
       cy.contains("Porto Alegre, RS · Híbrido · até R$").should("be.visible");
-      cy.contains("Você atende 1 dos 2 requisitos. Falta Excel.").should(
+      cy.contains("Você atende 1 de 2 requisitos. Falta Excel.").should(
         "be.visible",
       );
     });

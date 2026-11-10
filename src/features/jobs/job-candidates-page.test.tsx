@@ -146,7 +146,7 @@ describe("JobCandidatesPage", () => {
   it("shows job counts, current compatibility criteria, and the safe professional profile", async () => {
     const user = mount();
     expect(
-      await screen.findByText("1 candidatos · 1 atendem a todos os requisitos"),
+      await screen.findByText("1 candidato · 1 atende a todos os requisitos"),
     ).toBeVisible();
     await openCandidates(user);
     expect(screen.getByText("Atende 2 de 2 requisitos")).toBeVisible();
@@ -258,7 +258,7 @@ describe("JobCandidatesPage", () => {
     const user = mount(responses);
     await openCandidates(user);
     expect(
-      screen.getByText("1 perfis com match automático, sem candidatura."),
+      screen.getByText("1 perfil com match automático, sem candidatura."),
     ).toBeVisible();
     expect(screen.queryByText("Perfil automático")).not.toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Ver perfil" })).toHaveLength(

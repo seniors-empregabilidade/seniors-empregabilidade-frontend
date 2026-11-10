@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CompanyBadge } from "@/components/ui/company-badge";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { requirementCountLabel } from "@/lib/requirement-count";
 
 import { jobSearchQueryOptions } from "./job-search";
 import type { JobSearchResult, WorkMode } from "./job-search-schema";
@@ -58,7 +59,7 @@ export function JobSearchView() {
           id="job-search"
           value={term}
           onChange={(event) => setTerm(event.target.value)}
-          placeholder="Cargo, empresa..."
+          placeholder="Ex.: Analista administrativo"
         />
       </Field>
 
@@ -174,11 +175,21 @@ function JobCard({
       </p>
 
       <p className="text-lg text-foreground">
-        Você atende{" "}
-        <strong>
-          {job.matched_skill_count} dos {job.required_skill_count} requisitos
-        </strong>
-        . {formatMissingSkills(job.missing_skills.map((skill) => skill.name))}
+        {job.required_skill_count === 0 ? (
+          "Esta vaga ainda não listou requisitos de habilidades."
+        ) : (
+          <>
+            Você atende{" "}
+            <strong>
+              {requirementCountLabel(
+                job.matched_skill_count,
+                job.required_skill_count,
+              )}
+            </strong>
+            .{" "}
+            {formatMissingSkills(job.missing_skills.map((skill) => skill.name))}
+          </>
+        )}
       </p>
 
       <Button

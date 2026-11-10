@@ -7,6 +7,7 @@ import { CompanyBadge } from "@/components/ui/company-badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { applicationStatusLabel } from "@/lib/application-status";
+import { requirementCountLabel } from "@/lib/requirement-count";
 import { missingFieldLabel } from "@/lib/resume-completeness";
 import { cn } from "@/lib/utils";
 
@@ -348,11 +349,21 @@ function JobPreview({ job }: { job: JobSearchResult }) {
           .join(" · ")}
       </p>
       <p className="text-base text-foreground">
-        Você atende{" "}
-        <strong>
-          {job.matched_skill_count} dos {job.required_skill_count} requisitos
-        </strong>
-        . {formatMissingSkills(job.missing_skills.map((skill) => skill.name))}
+        {job.required_skill_count === 0 ? (
+          "Esta vaga ainda não listou requisitos de habilidades."
+        ) : (
+          <>
+            Você atende{" "}
+            <strong>
+              {requirementCountLabel(
+                job.matched_skill_count,
+                job.required_skill_count,
+              )}
+            </strong>
+            .{" "}
+            {formatMissingSkills(job.missing_skills.map((skill) => skill.name))}
+          </>
+        )}
       </p>
       <Link
         to="/candidato/vagas/$jobId"
