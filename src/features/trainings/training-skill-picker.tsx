@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,22 @@ export function TrainingSkillPicker({
   const options = useQuery(skillOptionsQueryOptions(debouncedSearch));
   const selectedIds = new Set(value.map((skill) => skill.id));
   const limitReached = value.length >= TRAINING_MAX_SKILLS;
+  const searchRef = useRef<HTMLInputElement>(null);
+  const removeButtons = useRef(new Map<string, HTMLButtonElement>());
+  const focusAfterRemoval = useRef<number | null>(null);
+
+  // The focused "Remover" button leaves with its skill, so focus moves to the
+  // skill now in that position, or to the search field when none is left.
+  useEffect(() => {
+    const index = focusAfterRemoval.current;
+    if (index === null) return;
+    focusAfterRemoval.current = null;
+    const next = value[Math.min(index, value.length - 1)];
+    const target = next
+      ? removeButtons.current.get(next.id)
+      : searchRef.current;
+    target?.focus();
+  }, [value]);
 
   function toggle(skill: TrainingSkill) {
     onChange(
@@ -45,6 +61,11 @@ export function TrainingSkillPicker({
         ? value.filter((selected) => selected.id !== skill.id)
         : [...value, skill],
     );
+  }
+
+  function remove(skill: TrainingSkill, index: number) {
+    focusAfterRemoval.current = index;
+    onChange(value.filter((selected) => selected.id !== skill.id));
   }
 
   return (
@@ -56,6 +77,7 @@ export function TrainingSkillPicker({
           Candidatos com essas competências em falta encontram o curso na busca.
         </p>
         <Input
+          ref={searchRef}
           id={searchId}
           type="search"
           autoComplete="off"
@@ -79,18 +101,22 @@ export function TrainingSkillPicker({
           aria-label="Competências relacionadas ao curso"
           className="flex list-none flex-wrap gap-2 p-0"
         >
-          {value.map((skill) => (
+          {value.map((skill, index) => (
             <li
               key={skill.id}
               className="flex min-h-11 items-center gap-2 rounded-lg border border-border bg-muted py-1 pr-1 pl-3 text-base text-foreground"
             >
               <span className="break-words">{skill.name}</span>
               <Button
+                ref={(element: HTMLButtonElement | null) => {
+                  if (element) removeButtons.current.set(skill.id, element);
+                  else removeButtons.current.delete(skill.id);
+                }}
                 type="button"
                 variant="ghost"
                 disabled={disabled}
                 aria-label={`Remover ${skill.name}`}
-                onClick={() => toggle(skill)}
+                onClick={() => remove(skill, index)}
               >
                 Remover
               </Button>

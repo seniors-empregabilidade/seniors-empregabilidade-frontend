@@ -128,7 +128,7 @@ describe("TrainingsAdminPage", () => {
     await shown("Excel básico");
     expect(
       row("Excel básico").getByRole("link", {
-        name: "Abrir o link de Excel básico em nova aba",
+        name: "Abrir link de Excel básico (abre em uma nova aba)",
       }),
     ).toHaveAttribute("href", "https://example.invalid/excel");
     expect(
@@ -336,6 +336,10 @@ describe("TrainingsAdminPage", () => {
       await form.findByRole("checkbox", { name: /Trabalho em grupo/ }),
     );
     await user.click(form.getByRole("button", { name: "Remover Excel" }));
+    // The removed button is gone, so focus moves to the next skill's button.
+    expect(
+      form.getByRole("button", { name: "Remover Trabalho em grupo" }),
+    ).toHaveFocus();
     await user.click(form.getByRole("button", { name: "Salvar alterações" }));
 
     expect(
@@ -350,6 +354,21 @@ describe("TrainingsAdminPage", () => {
       published: true,
       skill_ids: [teamwork.id],
     });
+  });
+
+  it("moves focus to the skill search when the last skill is removed", async () => {
+    const user = mount();
+
+    await shown("Excel básico");
+    await user.click(
+      screen.getByRole("button", { name: "Editar Excel básico" }),
+    );
+    const form = within(
+      await screen.findByRole("dialog", { name: "Editar curso" }),
+    );
+    await user.click(form.getByRole("button", { name: "Remover Excel" }));
+
+    expect(form.getByLabelText("Competências relacionadas")).toHaveFocus();
   });
 
   it("keeps the typed values and offers a retry when saving fails", async () => {

@@ -253,10 +253,13 @@ function TrainingRow({
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={`Abrir o link de ${training.title} em nova aba`}
             className="inline-flex min-h-11 items-center text-base font-normal text-primary underline underline-offset-4"
           >
-            Abrir link
+            {/* The visible label starts the accessible name (WCAG 2.5.3). */}
+            {"Abrir link "}
+            <span className="sr-only">
+              de {training.title} (abre em uma nova aba)
+            </span>
           </a>
         )}
       </th>
