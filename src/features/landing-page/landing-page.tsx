@@ -264,14 +264,13 @@ function SiteFooter() {
         )}
       >
         <div>
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1" aria-hidden="true">
-              <span className="size-2.5 rounded-full bg-on-dark" />
-              <span className="size-2.5 rounded-full bg-on-dark-subtle" />
-              <span className="size-2.5 rounded-full bg-on-dark-accent" />
-            </span>
-            <span className="text-xl font-bold text-on-dark">Seniors</span>
-          </div>
+          <img
+            src="/images/logo/logo-branca/logo-horizontal-branca.png"
+            alt="Seniors"
+            width={142}
+            height={48}
+            className="h-12 w-auto"
+          />
           <p className="mt-4 max-w-xs text-base text-on-dark-subtle">
             Plataforma de empregabilidade para profissionais com 50 anos ou
             mais.
