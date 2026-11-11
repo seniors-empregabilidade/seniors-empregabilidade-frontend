@@ -67,7 +67,7 @@ describe("LandingPage", () => {
     ).toBeVisible();
     expect(
       within(section as HTMLElement).getByRole("heading", {
-        name: "Capacitação ligada à vaga",
+        name: "Cursos por habilidade",
       }),
     ).toBeVisible();
   });
@@ -77,7 +77,7 @@ describe("LandingPage", () => {
 
     expect(screen.getByText("Gratuita para candidatos")).toBeVisible();
     expect(screen.getByText("Empresas identificadas por CNPJ")).toBeVisible();
-    expect(screen.getByText("Sem filtro por idade")).toBeVisible();
+    expect(screen.getByText("Empresas não veem sua idade")).toBeVisible();
   });
 
   it("shows only working footer links and no placeholder items", () => {

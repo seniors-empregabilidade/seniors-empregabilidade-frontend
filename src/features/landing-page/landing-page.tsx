@@ -47,7 +47,7 @@ function HeroSection() {
             {[
               "Gratuita para candidatos",
               "Empresas identificadas por CNPJ",
-              "Sem filtro por idade",
+              "Empresas não veem sua idade",
             ].map((item) => (
               <li key={item} className="flex items-center gap-2">
                 <span
@@ -60,22 +60,13 @@ function HeroSection() {
           </ul>
         </div>
 
-        <div className="relative">
-          <p className="absolute top-4 left-4 z-10 flex items-center gap-2 rounded-full bg-background px-4 py-2 text-base font-medium text-foreground shadow-md">
-            <span
-              className="size-2.5 rounded-full bg-success"
-              aria-hidden="true"
-            />
-            Perfil visível para empresas
-          </p>
-          <img
-            data-imagem="landing-hero"
-            src="/images/retrato-de-mulher-com-laptop-trabalhando.webp"
-            alt=""
-            aria-hidden="true"
-            className="h-[388px] w-full rounded-xl object-cover"
-          />
-        </div>
+        <img
+          data-imagem="landing-hero"
+          src="/images/retrato-de-mulher-com-laptop-trabalhando.webp"
+          alt=""
+          aria-hidden="true"
+          className="h-[388px] w-full rounded-xl object-cover"
+        />
       </div>
     </section>
   );
@@ -92,9 +83,8 @@ const whyChooseItems = [
     description: "Toda vaga vem de uma empresa cadastrada com CNPJ e endereço.",
   },
   {
-    title: "Capacitação ligada à vaga",
-    description:
-      "Cursos escolhidos a partir de requisitos que aparecem em vagas reais.",
+    title: "Cursos por habilidade",
+    description: "Busque cursos pela habilidade que a vaga pede.",
   },
 ];
 
@@ -145,7 +135,7 @@ const steps = [
     number: "01",
     title: "Monte seu currículo",
     description:
-      "Em etapas curtas, com o que você fez e não com quando começou.",
+      "Resumo, experiências, habilidades e certificações em um só lugar.",
   },
   {
     number: "02",
@@ -202,8 +192,7 @@ function GetStartedSection() {
               Comece pelo seu currículo
             </h3>
             <p className="mt-2 text-base text-foreground-2">
-              Você preenche uma vez e usa em todas as candidaturas. Leva cerca
-              de 15 minutos.
+              Você preenche uma vez e usa em todas as candidaturas.
             </p>
             <a
               href="/cadastro"
@@ -269,7 +258,7 @@ function SiteFooter() {
             <span className="text-xl font-bold text-on-dark">Seniors</span>
           </div>
           <p className="mt-4 max-w-xs text-base text-on-dark-subtle">
-            Plataforma de empregabilidade para profissionais com 50 anos ou
+            Plataforma de empregabilidade para profissionais com 45 anos ou
             mais.
           </p>
         </div>
