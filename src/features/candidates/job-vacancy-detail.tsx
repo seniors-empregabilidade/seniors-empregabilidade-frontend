@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { XIcon } from "lucide-react";
+import { CheckIcon, XIcon } from "lucide-react";
 import { useId, type ReactNode } from "react";
 
 import { LoadingSkeleton } from "@/components/loading-skeleton";
@@ -23,6 +23,7 @@ import {
   formatCompanyContext,
   formatVacancyMeta,
 } from "./job-vacancy-format";
+import { professionalProfileQueryOptions } from "./professional-profile";
 
 export interface JobVacancyMatchSummary {
   matchedCount: number;
@@ -46,6 +47,8 @@ export function JobVacancyDetail({
   const client = useQueryClient();
   // Job status and "already applied" come only from GET /jobs/{id}.
   const detail = useQuery(jobDetailQueryOptions(jobId));
+  // Same query the profile page and the search use, so it is usually cached.
+  const profile = useQuery(professionalProfileQueryOptions);
   const errorId = useId();
   const mutation = useMutation({
     mutationFn: () => applyToJobVacancy(jobId),
@@ -181,11 +184,14 @@ export function JobVacancyDetail({
               Requisitos e competências
             </h3>
             {vacancy.skills.length ? (
-              <ul className="list-disc space-y-2 pl-6 text-lg">
-                {vacancy.skills.map((skill) => (
-                  <li key={skill.id}>{skill.name}</li>
-                ))}
-              </ul>
+              <VacancySkillList
+                skills={vacancy.skills}
+                candidateSkillIds={
+                  profile.data
+                    ? new Set(profile.data.skills.map((skill) => skill.id))
+                    : null
+                }
+              />
             ) : (
               <p className="text-lg">
                 Esta vaga ainda não listou requisitos de habilidades.
@@ -317,4 +323,53 @@ function applicationStateLabel(vacancy: JobDetail): string {
   if (!vacancy.is_open) return "Vaga encerrada";
   if (!vacancy.is_applicable) return "Candidatura indisponível";
   return "Candidatar-se";
+}
+
+interface VacancySkillListProps {
+  skills: JobDetail["skills"];
+  // null while the candidate's profile is not known: the list stays neutral
+  // instead of claiming a skill is missing.
+  candidateSkillIds: ReadonlySet<string> | null;
+}
+
+function VacancySkillList({
+  skills,
+  candidateSkillIds,
+}: VacancySkillListProps) {
+  if (candidateSkillIds === null) {
+    return (
+      <ul className="list-disc space-y-2 pl-6 text-lg">
+        {skills.map((skill) => (
+          <li key={skill.id}>{skill.name}</li>
+        ))}
+      </ul>
+    );
+  }
+
+  // Color is never the only cue: each item also has an icon and a text label.
+  return (
+    <ul className="space-y-2 text-lg">
+      {skills.map((skill) => {
+        const owned = candidateSkillIds.has(skill.id);
+        const Icon = owned ? CheckIcon : XIcon;
+
+        return (
+          <li
+            key={skill.id}
+            className={`flex items-start gap-2 font-medium ${
+              owned ? "text-success" : "text-destructive"
+            }`}
+          >
+            <Icon aria-hidden="true" className="mt-1 size-5 shrink-0" />
+            <span>
+              {skill.name}
+              <span className="sr-only">
+                {owned ? " — você tem" : " — falta no seu perfil"}
+              </span>
+            </span>
+          </li>
+        );
+      })}
+    </ul>
+  );
 }
