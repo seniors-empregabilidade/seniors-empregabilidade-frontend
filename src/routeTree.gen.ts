@@ -21,6 +21,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AdministradorIndexRouteImport } from './routes/administrador.index'
 import { Route as AdministradorCandidatosRouteImport } from './routes/administrador.candidatos'
+import { Route as AdministradorCapacitacaoRouteImport } from './routes/administrador.capacitacao'
 import { Route as AdministradorCompetenciasRouteImport } from './routes/administrador.competencias'
 import { Route as AdministradorContasRouteImport } from './routes/administrador.contas'
 import { Route as CandidatoIndexRouteImport } from './routes/candidato.index'
@@ -99,6 +100,12 @@ const AdministradorCandidatosRoute = AdministradorCandidatosRouteImport.update({
   path: '/candidatos',
   getParentRoute: () => AdministradorRoute,
 } as any)
+const AdministradorCapacitacaoRoute =
+  AdministradorCapacitacaoRouteImport.update({
+    id: '/capacitacao',
+    path: '/capacitacao',
+    getParentRoute: () => AdministradorRoute,
+  } as any)
 const AdministradorCompetenciasRoute =
   AdministradorCompetenciasRouteImport.update({
     id: '/competencias',
@@ -199,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/administrador/candidatos': typeof AdministradorCandidatosRoute
+  '/administrador/capacitacao': typeof AdministradorCapacitacaoRoute
   '/administrador/competencias': typeof AdministradorCompetenciasRoute
   '/administrador/contas': typeof AdministradorContasRoute
   '/candidato/candidaturas': typeof CandidatoCandidaturasRoute
@@ -227,6 +235,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/administrador/candidatos': typeof AdministradorCandidatosRoute
+  '/administrador/capacitacao': typeof AdministradorCapacitacaoRoute
   '/administrador/competencias': typeof AdministradorCompetenciasRoute
   '/administrador/contas': typeof AdministradorContasRoute
   '/candidato/candidaturas': typeof CandidatoCandidaturasRoute
@@ -259,6 +268,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/administrador/candidatos': typeof AdministradorCandidatosRoute
+  '/administrador/capacitacao': typeof AdministradorCapacitacaoRoute
   '/administrador/competencias': typeof AdministradorCompetenciasRoute
   '/administrador/contas': typeof AdministradorContasRoute
   '/candidato/candidaturas': typeof CandidatoCandidaturasRoute
@@ -292,6 +302,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/administrador/candidatos'
+    | '/administrador/capacitacao'
     | '/administrador/competencias'
     | '/administrador/contas'
     | '/candidato/candidaturas'
@@ -320,6 +331,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/administrador/candidatos'
+    | '/administrador/capacitacao'
     | '/administrador/competencias'
     | '/administrador/contas'
     | '/candidato/candidaturas'
@@ -351,6 +363,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/administrador/candidatos'
+    | '/administrador/capacitacao'
     | '/administrador/competencias'
     | '/administrador/contas'
     | '/candidato/candidaturas'
@@ -469,6 +482,13 @@ declare module '@tanstack/react-router' {
       path: '/candidatos'
       fullPath: '/administrador/candidatos'
       preLoaderRoute: typeof AdministradorCandidatosRouteImport
+      parentRoute: typeof AdministradorRoute
+    }
+    '/administrador/capacitacao': {
+      id: '/administrador/capacitacao'
+      path: '/capacitacao'
+      fullPath: '/administrador/capacitacao'
+      preLoaderRoute: typeof AdministradorCapacitacaoRouteImport
       parentRoute: typeof AdministradorRoute
     }
     '/administrador/competencias': {
@@ -595,6 +615,7 @@ declare module '@tanstack/react-router' {
 
 interface AdministradorRouteChildren {
   AdministradorCandidatosRoute: typeof AdministradorCandidatosRoute
+  AdministradorCapacitacaoRoute: typeof AdministradorCapacitacaoRoute
   AdministradorCompetenciasRoute: typeof AdministradorCompetenciasRoute
   AdministradorContasRoute: typeof AdministradorContasRoute
   AdministradorIndexRoute: typeof AdministradorIndexRoute
@@ -602,6 +623,7 @@ interface AdministradorRouteChildren {
 
 const AdministradorRouteChildren: AdministradorRouteChildren = {
   AdministradorCandidatosRoute: AdministradorCandidatosRoute,
+  AdministradorCapacitacaoRoute: AdministradorCapacitacaoRoute,
   AdministradorCompetenciasRoute: AdministradorCompetenciasRoute,
   AdministradorContasRoute: AdministradorContasRoute,
   AdministradorIndexRoute: AdministradorIndexRoute,
