@@ -241,15 +241,11 @@ function GetStartedSection() {
 const footerColumns = [
   {
     title: "Para candidatos",
-    items: ["Buscar vagas", "Criar conta", "Capacitação", "Como usar"],
+    items: [{ label: "Criar conta", href: "/cadastro" }],
   },
   {
     title: "Para empresas",
-    items: ["Cadastrar empresa", "Publicar vaga", "Buscar candidatos"],
-  },
-  {
-    title: "Institucional",
-    items: ["Sobre nós", "Contato", "Política de privacidade", "Termos de uso"],
+    items: [{ label: "Cadastrar empresa", href: "/cadastro-empresa" }],
   },
 ];
 
@@ -260,7 +256,7 @@ function SiteFooter() {
       <div
         className={cn(
           container,
-          "grid gap-10 py-12 md:grid-cols-[1.2fr_1fr_1fr_1fr]",
+          "grid gap-10 py-12 md:grid-cols-[1.2fr_1fr_1fr]",
         )}
       >
         <div>
@@ -285,19 +281,18 @@ function SiteFooter() {
             </h3>
             <ul className="mt-4 space-y-3">
               {column.items.map((item) => (
-                <li key={item} className="text-base text-on-dark-subtle">
-                  {item}
+                <li key={item.href}>
+                  <a
+                    href={item.href}
+                    className="text-base text-on-dark-subtle hover:text-on-dark"
+                  >
+                    {item.label}
+                  </a>
                 </li>
               ))}
             </ul>
           </div>
         ))}
-      </div>
-
-      <div className={cn(container, "border-t border-on-dark-accent/20 py-6")}>
-        <p className="text-base text-on-dark-subtle">
-          Seniors Empregabilidade · AGES/PUCRS 2026-2
-        </p>
       </div>
     </footer>
   );
