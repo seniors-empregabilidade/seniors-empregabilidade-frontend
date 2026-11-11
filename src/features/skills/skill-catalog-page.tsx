@@ -173,7 +173,9 @@ export function SkillCatalogPage() {
                   <th
                     key={heading}
                     scope="col"
-                    className="px-4 py-3 text-base font-semibold text-foreground"
+                    className={`px-4 py-3 text-base font-semibold text-foreground ${
+                      heading === "Competência" ? "w-full" : ""
+                    } ${heading === "Ações" ? "text-right" : ""}`}
                   >
                     {heading}
                   </th>
@@ -249,7 +251,7 @@ function SkillRow({
         {skillStatusLabels[skill.status]}
       </td>
       <td className="px-4 py-3">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
           <SkillFormDialog skill={skill} onSaved={onChanged} />
           <SkillStatusAction skill={skill} onChanged={onChanged} />
         </div>
