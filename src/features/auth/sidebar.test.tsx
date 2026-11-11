@@ -147,12 +147,14 @@ describe("Sidebar", () => {
       "href",
       "/administrador",
     );
-    ["Empresas", "Capacitação"].forEach((label) => {
-      expect(screen.getByText(label)).toBeVisible();
-      expect(
-        screen.queryByRole("link", { name: label }),
-      ).not.toBeInTheDocument();
-    });
+    expect(screen.getByRole("link", { name: "Capacitação" })).toHaveAttribute(
+      "href",
+      "/administrador/capacitacao",
+    );
+    expect(screen.getByText("Empresas")).toBeVisible();
+    expect(
+      screen.queryByRole("link", { name: "Empresas" }),
+    ).not.toBeInTheDocument();
   });
 
   it("signs out, clears the query cache and navigates back to login", async () => {
