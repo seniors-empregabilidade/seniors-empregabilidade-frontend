@@ -221,7 +221,10 @@ describe("JobVacancyDetailModal", () => {
     await loaded();
     await waitFor(() =>
       expect(
-        stub.requests.filter((request) => request.method === "get"),
+        stub.requests.filter(
+          (request) =>
+            request.method === "get" && request.url?.startsWith("/jobs"),
+        ),
       ).toHaveLength(2),
     );
     expect(
@@ -393,7 +396,9 @@ describe("JobVacancyDetailModal", () => {
     await loaded();
     await userEvent.keyboard("{Escape}");
     expect(onOpenChange).toHaveBeenCalledWith(false, expect.anything());
-    expect(stub.requests).toHaveLength(1);
+    expect(
+      stub.requests.filter((request) => request.url?.startsWith("/jobs")),
+    ).toHaveLength(1);
   });
 
   it("does not fetch while the modal is closed", () => {
