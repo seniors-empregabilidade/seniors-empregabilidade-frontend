@@ -73,7 +73,18 @@ export function Sidebar({ userType }: SidebarProps) {
   return (
     <aside className="flex w-full flex-col justify-between bg-foreground px-5 py-6 sm:w-64 sm:shrink-0">
       <div>
-        <p className="text-xl font-bold text-on-dark">Seniors</p>
+        <div className="flex items-center gap-2">
+          {/* Versão branca da logo, própria para o fundo escuro da sidebar.
+              O nome continua como texto. */}
+          <img
+            src="/images/logo/logo-branca/logo-icone-branca.png"
+            alt=""
+            width={48}
+            height={48}
+            className="size-12 shrink-0"
+          />
+          <p className="text-2xl font-bold text-on-dark">Seniors</p>
+        </div>
         <p className="mt-1 text-base text-on-dark-subtle">
           {sidebarSubtitle[userType]}
         </p>

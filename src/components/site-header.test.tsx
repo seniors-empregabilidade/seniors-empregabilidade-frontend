@@ -32,6 +32,17 @@ it.each(["app", "landing"] as const)(
   },
 );
 
+it.each(["app", "landing"] as const)(
+  "shows the logo with the brand name as its text alternative (%s)",
+  (variant) => {
+    render(<SiteHeader variant={variant} />);
+    expect(screen.getByRole("img", { name: "Seniors" })).toHaveAttribute(
+      "src",
+      "/images/logo/logo-horizontal-transparente.png",
+    );
+  },
+);
+
 it.each([
   ["Entrar", "/login"],
   ["Criar conta", "/cadastro"],
