@@ -32,6 +32,7 @@ const published = {
   published: true,
   skills: [excel],
   job_ids: ["67000000-0000-4000-8000-000000000001"],
+  jobs: [{ id: "67000000-0000-4000-8000-000000000001", title: "Analista" }],
 };
 const unpublished = {
   id: "66000000-0000-4000-8000-000000000002",
@@ -42,6 +43,19 @@ const unpublished = {
   published: false,
   skills: [],
   job_ids: [],
+  jobs: [],
+};
+const analyst = {
+  id: "67000000-0000-4000-8000-000000000001",
+  title: "Analista",
+  company_name: "Empresa Sintética",
+  status: "published",
+};
+const coordinator = {
+  id: "67000000-0000-4000-8000-000000000002",
+  title: "Coordenador",
+  company_name: "Outra Empresa",
+  status: "closed",
 };
 const firstPage = { items: [published, unpublished], total: 2 };
 const publishedRoute = `PATCH /admin/trainings/${published.id}`;
@@ -60,7 +74,14 @@ function mount(
   list: StubRoute = { status: 200, data: firstPage },
 ) {
   stub = stubApiRoutes(
-    { "GET /skills": { status: 200, data: [excel, teamwork] }, ...routes },
+    {
+      "GET /skills": { status: 200, data: [excel, teamwork] },
+      "GET /admin/jobs": {
+        status: 200,
+        data: { items: [analyst, coordinator], total: 2 },
+      },
+      ...routes,
+    },
     (request) =>
       request.url?.startsWith("/admin/trainings?")
         ? typeof list === "function"
@@ -290,6 +311,7 @@ describe("TrainingsAdminPage", () => {
       external_link: "https://example.invalid/excel",
       published: false,
       skill_ids: [excel.id],
+      job_ids: [],
     });
   });
 
@@ -309,7 +331,7 @@ describe("TrainingsAdminPage", () => {
     ).toBeVisible();
   });
 
-  it("edits a course, adds and removes skills, and keeps its jobs", async () => {
+  it("edits a course, adds and removes skills, and sends its jobs unchanged", async () => {
     const user = mount({
       [publishedRoute]: {
         status: 200,
@@ -328,7 +350,9 @@ describe("TrainingsAdminPage", () => {
     expect(form.getByLabelText("Nome do curso *")).toHaveValue("Excel básico");
     expect(form.getByRole("radio", { name: "Online" })).toBeChecked();
     expect(form.getByRole("checkbox", { name: /Publicar/ })).toBeChecked();
-    expect(form.getByText(/relacionado a 1 vaga\./)).toBeVisible();
+    expect(
+      form.getByRole("button", { name: "Remover Analista" }),
+    ).toBeVisible();
 
     await user.clear(form.getByLabelText("Nome do curso *"));
     await user.type(form.getByLabelText("Nome do curso *"), "Excel avançado");
@@ -353,7 +377,107 @@ describe("TrainingsAdminPage", () => {
       external_link: "https://example.invalid/excel",
       published: true,
       skill_ids: [teamwork.id],
+      job_ids: [analyst.id],
     });
+  });
+
+  it("relates jobs to a course and sends their ids", async () => {
+    const user = mount({
+      [publishedRoute]: { status: 200, data: published },
+    });
+
+    await shown("Excel básico");
+    await user.click(
+      screen.getByRole("button", { name: "Editar Excel básico" }),
+    );
+    const form = within(
+      await screen.findByRole("dialog", { name: "Editar curso" }),
+    );
+
+    // Each option names its company and status, since closed jobs stay listed.
+    const option = await form.findByRole("checkbox", {
+      name: "Coordenador (Outra Empresa · Encerrada)",
+    });
+    await user.click(option);
+    expect(form.getByText("2 vagas relacionadas.")).toBeVisible();
+    await user.click(form.getByRole("button", { name: "Salvar alterações" }));
+
+    await screen.findByText("Curso “Excel básico” atualizado.");
+    const patch = stub?.requests.find((request) => request.method === "patch");
+    expect(patch?.body).toMatchObject({
+      job_ids: [analyst.id, coordinator.id],
+    });
+  });
+
+  it("moves focus along the related jobs as they are removed", async () => {
+    const user = mount();
+
+    await shown("Excel básico");
+    await user.click(
+      screen.getByRole("button", { name: "Editar Excel básico" }),
+    );
+    const form = within(
+      await screen.findByRole("dialog", { name: "Editar curso" }),
+    );
+    await user.click(
+      await form.findByRole("checkbox", { name: /Coordenador/ }),
+    );
+
+    await user.click(form.getByRole("button", { name: "Remover Analista" }));
+    expect(
+      form.getByRole("button", { name: "Remover Coordenador" }),
+    ).toHaveFocus();
+
+    await user.click(form.getByRole("button", { name: "Remover Coordenador" }));
+    expect(form.getByLabelText("Vagas relacionadas")).toHaveFocus();
+  });
+
+  it("explains a related job that no longer exists next to the job list", async () => {
+    const user = mount({
+      [publishedRoute]: {
+        status: 422,
+        data: {
+          title: "Unprocessable Content",
+          status: 422,
+          code: "training_relation_not_found",
+          errors: { job_ids: ["Some job does not exist."] },
+        },
+      },
+    });
+
+    await shown("Excel básico");
+    await user.click(
+      screen.getByRole("button", { name: "Editar Excel básico" }),
+    );
+    const form = within(
+      await screen.findByRole("dialog", { name: "Editar curso" }),
+    );
+    await user.click(form.getByRole("button", { name: "Salvar alterações" }));
+
+    expect(
+      await form.findByText(
+        "Alguma vaga escolhida não existe mais. Revise a lista de vagas e tente de novo.",
+      ),
+    ).toBeVisible();
+    expect(
+      form.queryByText(/competência escolhida não existe mais/),
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not open an editor when the course list lacks the named jobs", async () => {
+    const withoutJobs = Object.fromEntries(
+      Object.entries(published).filter(([key]) => key !== "jobs"),
+    );
+    mount({}, { status: 200, data: { items: [withoutJobs], total: 1 } });
+
+    expect(
+      await screen.findByText(
+        "Não foi possível carregar os cursos. Tente novamente.",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Editar Excel básico" }),
+    ).not.toBeInTheDocument();
   });
 
   it("moves focus to the skill search when the last skill is removed", async () => {

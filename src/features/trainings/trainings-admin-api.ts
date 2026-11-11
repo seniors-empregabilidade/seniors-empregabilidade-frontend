@@ -3,15 +3,18 @@ import { z } from "zod";
 
 import { apiClient } from "@/lib/api-client";
 import { ApiError } from "@/lib/api-error";
+import { jobStatuses } from "@/lib/job-status-labels";
 import { skillTypes } from "@/lib/skill-type";
 
 import { trainingModeSchema, type TrainingMode } from "./trainings-api";
 
 // US-22-T03 consumes the administrator endpoints of US-22-T01. A course is
 // "inactive" when it is not published: candidates stop seeing it, but the
-// course and its relations stay and can be published again.
+// course and its relations stay and can be published again. US-22-T04 adds
+// the related jobs, picked from GET /admin/jobs.
 const TRAININGS_ENDPOINT = "/admin/trainings";
 const SKILL_OPTIONS_ENDPOINT = "/skills";
+const JOB_OPTIONS_ENDPOINT = "/admin/jobs";
 
 export const TRAININGS_PAGE_SIZE = 20;
 // Mirror the backend limits of a course.
@@ -19,8 +22,11 @@ export const TRAINING_TITLE_MAX_LENGTH = 150;
 export const TRAINING_INSTITUTION_MAX_LENGTH = 150;
 export const TRAINING_LINK_MAX_LENGTH = 2048;
 export const TRAINING_MAX_SKILLS = 50;
+export const TRAINING_MAX_JOBS = 50;
 export const SKILL_OPTIONS_LIMIT = 20;
 export const SKILL_SEARCH_MAX_LENGTH = 100;
+export const JOB_OPTIONS_LIMIT = 20;
+export const JOB_SEARCH_MAX_LENGTH = 150;
 
 export const trainingModes = ["onsite", "hybrid", "remote", "online"] as const;
 
@@ -37,6 +43,14 @@ const trainingSkillSchema = z.object({
   type: z.enum(skillTypes),
 });
 
+const trainingJobSchema = z.object({
+  id: z.uuid(),
+  title: z.string(),
+});
+
+// `jobs` is required on purpose: saving sends the jobs shown in the editor as
+// the complete set, so a response without them must fail instead of opening
+// the editor with an empty list that would erase the stored relations.
 const adminTrainingSchema = z.object({
   id: z.uuid(),
   title: z.string(),
@@ -46,6 +60,7 @@ const adminTrainingSchema = z.object({
   published: z.boolean(),
   skills: z.array(trainingSkillSchema),
   job_ids: z.array(z.uuid()),
+  jobs: z.array(trainingJobSchema),
 });
 
 const adminTrainingListSchema = z.object({
@@ -55,7 +70,22 @@ const adminTrainingListSchema = z.object({
 
 const skillOptionListSchema = z.array(trainingSkillSchema);
 
+const jobOptionSchema = z.object({
+  id: z.uuid(),
+  title: z.string(),
+  company_name: z.string(),
+  status: z.enum(jobStatuses),
+});
+
+const jobOptionListSchema = z.object({
+  items: z.array(jobOptionSchema),
+  total: z.number().int().nonnegative(),
+});
+
 export type TrainingSkill = z.infer<typeof trainingSkillSchema>;
+export type TrainingJob = z.infer<typeof trainingJobSchema>;
+export type JobOption = z.infer<typeof jobOptionSchema>;
+export type JobOptionList = z.infer<typeof jobOptionListSchema>;
 export type AdminTraining = z.infer<typeof adminTrainingSchema>;
 export type AdminTrainingList = z.infer<typeof adminTrainingListSchema>;
 export type PublishedFilter = "all" | "published" | "unpublished";
@@ -159,6 +189,39 @@ export function skillOptionsQueryOptions(search: string) {
   });
 }
 
+// Jobs in any status, ordered by title: a course may prepare for a job that is
+// still a draft or already closed, so the status is shown, not filtered out.
+export async function fetchJobOptions(
+  search: string,
+  signal?: AbortSignal,
+): Promise<JobOptionList> {
+  const trimmed = search.trim();
+  const response = await apiClient.get<unknown>(JOB_OPTIONS_ENDPOINT, {
+    params: {
+      limit: JOB_OPTIONS_LIMIT,
+      ...(trimmed === "" ? {} : { search: trimmed }),
+    },
+    ...(signal ? { signal } : {}),
+  });
+  const parsed = jobOptionListSchema.safeParse(response.data);
+  if (!parsed.success) {
+    throw new ApiError({
+      message: "Unexpected job options response",
+      code: "invalid_job_options_response",
+    });
+  }
+  return parsed.data;
+}
+
+export function jobOptionsQueryOptions(search: string) {
+  return queryOptions({
+    queryKey: ["administrator", "training-job-options", search] as const,
+    queryFn: ({ signal }) => fetchJobOptions(search, signal),
+    retry: false,
+    placeholderData: keepPreviousData,
+  });
+}
+
 export const trainingValuesSchema = z.object({
   title: z
     .string()
@@ -189,6 +252,9 @@ export const trainingValuesSchema = z.object({
   skills: z.array(trainingSkillSchema).max(TRAINING_MAX_SKILLS, {
     message: `Relacione no máximo ${TRAINING_MAX_SKILLS} competências.`,
   }),
+  jobs: z.array(trainingJobSchema).max(TRAINING_MAX_JOBS, {
+    message: `Relacione no máximo ${TRAINING_MAX_JOBS} vagas.`,
+  }),
 });
 
 export type TrainingValues = z.infer<typeof trainingValuesSchema>;
@@ -206,12 +272,15 @@ function isWebLink(value: string): boolean {
   }
 }
 
-// The related skills travel as the complete set of ids, which replaces the
-// relations stored for the course. `job_ids` is left out on purpose: the
-// backend keeps the jobs already related when the field is omitted.
+// The related skills and jobs travel as the complete sets of ids, which
+// replace the relations stored for the course.
 function toRequestBody(values: TrainingValues) {
-  const { skills, ...rest } = values;
-  return { ...rest, skill_ids: skills.map((skill) => skill.id) };
+  const { skills, jobs, ...rest } = values;
+  return {
+    ...rest,
+    skill_ids: skills.map((skill) => skill.id),
+    job_ids: jobs.map((job) => job.id),
+  };
 }
 
 export async function createTraining(
@@ -269,7 +338,9 @@ export function trainingSaveErrorMessage(error: unknown): string {
       return "Este curso não está mais disponível. Atualize a lista.";
     }
     if (error.code === "training_relation_not_found") {
-      return "Alguma competência escolhida não existe mais. Revise a lista de competências e tente de novo.";
+      return missingRelation(error) === "job_ids"
+        ? "Alguma vaga escolhida não existe mais. Revise a lista de vagas e tente de novo."
+        : "Alguma competência escolhida não existe mais. Revise a lista de competências e tente de novo.";
     }
     if (error.code === "validation_error") {
       return "Revise os campos: algum valor não foi aceito.";
@@ -295,4 +366,21 @@ export function trainingPublicationErrorMessage(
 
 export function skillOptionsErrorMessage(): string {
   return "Não foi possível carregar as competências. Tente novamente.";
+}
+
+export function jobOptionsErrorMessage(): string {
+  return "Não foi possível carregar as vagas. Tente novamente.";
+}
+
+/** Which relation `training_relation_not_found` refers to, from its field. */
+export function missingRelation(
+  error: unknown,
+): "skill_ids" | "job_ids" | null {
+  if (
+    !(error instanceof ApiError) ||
+    error.code !== "training_relation_not_found"
+  ) {
+    return null;
+  }
+  return error.errors?.job_ids ? "job_ids" : "skill_ids";
 }
