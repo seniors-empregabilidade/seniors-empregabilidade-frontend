@@ -160,6 +160,35 @@ describe("ApplicationsPage", () => {
     ).toBeInTheDocument();
   });
 
+  it("must count a single day in process in the singular", async () => {
+    vi.spyOn(applicationsApi, "fetchApplications").mockResolvedValue([
+      { ...mockApplications[0]!, days_in_process: 1 },
+    ]);
+
+    renderWithClient(<ApplicationsPage />);
+
+    expect(
+      await screen.findByText("Enviada em 4 de agosto · 1 dia em processo."),
+    ).toBeVisible();
+  });
+
+  it("must agree the similar jobs sentence with a single open job", async () => {
+    const rejected = mockApplications[1]!;
+    vi.spyOn(applicationsApi, "fetchApplications").mockResolvedValue([
+      { ...rejected, similar_jobs: [rejected.similar_jobs[0]!] },
+    ]);
+
+    renderWithClient(<ApplicationsPage />);
+
+    expect(
+      await screen.findByText(
+        (_, element) =>
+          element?.tagName === "P" &&
+          element.textContent === "Há 1 vaga parecida aberta agora.",
+      ),
+    ).toBeVisible();
+  });
+
   it.each([
     {
       status: "in_selection_process" as const,

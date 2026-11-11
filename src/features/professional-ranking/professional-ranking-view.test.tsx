@@ -20,12 +20,14 @@ function applicant(
   city: string | null = "Porto Alegre",
   state: string | null = "RS",
   origin: "application" | "automatic_match" = "application",
+  applicationType: "active" | "automatic" = "active",
 ) {
   const automatic = origin === "automatic_match";
 
   return {
     origin,
     application_id: automatic ? null : id,
+    application_type: automatic ? null : applicationType,
     status: automatic ? null : "applied",
     match_score: null,
     compatibility_percentage: percentage,
@@ -56,9 +58,12 @@ beforeEach(() => {
   getMock.mockResolvedValue({ data: PAYLOAD });
 });
 
-function renderView(
-  onViewResume?: (applicant: { profile: { full_name: string } }) => void,
-) {
+type ResumeHandler = (applicant: { profile: { full_name: string } }) => void;
+type ContactHandler = (applicant: {
+  profile: { full_name: string; candidate_id: string };
+}) => void;
+
+function renderView(onViewResume?: ResumeHandler, onContact?: ContactHandler) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -68,6 +73,7 @@ function renderView(
       <ProfessionalRankingView
         jobId="job-1"
         {...(onViewResume ? { onViewResume } : {})}
+        {...(onContact ? { onContact } : {})}
       />
     </QueryClientProvider>,
   );
@@ -152,6 +158,108 @@ describe("ProfessionalRankingView", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("não mostra botão de contato sem a ação", async () => {
+    renderView();
+
+    await screen.findByText("Marcos Silveira");
+
+    expect(
+      screen.queryByRole("button", { name: /Entrar em contato/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("mostra a coluna de ações só com contato, sem botão de currículo", async () => {
+    renderView(undefined, vi.fn());
+
+    await screen.findByText("Marcos Silveira");
+
+    expect(
+      screen.getByRole("columnheader", { name: "Ações" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("button", { name: /Entrar em contato/ }),
+    ).toHaveLength(5);
+    expect(
+      screen.queryByRole("button", { name: /Ver currículo/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("mostra currículo e contato lado a lado quando as duas ações existem", async () => {
+    renderView(vi.fn(), vi.fn());
+
+    const row = (await screen.findByText("Marcos Silveira")).closest(
+      "tr",
+    ) as HTMLElement;
+
+    expect(
+      within(row).getByRole("button", {
+        name: "Ver currículo de Marcos Silveira",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(row).getByRole("button", {
+        name: "Entrar em contato com Marcos Silveira",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("entrega o profissional certo ao contato, inclusive abaixo de 50%", async () => {
+    const onContact = vi.fn();
+    const user = userEvent.setup();
+    renderView(undefined, onContact);
+
+    const row = (await screen.findByText("Antônio Ferraz")).closest(
+      "tr",
+    ) as HTMLElement;
+    await user.click(
+      within(row).getByRole("button", {
+        name: "Entrar em contato com Antônio Ferraz",
+      }),
+    );
+
+    expect(onContact).toHaveBeenCalledOnce();
+    const [clicked] = onContact.mock.lastCall as [
+      { profile: { full_name: string; candidate_id: string } },
+    ];
+    expect(clicked.profile.full_name).toBe("Antônio Ferraz");
+    expect(clicked.profile.candidate_id).toBe("c-a-5");
+  });
+
+  it("permite contato com match automático, que não tem candidatura", async () => {
+    getMock.mockResolvedValue({
+      data: {
+        ...PAYLOAD,
+        automatic_match_count: 1,
+        applicants: [
+          applicant(
+            "a-7",
+            "Paula Auto",
+            "60.00",
+            3,
+            5,
+            "Canoas",
+            "RS",
+            "automatic_match",
+          ),
+        ],
+      },
+    });
+    const onContact = vi.fn();
+    const user = userEvent.setup();
+    renderView(undefined, onContact);
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "Entrar em contato com Paula Auto",
+      }),
+    );
+
+    const [clicked] = onContact.mock.lastCall as [
+      { profile: { full_name: string; candidate_id: string } },
+    ];
+    expect(clicked.profile.candidate_id).toBe("c-a-7");
+  });
+
   it("nomeia as competências que formam o percentual", async () => {
     getMock.mockResolvedValue({
       data: {
@@ -226,6 +334,54 @@ describe("ProfessionalRankingView", () => {
     expect(
       within(applied).getByText("Candidatou-se à vaga"),
     ).toBeInTheDocument();
+  });
+
+  it("não diz que se candidatou quem foi candidatado pela plataforma", async () => {
+    getMock.mockResolvedValue({
+      data: {
+        ...PAYLOAD,
+        total_applicant_count: 2,
+        applicants: [
+          applicant("a-1", "Marcos Silveira", 100, 5, 5),
+          applicant(
+            "a-8",
+            "Rita Automática",
+            100,
+            5,
+            5,
+            "Canoas",
+            "RS",
+            "application",
+            "automatic",
+          ),
+        ],
+      },
+    });
+    const user = userEvent.setup();
+
+    renderView();
+
+    const automaticRow = (await screen.findByText("Rita Automática")).closest(
+      "tr",
+    ) as HTMLElement;
+    const activeRow = screen
+      .getByText("Marcos Silveira")
+      .closest("tr") as HTMLElement;
+    expect(
+      within(automaticRow).getByText("Candidatura automática"),
+    ).toBeInTheDocument();
+    expect(
+      within(automaticRow).queryByText("Candidatou-se à vaga"),
+    ).not.toBeInTheDocument();
+    expect(
+      within(activeRow).getByText("Candidatou-se à vaga"),
+    ).toBeInTheDocument();
+    // A mesma compatibilidade, seja quem for que fez a candidatura.
+    expect(within(automaticRow).getByText("100%")).toBeInTheDocument();
+    expect(within(activeRow).getByText("100%")).toBeInTheDocument();
+    // Continua sendo uma candidatura: entra no filtro de candidaturas.
+    await user.click(screen.getByRole("button", { name: "Candidaturas (2)" }));
+    expect(bodyRows()).toHaveLength(2);
   });
 
   it("filtra a lista por origem e informa as quantidades", async () => {

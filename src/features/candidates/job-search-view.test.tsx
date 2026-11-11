@@ -1,4 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRouter,
+  RouterContextProvider,
+} from "@tanstack/react-router";
 import type { ReactElement } from "react";
 import {
   cleanup,
@@ -19,6 +25,24 @@ import { JobSearchView } from "./job-search-view";
 vi.mock("@/lib/api-client", () => ({
   apiClient: { get: vi.fn() },
 }));
+
+// The profile is loaded apart from the job list, so the job requests keep the
+// order these tests stub them in.
+const mocks = vi.hoisted(() => ({
+  skills: [{ id: "00000000-0000-4000-8000-0000000000aa", name: "Logística" }],
+}));
+
+vi.mock("./professional-profile", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("./professional-profile")>();
+  return {
+    ...actual,
+    professionalProfileQueryOptions: {
+      ...actual.professionalProfileQueryOptions,
+      queryFn: () => Promise.resolve({ skills: mocks.skills }),
+    },
+  };
+});
 
 const baseJob = {
   id: jobDetail.id,
@@ -48,6 +72,9 @@ function render(element: ReactElement) {
 afterEach(() => {
   cleanup();
   vi.resetAllMocks();
+  mocks.skills = [
+    { id: "00000000-0000-4000-8000-0000000000aa", name: "Logística" },
+  ];
 });
 
 describe("JobSearchView", () => {
@@ -68,6 +95,89 @@ describe("JobSearchView", () => {
       ),
     ).toBeVisible();
     expect(screen.getByText(/Falta certificação NR-11/)).toBeVisible();
+    // The role shell already provides the page's only main landmark.
+    expect(screen.queryByRole("main")).not.toBeInTheDocument();
+    // The default profile has skills, so the empty résumé notice stays out.
+    expect(
+      screen.queryByText(/Seu currículo ainda não tem habilidades/),
+    ).not.toBeInTheDocument();
+  });
+
+  it("counts a single requirement in the singular and explains a job without requirements", async () => {
+    vi.spyOn(apiClient, "get").mockResolvedValueOnce({
+      data: [
+        {
+          ...baseJob,
+          id: "00000000-0000-4000-8000-000000000101",
+          title: "Vaga com um requisito",
+          matched_skill_count: 1,
+          required_skill_count: 1,
+          missing_skills: [],
+        },
+        {
+          ...baseJob,
+          id: "00000000-0000-4000-8000-000000000102",
+          title: "Vaga sem requisitos",
+          matched_skill_count: 0,
+          required_skill_count: 0,
+          missing_skills: [],
+        },
+      ],
+    });
+
+    render(<JobSearchView />);
+
+    expect(await screen.findByText("Vaga com um requisito")).toBeVisible();
+    expect(
+      screen.getByText(
+        (_, element) =>
+          element?.tagName === "P" &&
+          element.textContent ===
+            "Você atende 1 de 1 requisito. Você atende todos os requisitos.",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.getByText("Esta vaga ainda não listou requisitos de habilidades."),
+    ).toBeVisible();
+  });
+
+  it("explains how to see met requirements when the résumé has no skills", async () => {
+    mocks.skills = [];
+    vi.spyOn(apiClient, "get").mockResolvedValueOnce({ data: [baseJob] });
+    const router = createRouter({
+      routeTree: createRootRoute(),
+      history: createMemoryHistory({ initialEntries: ["/candidato/vagas"] }),
+    });
+
+    render(
+      <RouterContextProvider router={router}>
+        <JobSearchView />
+      </RouterContextProvider>,
+    );
+
+    expect(await screen.findByText("Supervisor de Logística")).toBeVisible();
+    const notice = screen.getByText(/Seu currículo ainda não tem habilidades/);
+    expect(
+      within(notice).getByRole("link", {
+        name: "Cadastre suas habilidades em Meu perfil",
+      }),
+    ).toHaveAttribute("href", "/candidato/perfil");
+  });
+
+  it("shows the company's industry and city when it has them", async () => {
+    vi.spyOn(apiClient, "get").mockResolvedValueOnce({
+      data: [
+        {
+          ...baseJob,
+          company_industry: "Logística",
+          company_city: "Canoas",
+        },
+      ],
+    });
+
+    render(<JobSearchView />);
+
+    expect(await screen.findByText("Logística · Canoas")).toBeVisible();
   });
 
   it("shows a clear empty state when nothing matches", async () => {
@@ -106,7 +216,10 @@ describe("JobSearchView", () => {
     await screen.findByText("Supervisor de Logística");
     get.mockClear();
 
-    await user.type(screen.getByLabelText(/buscar por vaga/i), "supervisor");
+    await user.type(
+      screen.getByLabelText(/buscar pelo título da vaga/i),
+      "supervisor",
+    );
 
     // Ainda dentro do debounce: não deve ter chamado de novo pra cada tecla.
     expect(get).not.toHaveBeenCalled();

@@ -236,7 +236,7 @@ describe("CandidateHome", () => {
       within(preview).getByText(/São Paulo, SP · Híbrido · até R\$\s?8\.000/),
     ).toBeVisible();
     expect(preview).toHaveTextContent(
-      "Você atende 2 dos 3 requisitos. Falta Excel.",
+      "Você atende 2 de 3 requisitos. Falta Excel.",
     );
     expect(
       within(preview).getByRole("link", {
@@ -246,6 +246,49 @@ describe("CandidateHome", () => {
     expect(
       within(card).getByRole("link", { name: "Ver todas as vagas" }),
     ).toHaveAttribute("href", "/candidato/vagas");
+  });
+
+  it("points to the profile when the résumé has no skills to compare", async () => {
+    stubApi({ jobs: [job] });
+
+    renderHome();
+
+    const card = section("Vagas abertas");
+    await within(card).findByRole("article", {
+      name: "Supervisor de Logística",
+    });
+    const notice = within(card).getByText(
+      /Seu currículo ainda não tem habilidades/,
+    );
+    expect(
+      within(notice).getByRole("link", {
+        name: "Cadastre suas habilidades em Meu perfil",
+      }),
+    ).toHaveAttribute("href", "/candidato/perfil");
+  });
+
+  it("does not show the skills notice when the résumé has skills", async () => {
+    stubApi({
+      profile: {
+        ...profile,
+        skills: [{ id: "s2", name: "Logística", type: "hard" }],
+      },
+      jobs: [job],
+    });
+
+    renderHome();
+
+    // The greeting proves the profile loaded before the notice is ruled out.
+    expect(
+      await screen.findByRole("heading", { name: "Olá, Maria!" }),
+    ).toBeVisible();
+    const card = section("Vagas abertas");
+    await within(card).findByRole("article", {
+      name: "Supervisor de Logística",
+    });
+    expect(
+      within(card).queryByText(/Seu currículo ainda não tem habilidades/),
+    ).not.toBeInTheDocument();
   });
 
   it("leaves the salary out when the job has none", async () => {

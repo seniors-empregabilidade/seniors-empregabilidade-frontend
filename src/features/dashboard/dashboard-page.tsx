@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { ExportDataButton } from "@/components/export-data-button";
+import { LoadingSkeleton } from "@/components/loading-skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -233,7 +234,7 @@ export function DashboardPage() {
         </div>
       </form>
       {dashboard.isPending ? (
-        <p role="status">Carregando indicadores...</p>
+        <LoadingSkeleton label="Carregando indicadores..." />
       ) : null}
       {dashboard.isFetching && !dashboard.isPending ? (
         <p role="status">Atualizando indicadores...</p>

@@ -78,6 +78,10 @@ describe("Sidebar", () => {
       "href",
       "/candidato/perfil",
     );
+    expect(screen.getByRole("link", { name: "Capacitação" })).toHaveAttribute(
+      "href",
+      "/candidato/capacitacao",
+    );
     expect(screen.getByRole("link", { name: "Como usar" })).toHaveAttribute(
       "href",
       "/candidato/como-usar",
@@ -95,20 +99,6 @@ describe("Sidebar", () => {
     expect(
       screen.getByRole("link", { name: "Relatórios" }),
     ).not.toHaveAttribute("aria-current");
-  });
-
-  it("shows the remaining candidate nav items as static text, not as controls", () => {
-    render(<Sidebar userType="candidate" />);
-
-    ["Capacitação"].forEach((label) => {
-      expect(screen.getByText(label)).toBeVisible();
-      expect(
-        screen.queryByRole("button", { name: label }),
-      ).not.toBeInTheDocument();
-      expect(
-        screen.queryByRole("link", { name: label }),
-      ).not.toBeInTheDocument();
-    });
   });
 
   it("links Minhas vagas to the company job list", () => {
@@ -157,12 +147,14 @@ describe("Sidebar", () => {
       "href",
       "/administrador",
     );
-    ["Empresas", "Capacitação"].forEach((label) => {
-      expect(screen.getByText(label)).toBeVisible();
-      expect(
-        screen.queryByRole("link", { name: label }),
-      ).not.toBeInTheDocument();
-    });
+    expect(screen.getByRole("link", { name: "Capacitação" })).toHaveAttribute(
+      "href",
+      "/administrador/capacitacao",
+    );
+    expect(screen.getByText("Empresas")).toBeVisible();
+    expect(
+      screen.queryByRole("link", { name: "Empresas" }),
+    ).not.toBeInTheDocument();
   });
 
   it("signs out, clears the query cache and navigates back to login", async () => {

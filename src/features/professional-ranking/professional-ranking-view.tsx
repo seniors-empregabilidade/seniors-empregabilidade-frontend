@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { Sparkles, UserCheck } from "lucide-react";
+import { Send, Sparkles, UserCheck } from "lucide-react";
 import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { requirementCountLabel } from "@/lib/requirement-count";
 
 import {
   type ApplicantOrigin,
@@ -20,11 +21,14 @@ interface ProfessionalRankingViewProps {
    * endpoint que libere o currículo para a empresa.
    */
   onViewResume?: (applicant: JobApplicant) => void;
+  /** Ação do botão "Entrar em contato" (US-29). Sem ela o botão não aparece. */
+  onContact?: (applicant: JobApplicant) => void;
 }
 
 export function ProfessionalRankingView({
   jobId,
   onViewResume,
+  onContact,
 }: ProfessionalRankingViewProps) {
   const { data, isPending, isError, refetch } = useQuery(
     jobApplicantsQueryOptions(jobId),
@@ -67,6 +71,7 @@ export function ProfessionalRankingView({
               (item) => originFilter === "all" || item.origin === originFilter,
             )}
             onViewResume={onViewResume}
+            onContact={onContact}
           />
         </>
       )}
@@ -78,10 +83,12 @@ function RankingTable({
   applicants,
   hasApplicants,
   onViewResume,
+  onContact,
 }: {
   applicants: JobApplicant[];
   hasApplicants: boolean;
   onViewResume: ((applicant: JobApplicant) => void) | undefined;
+  onContact: ((applicant: JobApplicant) => void) | undefined;
 }) {
   if (applicants.length === 0) {
     return (
@@ -93,8 +100,18 @@ function RankingTable({
     );
   }
 
+  const hasActions = Boolean(onViewResume ?? onContact);
+
   return (
-    <div className="overflow-x-auto">
+    <div
+      role="region"
+      aria-label="Tabela de profissionais da vaga"
+      // On a phone the table scrolls sideways; a focusable region lets the
+      // keyboard scroll it too (axe scrollable-region-focusable).
+      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+      tabIndex={0}
+      className="overflow-x-auto focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+    >
       <table className="w-full min-w-[680px] border-collapse text-left text-lg">
         <caption className="sr-only">
           Candidatos ordenados por compatibilidade, do maior para o menor
@@ -110,9 +127,9 @@ function RankingTable({
             <th scope="col" className="px-3 py-3">
               Requisitos atendidos
             </th>
-            {/* Sem ação de currículo ainda, a coluna some em vez de mostrar um
-                botão que não faz nada. */}
-            {onViewResume ? (
+            {/* Sem nenhuma ação, a coluna some em vez de mostrar um botão que
+                não faz nada. */}
+            {hasActions ? (
               <th scope="col" className="px-3 py-3">
                 <span className="sr-only">Ações</span>
               </th>
@@ -126,6 +143,7 @@ function RankingTable({
               applicant={applicant}
               position={index + 1}
               onViewResume={onViewResume}
+              onContact={onContact}
             />
           ))}
         </tbody>
@@ -138,17 +156,26 @@ function skillNames(skills: JobApplicant["matched_skills"]): string {
   return skills.map((skill) => skill.name).join(", ");
 }
 
-// Texto e ícone distinguem a origem; a cor é só reforço.
-function OriginBadge({ origin }: { origin: ApplicantOrigin }) {
-  return origin === "application" ? (
+// Texto e ícone distinguem a origem; a cor é só reforço. Uma candidatura
+// automática foi feita pela plataforma, então não diz que a pessoa se candidatou.
+function OriginBadge({ applicant }: { applicant: JobApplicant }) {
+  if (applicant.origin === "automatic_match") {
+    return (
+      <Badge variant="secondary" className="mt-1">
+        <Sparkles />
+        Match automático
+      </Badge>
+    );
+  }
+  return applicant.application_type === "automatic" ? (
+    <Badge variant="outline" className="mt-1">
+      <Send />
+      Candidatura automática
+    </Badge>
+  ) : (
     <Badge variant="outline" className="mt-1">
       <UserCheck />
       Candidatou-se à vaga
-    </Badge>
-  ) : (
-    <Badge variant="secondary" className="mt-1">
-      <Sparkles />
-      Match automático
     </Badge>
   );
 }
@@ -199,10 +226,12 @@ function RankingRow({
   applicant,
   position,
   onViewResume,
+  onContact,
 }: {
   applicant: JobApplicant;
   position: number;
   onViewResume: ((applicant: JobApplicant) => void) | undefined;
+  onContact: ((applicant: JobApplicant) => void) | undefined;
 }) {
   const { profile, compatibility_percentage: percentage } = applicant;
   const highlighted = applicant.is_highlighted;
@@ -223,7 +252,7 @@ function RankingRow({
         {location ? (
           <p className="text-base text-foreground-2">{location}</p>
         ) : null}
-        <OriginBadge origin={applicant.origin} />
+        <OriginBadge applicant={applicant} />
       </td>
       <td className="px-3 py-4">
         {percentage === null ? (
@@ -251,10 +280,15 @@ function RankingRow({
         )}
       </td>
       <td className="px-3 py-4">
-        <p className="text-base text-foreground">
-          {applicant.matched_skill_count} de {applicant.required_skill_count}{" "}
-          requisitos
-        </p>
+        {/* Without requirements the compatibility cell already explains it. */}
+        {applicant.required_skill_count > 0 ? (
+          <p className="text-base text-foreground">
+            {requirementCountLabel(
+              applicant.matched_skill_count,
+              applicant.required_skill_count,
+            )}
+          </p>
+        ) : null}
         {/* Os critérios que formam o percentual (US-19). */}
         {applicant.matched_skills.length > 0 ? (
           <p className="mt-1 text-base text-foreground">
@@ -269,18 +303,28 @@ function RankingRow({
           </p>
         ) : null}
       </td>
-      {onViewResume ? (
+      {(onViewResume ?? onContact) ? (
         <td className="px-3 py-4">
-          {/* Disponível para todos, inclusive abaixo de 50%. */}
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onViewResume(applicant)}
-          >
-            {/* Space outside the span, or the name reads "currículode". */}
-            Ver currículo{" "}
-            <span className="sr-only">de {profile.full_name}</span>
-          </Button>
+          {/* Disponíveis para todos, inclusive abaixo de 50%. */}
+          <div className="flex flex-wrap gap-2">
+            {onViewResume ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onViewResume(applicant)}
+              >
+                {/* Space outside the span, or the name reads "currículode". */}
+                Ver currículo{" "}
+                <span className="sr-only">de {profile.full_name}</span>
+              </Button>
+            ) : null}
+            {onContact ? (
+              <Button type="button" onClick={() => onContact(applicant)}>
+                Entrar em contato{" "}
+                <span className="sr-only">com {profile.full_name}</span>
+              </Button>
+            ) : null}
+          </div>
         </td>
       ) : null}
     </tr>

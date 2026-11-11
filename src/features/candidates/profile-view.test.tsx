@@ -114,6 +114,8 @@ describe("ProfileView", () => {
     expect(screen.getByText("MBA em Gestão Empresarial")).toBeVisible();
     expect(screen.getByText("FGV · 2011")).toBeVisible();
     expect(screen.getByText("Liderança")).toBeVisible();
+    // The role shell already provides the page's only main landmark.
+    expect(screen.queryByRole("main")).not.toBeInTheDocument();
   });
 
   it("shows empty states for sections with no data", async () => {

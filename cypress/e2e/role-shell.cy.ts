@@ -18,6 +18,14 @@ function stubCurrentUser(userType: string): void {
     statusCode: 200,
     body: { items: [], unread_count: 3, next_cursor: null },
   }).as("unreadCount");
+
+  cy.intercept("GET", "**/support/contact", {
+    statusCode: 200,
+    body: {
+      whatsapp_number: "5551999990000",
+      initial_message: "Olá! Preciso de ajuda.",
+    },
+  }).as("supportContact");
 }
 
 function visitRoleArea(
@@ -38,6 +46,7 @@ function visitRoleArea(
     .its("request.headers.authorization")
     .should("eq", "Bearer e2e-access-token");
   if (userType !== "administrator") cy.wait("@unreadCount");
+  cy.wait("@supportContact");
   cy.get("aside").should("be.visible");
 }
 
@@ -54,7 +63,13 @@ describe("role area shell", () => {
     cy.get('a[href="/candidato/notificacoes"]')
       .should("be.visible")
       .and("contain.text", "Notificações 3 não lidas");
-    cy.contains("Suporte no WhatsApp").should("be.visible");
+    cy.contains("a", "Suporte no WhatsApp")
+      .should("be.visible")
+      .and("have.attr", "href")
+      .and("match", /^https:\/\/wa\.me\/5551999990000\?/);
+    cy.contains("a", "Suporte no WhatsApp")
+      .should("have.attr", "target", "_blank")
+      .and("have.attr", "rel", "noopener noreferrer");
   });
 
   it("navigates from Relatórios to Meu perfil, staying inside the shell", () => {

@@ -1,7 +1,12 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { stubApiRoutes, type ApiStub } from "../../../tests/api-stub";
 
 import { RoleShell } from "./role-shell";
+import { supportContactQueryKey } from "./support-contact";
 
 const navigateMock = vi.fn();
 
@@ -24,9 +29,42 @@ vi.mock("@tanstack/react-router", () => ({
   ),
 }));
 
+let stub: ApiStub | undefined;
+
+beforeEach(() => {
+  stub = stubApiRoutes({
+    "GET /support/contact": {
+      status: 200,
+      data: {
+        whatsapp_number: "5551999990000",
+        initial_message: "Olá! Preciso de ajuda.",
+      },
+    },
+  });
+});
+
+afterEach(() => {
+  stub?.restore();
+  stub = undefined;
+});
+
+function renderShell(ui: ReactNode) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+  return client;
+}
+
+async function settled(client: QueryClient) {
+  await waitFor(() =>
+    expect(client.isFetching({ queryKey: supportContactQueryKey })).toBe(0),
+  );
+}
+
 describe("RoleShell", () => {
-  it("shows the header, sidebar and support button for the candidate area", () => {
-    render(
+  it("shows the header, sidebar and support button for the candidate area", async () => {
+    const client = renderShell(
       <RoleShell userType="candidate">
         <p>Conteúdo da página</p>
       </RoleShell>,
@@ -35,11 +73,14 @@ describe("RoleShell", () => {
     expect(screen.getByText("Área do candidato")).toBeVisible();
     expect(screen.getByText("Olá!")).toBeVisible();
     expect(screen.getByText("Conteúdo da página")).toBeVisible();
-    expect(screen.getByText("Suporte no WhatsApp")).toBeVisible();
+    expect(
+      await screen.findByRole("link", { name: /Suporte no WhatsApp/ }),
+    ).toBeVisible();
+    await settled(client);
   });
 
-  it("omits the greeting header for the company area", () => {
-    render(
+  it("omits the greeting header for the company area", async () => {
+    const client = renderShell(
       <RoleShell userType="company">
         <p>Conteúdo da página</p>
       </RoleShell>,
@@ -47,10 +88,11 @@ describe("RoleShell", () => {
 
     expect(screen.getByText("Área da empresa")).toBeVisible();
     expect(screen.queryByText("Olá!")).not.toBeInTheDocument();
+    await settled(client);
   });
 
-  it("omits the greeting header for the administrator area", () => {
-    render(
+  it("omits the greeting header for the administrator area", async () => {
+    const client = renderShell(
       <RoleShell userType="administrator">
         <p>Conteúdo da página</p>
       </RoleShell>,
@@ -58,10 +100,11 @@ describe("RoleShell", () => {
 
     expect(screen.getByText("Administração")).toBeVisible();
     expect(screen.queryByText("Olá!")).not.toBeInTheDocument();
+    await settled(client);
   });
 
-  it("shows the header with the route's action for the company area", () => {
-    render(
+  it("shows the header with the route's action for the company area", async () => {
+    const client = renderShell(
       <RoleShell
         userType="company"
         headerAction={<a href="/empresa/notificacoes">Notificações</a>}
@@ -75,5 +118,6 @@ describe("RoleShell", () => {
       "href",
       "/empresa/notificacoes",
     );
+    await settled(client);
   });
 });
