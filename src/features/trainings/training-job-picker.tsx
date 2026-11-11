@@ -150,7 +150,7 @@ export function TrainingJobPicker({
       ) : (
         <fieldset className="min-w-0 space-y-1" disabled={disabled}>
           <legend className="text-base leading-none font-medium">
-            Resultados da busca
+            Vagas encontradas
           </legend>
           <ul className="max-h-56 list-none overflow-y-auto rounded-lg border border-border p-2">
             {options.data.items.map((job) => {

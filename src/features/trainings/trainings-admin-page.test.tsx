@@ -394,8 +394,15 @@ describe("TrainingsAdminPage", () => {
       await screen.findByRole("dialog", { name: "Editar curso" }),
     );
 
+    // Each picker names its own results, so the two groups are told apart.
+    const jobResults = within(
+      await form.findByRole("group", { name: "Vagas encontradas" }),
+    );
+    expect(
+      await form.findByRole("group", { name: "Competências encontradas" }),
+    ).toBeVisible();
     // Each option names its company and status, since closed jobs stay listed.
-    const option = await form.findByRole("checkbox", {
+    const option = jobResults.getByRole("checkbox", {
       name: "Coordenador (Outra Empresa · Encerrada)",
     });
     await user.click(option);

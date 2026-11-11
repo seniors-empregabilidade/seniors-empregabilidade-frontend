@@ -151,7 +151,7 @@ export function TrainingSkillPicker({
       ) : (
         <fieldset className="min-w-0 space-y-1" disabled={disabled}>
           <legend className="text-base leading-none font-medium">
-            Resultados da busca
+            Competências encontradas
           </legend>
           <ul className="max-h-56 list-none overflow-y-auto rounded-lg border border-border p-2">
             {options.data.map((skill) => {
