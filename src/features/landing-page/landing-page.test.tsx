@@ -94,4 +94,17 @@ describe("LandingPage", () => {
     expect(within(footer).queryByText("Termos de uso")).toBeNull();
     expect(within(footer).queryByText(/AGES/)).toBeNull();
   });
+
+  it("shows the white brand logo in the footer", () => {
+    render(<LandingPage />);
+
+    const footer = screen.getByRole("contentinfo");
+
+    expect(
+      within(footer).getByRole("img", { name: "Seniors" }),
+    ).toHaveAttribute(
+      "src",
+      "/images/logo/logo-branca/logo-horizontal-branca.png",
+    );
+  });
 });
