@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useId, useState } from "react";
 
+import { LoadingSkeleton } from "@/components/loading-skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -130,9 +131,7 @@ export function SkillCatalogPage() {
       </div>
 
       {skills.isPending ? (
-        <p className="text-lg text-muted-foreground">
-          Carregando competências…
-        </p>
+        <LoadingSkeleton label="Carregando competências…" />
       ) : skills.isError ? (
         <div
           role="alert"

@@ -32,6 +32,7 @@ const applicant = {
   compatibility_percentage: "100.00",
   is_highlighted: true,
   application_id: applicationId,
+  application_type: "active",
   status: "applied",
   match_score: null,
   matched_skill_count: 2,
@@ -142,10 +143,29 @@ async function openCandidates(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("JobCandidatesPage", () => {
+  it("counts several applicants and full matches in the plural", async () => {
+    mount({
+      ...routes(),
+      [`GET /jobs/${jobId}/applications`]: {
+        status: 200,
+        data: {
+          ...summary,
+          total_applicant_count: 2,
+          full_match_count: 0,
+          applicants: [applicant],
+        },
+      },
+    });
+
+    expect(
+      await screen.findByText("2 candidatos · 0 atendem a todos os requisitos"),
+    ).toBeVisible();
+  });
+
   it("shows job counts, current compatibility criteria, and the safe professional profile", async () => {
     const user = mount();
     expect(
-      await screen.findByText("1 candidatos · 1 atendem a todos os requisitos"),
+      await screen.findByText("1 candidato · 1 atende a todos os requisitos"),
     ).toBeVisible();
     await openCandidates(user);
     expect(screen.getByText("Atende 2 de 2 requisitos")).toBeVisible();
@@ -243,6 +263,7 @@ describe("JobCandidatesPage", () => {
             ...applicant,
             origin: "automatic_match",
             application_id: null,
+            application_type: null,
             status: null,
             profile: {
               ...applicant.profile,
@@ -256,11 +277,52 @@ describe("JobCandidatesPage", () => {
     const user = mount(responses);
     await openCandidates(user);
     expect(
-      screen.getByText("1 perfis com match automático, sem candidatura."),
+      screen.getByText("1 perfil com match automático, sem candidatura."),
     ).toBeVisible();
     expect(screen.queryByText("Perfil automático")).not.toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Ver perfil" })).toHaveLength(
       1,
+    );
+  });
+
+  it("tells an automatic application apart from one the professional made", async () => {
+    const responses = routes();
+    responses[`GET /jobs/${jobId}/applications`] = {
+      status: 200,
+      data: {
+        ...summary,
+        total_applicant_count: 2,
+        applicants: [
+          applicant,
+          {
+            ...applicant,
+            application_id: skillId,
+            application_type: "automatic",
+            status: "under_review",
+            profile: {
+              ...applicant.profile,
+              candidate_id: skillId,
+              full_name: "Pessoa Automática",
+            },
+          },
+        ],
+      },
+    };
+    const user = mount(responses);
+    await openCandidates(user);
+    const note =
+      "Candidatura automática: a plataforma candidatou este profissional pela compatibilidade com a vaga.";
+    const automaticCard = screen
+      .getByRole("heading", { name: "Pessoa Automática" })
+      .closest("article");
+    const activeCard = screen
+      .getByRole("heading", { name: "Pessoa Exemplo" })
+      .closest("article");
+    expect(automaticCard).toHaveTextContent(note);
+    expect(activeCard).not.toHaveTextContent("Candidatura automática");
+    // An automatic application is a real one: the company manages it as usual.
+    expect(screen.getAllByRole("button", { name: "Ver perfil" })).toHaveLength(
+      2,
     );
   });
 

@@ -68,9 +68,9 @@ Abra [http://localhost:5173](http://localhost:5173). Você deve ver a página in
 
 Volte ao terminal onde `pnpm dev` está em execução e pressione `Ctrl+C`. Isso encerra apenas o servidor de desenvolvimento; não remove arquivos nem dependências.
 
-## Variáveis de ambiente (opcional)
+## Variáveis de ambiente
 
-A URL local da API já possui o padrão `http://localhost:8000/api/v1`, então não é necessário criar um arquivo de ambiente no início. Para apontar para outra API, copie o exemplo uma vez e edite `VITE_API_URL`:
+No `pnpm dev`, a URL local da API já possui o padrão `http://localhost:8000/api/v1`. O build de produção não tem esse padrão: sem `VITE_API_URL`, `pnpm build` termina, mas a página falha ao carregar. Por isso `pnpm validate:push` e o hook de pre-push, que testam esse build no navegador, exigem o arquivo de ambiente. Crie-o uma vez a partir do exemplo, que já usa o mesmo valor da CI, e edite `VITE_API_URL` se precisar apontar para outra API:
 
 **Bash (Linux, macOS ou WSL):**
 

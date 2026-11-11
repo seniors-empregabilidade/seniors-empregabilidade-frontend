@@ -93,7 +93,7 @@ export function ProfileView() {
   }
 
   return (
-    <main className="min-h-full bg-muted p-4 md:p-8">
+    <div className="min-h-full bg-muted p-4 md:p-8">
       <div className="mb-6 flex items-start justify-between gap-3">
         <h1 className="text-3xl font-bold text-foreground">Meu perfil</h1>
         <Button
@@ -151,7 +151,7 @@ export function ProfileView() {
           )}
         </div>
       </div>
-    </main>
+    </div>
   );
 }
 
@@ -453,7 +453,7 @@ function EmptyState({ message }: { message: string }) {
 
 function ProfileSkeleton() {
   return (
-    <main className="min-h-full animate-pulse bg-muted p-8 motion-reduce:animate-none">
+    <div className="min-h-full animate-pulse bg-muted p-8 motion-reduce:animate-none">
       <div className="mb-8 flex items-center gap-6">
         <div className="h-26 w-26 rounded-full bg-accent" />
         <div className="flex flex-1 flex-col gap-2">
@@ -464,7 +464,7 @@ function ProfileSkeleton() {
       </div>
       <div className="mb-4 h-30 rounded-lg bg-accent" />
       <div className="h-50 rounded-lg bg-accent" />
-    </main>
+    </div>
   );
 }
 
@@ -476,7 +476,7 @@ function ProfileErrorState({
   onRetry: () => void;
 }) {
   return (
-    <main className="flex min-h-full items-center justify-center bg-muted p-8">
+    <div className="flex min-h-full items-center justify-center bg-muted p-8">
       <div
         role="alert"
         className="flex max-w-md flex-col gap-4 rounded-lg border border-destructive bg-background p-6"
@@ -489,6 +489,6 @@ function ProfileErrorState({
           Tentar novamente
         </Button>
       </div>
-    </main>
+    </div>
   );
 }
