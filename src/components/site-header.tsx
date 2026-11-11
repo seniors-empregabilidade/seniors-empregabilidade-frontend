@@ -3,16 +3,6 @@ import { Link } from "@tanstack/react-router";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-function BrandMark() {
-  return (
-    <span className="flex items-center gap-1" aria-hidden="true">
-      <span className="size-2.5 rounded-full bg-foreground" />
-      <span className="size-2.5 rounded-full bg-foreground-2" />
-      <span className="size-2.5 rounded-full bg-border" />
-    </span>
-  );
-}
-
 const navLink =
   "rounded-md text-base text-foreground-2 underline underline-offset-4 hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none";
 
@@ -33,14 +23,17 @@ export function SiteHeader({
           to="/"
           className="flex items-center gap-3 rounded-md focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
         >
-          <BrandMark />
-          <span className="block">
-            <span className="block text-xl font-bold text-foreground">
-              Seniors
-            </span>
-            <span className="block text-base text-muted-foreground">
-              Conectando experiência a novas oportunidades
-            </span>
+          {/* O nome "Seniors" já faz parte da imagem: o alt o expõe aos leitores de tela. */}
+          <img
+            src="/images/logo/logo-horizontal-transparente.png"
+            alt="Seniors"
+            width={142}
+            height={48}
+            className="h-12 w-auto"
+          />
+          {/* Quebra em duas linhas para não alargar o cabeçalho e empurrar o menu. */}
+          <span className="block max-w-56 text-base leading-snug text-muted-foreground">
+            Conectando experiência a novas oportunidades
           </span>
         </Link>
 

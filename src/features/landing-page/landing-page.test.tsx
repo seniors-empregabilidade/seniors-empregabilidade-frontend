@@ -95,4 +95,17 @@ describe("LandingPage", () => {
     expect(within(footer).getByText("Cadastrar empresa")).toBeVisible();
     expect(within(footer).getByText("Sobre nós")).toBeVisible();
   });
+
+  it("shows the white brand logo in the footer", () => {
+    render(<LandingPage />);
+
+    const footer = screen.getByRole("contentinfo");
+
+    expect(
+      within(footer).getByRole("img", { name: "Seniors" }),
+    ).toHaveAttribute(
+      "src",
+      "/images/logo/logo-branca/logo-horizontal-branca.png",
+    );
+  });
 });
