@@ -53,7 +53,7 @@ function visitCourseSearch(): void {
 
 describe("course search", () => {
   it("filters courses by skill and opens a safe external link", () => {
-    cy.intercept("GET", "**/trainings*", (request) => {
+    cy.intercept("GET", "**/api/v1/trainings*", (request) => {
       const skill = new URL(request.url).searchParams.get("skill");
       request.reply({
         body: coursePage(skill === "Excel" ? [] : [course, unsafeCourse]),
@@ -91,7 +91,7 @@ describe("course search", () => {
 
   it("recovers from a failed load", () => {
     let failed = false;
-    cy.intercept("GET", "**/trainings*", (request) => {
+    cy.intercept("GET", "**/api/v1/trainings*", (request) => {
       if (!failed) {
         failed = true;
         request.reply({
@@ -115,9 +115,9 @@ describe("course search", () => {
   });
 
   it("has no detectable WCAG 2.2 AA violations", () => {
-    cy.intercept("GET", "**/trainings*", { body: coursePage([course]) }).as(
-      "courses",
-    );
+    cy.intercept("GET", "**/api/v1/trainings*", {
+      body: coursePage([course]),
+    }).as("courses");
     visitCourseSearch();
     cy.wait("@courses");
     cy.contains("NR-11: movimentação de cargas").should("be.visible");
