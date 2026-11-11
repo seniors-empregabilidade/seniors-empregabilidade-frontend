@@ -3,7 +3,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   clearSession,
   readAccessToken,
+  readRefreshToken,
   writeAccessToken,
+  writeRefreshToken,
 } from "@/lib/session-storage";
 
 afterEach(() => {
@@ -37,6 +39,15 @@ describe("session storage", () => {
       "access-token-value",
     );
     expect(window.localStorage.length).toBe(0);
+  });
+
+  it("clears the refresh token with the session and keeps it out of localStorage", () => {
+    writeRefreshToken("refresh-token-value");
+    expect(readRefreshToken()).toBe("refresh-token-value");
+    expect(window.localStorage.length).toBe(0);
+
+    clearSession();
+    expect(readRefreshToken()).toBeNull();
   });
 
   it("behaves like a signed-out visitor when the browser blocks storage", () => {
