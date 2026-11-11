@@ -14,8 +14,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  frontend:
-    name: Frontend CI
+  checks:
+    name: Checks
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -58,11 +58,49 @@ jobs:
       - name: Run tests with coverage
         run: pnpm test:coverage
 
+  e2e:
+    name: Browser smoke tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      VITE_API_URL: http://localhost:8000/api/v1
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Build
         run: pnpm build
 
       - name: Run browser smoke tests
         run: pnpm e2e:ci
+
+  # Keeps the required status check name stable while the work runs in parallel jobs.
+  frontend:
+    name: Frontend CI
+    needs: [checks, e2e]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Require every job to succeed
+        env:
+          RESULTS: ${{ needs.checks.result }} ${{ needs.e2e.result }}
+        run: test "$RESULTS" = "success success"
 
   deploy:
     name: Deploy
