@@ -16,13 +16,14 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ApiError } from "@/lib/api-error";
 
+import { TrainingJobPicker } from "./training-job-picker";
 import { TrainingSkillPicker } from "./training-skill-picker";
 import {
   type AdminTraining,
   adminTrainingsQueryKey,
   createTraining,
+  missingRelation,
   TRAINING_INSTITUTION_MAX_LENGTH,
   TRAINING_LINK_MAX_LENGTH,
   TRAINING_TITLE_MAX_LENGTH,
@@ -55,6 +56,7 @@ function initialValues(
       external_link: "",
       published: false,
       skills: [],
+      jobs: [],
     };
   }
   return {
@@ -64,13 +66,8 @@ function initialValues(
     external_link: training.external_link,
     published: training.published,
     skills: training.skills,
+    jobs: training.jobs,
   };
-}
-
-function isRelationNotFound(error: unknown): boolean {
-  return (
-    error instanceof ApiError && error.code === "training_relation_not_found"
-  );
 }
 
 export function TrainingFormDialog({
@@ -115,19 +112,24 @@ export function TrainingFormDialog({
     },
   });
   const pending = mutation.isPending;
-  const relationProblem =
-    mutation.isError && isRelationNotFound(mutation.error)
-      ? trainingSaveErrorMessage(mutation.error)
-      : undefined;
+  const relation = mutation.isError ? missingRelation(mutation.error) : null;
+  const relationProblem = relation
+    ? trainingSaveErrorMessage(mutation.error)
+    : undefined;
   const failure =
-    mutation.isError && !relationProblem
+    mutation.isError && !relation
       ? trainingSaveErrorMessage(mutation.error)
       : null;
   const titleProblem = errors.title?.message;
   const institutionProblem = errors.institution?.message;
   const modeProblem = errors.mode?.message;
   const linkProblem = errors.external_link?.message;
-  const skillsProblem = errors.skills?.message ?? relationProblem;
+  const skillsProblem =
+    errors.skills?.message ??
+    (relation === "skill_ids" ? relationProblem : undefined);
+  const jobsProblem =
+    errors.jobs?.message ??
+    (relation === "job_ids" ? relationProblem : undefined);
 
   return (
     <Dialog
@@ -288,13 +290,18 @@ export function TrainingFormDialog({
             )}
           />
 
-          {training && training.job_ids.length > 0 ? (
-            <p className="text-base text-muted-foreground">
-              Este curso está relacionado a {training.job_ids.length}{" "}
-              {training.job_ids.length === 1 ? "vaga" : "vagas"}. As relações
-              com vagas são mantidas ao salvar.
-            </p>
-          ) : null}
+          <Controller
+            control={control}
+            name="jobs"
+            render={({ field }) => (
+              <TrainingJobPicker
+                value={field.value}
+                onChange={field.onChange}
+                disabled={pending}
+                errorMessage={jobsProblem}
+              />
+            )}
+          />
 
           <div className="space-y-1">
             <label className={choiceClassName}>
