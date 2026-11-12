@@ -67,7 +67,7 @@ describe("LandingPage", () => {
     ).toBeVisible();
     expect(
       within(section as HTMLElement).getByRole("heading", {
-        name: "Capacitação ligada à vaga",
+        name: "Cursos por habilidade",
       }),
     ).toBeVisible();
   });
@@ -77,23 +77,22 @@ describe("LandingPage", () => {
 
     expect(screen.getByText("Gratuita para candidatos")).toBeVisible();
     expect(screen.getByText("Empresas identificadas por CNPJ")).toBeVisible();
-    expect(screen.getByText("Sem filtro por idade")).toBeVisible();
+    expect(screen.getByText("Empresas não veem sua idade")).toBeVisible();
   });
 
-  it("shows the footer with candidate, company and institutional links", () => {
+  it("shows only working footer links and no placeholder items", () => {
     render(<LandingPage />);
 
     const footer = screen.getByRole("contentinfo");
 
     expect(
-      within(footer).getByText("Para candidatos", { exact: false }),
-    ).toBeVisible();
+      within(footer).getByRole("link", { name: "Criar conta" }),
+    ).toHaveAttribute("href", "/cadastro");
     expect(
-      within(footer).getByText("Para empresas", { exact: false }),
-    ).toBeVisible();
-    expect(within(footer).getByText("Buscar vagas")).toBeVisible();
-    expect(within(footer).getByText("Cadastrar empresa")).toBeVisible();
-    expect(within(footer).getByText("Sobre nós")).toBeVisible();
+      within(footer).getByRole("link", { name: "Cadastrar empresa" }),
+    ).toHaveAttribute("href", "/cadastro-empresa");
+    expect(within(footer).queryByText("Termos de uso")).toBeNull();
+    expect(within(footer).queryByText(/AGES/)).toBeNull();
   });
 
   it("shows the white brand logo in the footer", () => {
