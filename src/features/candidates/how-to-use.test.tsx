@@ -53,6 +53,26 @@ describe("HowToUsePage", () => {
     });
   });
 
+  it("shows a screen capture that exists for every step", () => {
+    const capturesInPublic = Object.keys(
+      import.meta.glob("/public/images/como-usar/*.webp"),
+    ).map((path) => path.replace("/public", ""));
+    render(<HowToUsePage />);
+
+    const images = screen.getAllByRole("img");
+    expect(images.map((image) => image.getAttribute("src"))).toEqual([
+      "/images/como-usar/meu-perfil.webp",
+      "/images/como-usar/vagas.webp",
+      "/images/como-usar/detalhe-da-vaga.webp",
+      "/images/como-usar/candidaturas.webp",
+    ]);
+    images.forEach((image) => {
+      expect(capturesInPublic).toContain(image.getAttribute("src"));
+      expect(image).toHaveAttribute("width");
+      expect(image).toHaveAttribute("height");
+    });
+  });
+
   it("points to support without promising hours or unconfirmed features", () => {
     render(<HowToUsePage />);
 
