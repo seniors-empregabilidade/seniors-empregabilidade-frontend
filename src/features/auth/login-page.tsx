@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ApiError } from "@/lib/api-error";
-import { writeAccessToken } from "@/lib/session-storage";
+import { writeAccessToken, writeRefreshToken } from "@/lib/session-storage";
 import { cn } from "@/lib/utils";
 
 import { login } from "./login";
@@ -51,6 +51,7 @@ export function LoginPage() {
     mutationFn: login,
     onSuccess: (session) => {
       writeAccessToken(session.access_token);
+      if (session.refresh_token) writeRefreshToken(session.refresh_token);
       // A previous account’s cached queries (/auth/me AND anything else,
       // e.g. a candidate's profile) must not outlive a new sign-in in this
       // same tab — clearing just one key isn't enough to guarantee that.

@@ -1,9 +1,20 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import { apiClient } from "@/lib/api-client";
-import { clearSession, writeAccessToken } from "@/lib/session-storage";
+import {
+  clearSession,
+  readAccessToken,
+  readRefreshToken,
+  writeAccessToken,
+  writeRefreshToken,
+} from "@/lib/session-storage";
 
-import { stubApi, type ApiStub } from "../../api-stub";
+import {
+  stubApi,
+  stubApiRoutes,
+  type ApiStub,
+  type StubRoute,
+} from "../../api-stub";
 
 let stub: ApiStub | undefined;
 
@@ -89,5 +100,133 @@ describe("apiClient authorization", () => {
     await apiClient.get("http://localhost:8000/api/v1/auth/me");
 
     expect(stub.requests[0]?.authorization).toBe("Bearer access-token-value");
+  });
+});
+
+const session = (access: string, refresh: string | null) => ({
+  access_token: access,
+  id_token: "id",
+  refresh_token: refresh,
+  expires_in: 900,
+  token_type: "Bearer",
+  user_id: "11111111-2222-4333-8444-555555555555",
+  user_type: "candidate",
+});
+
+describe("apiClient session refresh", () => {
+  afterEach(() => {
+    stub?.restore();
+    stub = undefined;
+    clearSession();
+  });
+
+  function signedIn(): void {
+    writeAccessToken("old-access");
+    writeRefreshToken("old-refresh");
+  }
+
+  function expiringApi(refresh: StubRoute): ApiStub {
+    return stubApiRoutes({
+      "GET /jobs": (request) =>
+        request.authorization === "Bearer new-access"
+          ? { status: 200, data: { ok: true } }
+          : { status: 401, data: { title: "Unauthorized", status: 401 } },
+      "POST /auth/refresh": refresh,
+    });
+  }
+
+  it("refreshes once on a 401, keeps the old refresh token and retries", async () => {
+    signedIn();
+    stub = expiringApi({ status: 200, data: session("new-access", null) });
+
+    const response = await apiClient.get("/jobs");
+
+    expect(response.data).toEqual({ ok: true });
+    expect(stub.requests.map((r) => `${r.method} ${r.url}`)).toEqual([
+      "get /jobs",
+      "post /auth/refresh",
+      "get /jobs",
+    ]);
+    expect(stub.requests[1]?.body).toEqual({
+      refresh_token: "old-refresh",
+      access_token: "old-access",
+    });
+    expect(readAccessToken()).toBe("new-access");
+    expect(readRefreshToken()).toBe("old-refresh");
+  });
+
+  it("stores a rotated refresh token", async () => {
+    signedIn();
+    stub = expiringApi({
+      status: 200,
+      data: session("new-access", "new-refresh"),
+    });
+
+    await apiClient.get("/jobs");
+
+    expect(readRefreshToken()).toBe("new-refresh");
+  });
+
+  it("shares one refresh between concurrent expired requests", async () => {
+    signedIn();
+    stub = expiringApi({ status: 200, data: session("new-access", null) });
+
+    await Promise.all([apiClient.get("/jobs"), apiClient.get("/jobs")]);
+
+    expect(stub.requests.filter((r) => r.url === "/auth/refresh")).toHaveLength(
+      1,
+    );
+  });
+
+  it("ends the session when the refresh token is refused", async () => {
+    signedIn();
+    stub = expiringApi({ status: 401, data: { title: "No", status: 401 } });
+
+    await expect(apiClient.get("/jobs")).rejects.toMatchObject({ status: 401 });
+
+    expect(readAccessToken()).toBeNull();
+    expect(readRefreshToken()).toBeNull();
+  });
+
+  it("keeps the session when the refresh fails for a server reason", async () => {
+    signedIn();
+    stub = expiringApi({ status: 503, data: { title: "Down", status: 503 } });
+
+    await expect(apiClient.get("/jobs")).rejects.toMatchObject({ status: 401 });
+
+    expect(readRefreshToken()).toBe("old-refresh");
+  });
+
+  it("does not retry a second 401", async () => {
+    signedIn();
+    stub = stubApiRoutes({
+      "GET /jobs": { status: 401, data: { title: "No", status: 401 } },
+      "POST /auth/refresh": { status: 200, data: session("new-access", null) },
+    });
+
+    await expect(apiClient.get("/jobs")).rejects.toMatchObject({ status: 401 });
+
+    expect(stub.requests.filter((r) => r.url === "/jobs")).toHaveLength(2);
+  });
+
+  it("does not treat wrong credentials as an expired session", async () => {
+    signedIn();
+    stub = stubApiRoutes({
+      "POST /auth/login": { status: 401, data: { title: "No", status: 401 } },
+    });
+
+    await expect(apiClient.post("/auth/login", {})).rejects.toMatchObject({
+      status: 401,
+    });
+
+    expect(stub.requests).toHaveLength(1);
+  });
+
+  it("does not refresh a visitor who never signed in", async () => {
+    stub = expiringApi({ status: 200, data: session("new-access", null) });
+
+    await expect(apiClient.get("/jobs")).rejects.toMatchObject({ status: 401 });
+
+    expect(stub.requests).toHaveLength(1);
   });
 });
