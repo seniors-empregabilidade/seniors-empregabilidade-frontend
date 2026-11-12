@@ -9,7 +9,10 @@ import {
   createTraining,
   defaultTrainingFilters,
   fetchAdminTrainings,
+  fetchJobOptions,
   fetchSkillOptions,
+  jobOptionsErrorMessage,
+  missingRelation,
   skillOptionsErrorMessage,
   trainingPublicationErrorMessage,
   trainingSaveErrorMessage,
@@ -33,6 +36,13 @@ const training = {
   published: true,
   skills: [skill],
   job_ids: ["67000000-0000-4000-8000-000000000001"],
+  jobs: [{ id: "67000000-0000-4000-8000-000000000001", title: "Analista" }],
+};
+const jobOption = {
+  id: "67000000-0000-4000-8000-000000000001",
+  title: "Analista",
+  company_name: "Empresa Sintética",
+  status: "published",
 };
 const values = {
   title: "  Excel básico ",
@@ -41,6 +51,7 @@ const values = {
   external_link: " https://example.invalid/excel ",
   published: false,
   skills: [{ ...skill, type: "hard" as const }],
+  jobs: [{ id: "67000000-0000-4000-8000-000000000001", title: "Analista" }],
 };
 
 let stub: ApiStub | undefined;
@@ -118,6 +129,10 @@ describe("trainingValuesSchema", () => {
     expect(
       trainingValuesSchema.safeParse({ ...values, skills: many }).success,
     ).toBe(false);
+    const manyJobs = many.map(({ id }) => ({ id, title: "Vaga" }));
+    expect(
+      trainingValuesSchema.safeParse({ ...values, jobs: manyJobs }).success,
+    ).toBe(false);
   });
 });
 
@@ -149,7 +164,23 @@ describe("training requests", () => {
     ).rejects.toMatchObject({ code: "invalid_training_list_response" });
   });
 
-  it("creates a course sending the skill ids and no job ids", async () => {
+  it("refuses a course without its named jobs, so saving cannot erase them", async () => {
+    const withoutJobs = Object.fromEntries(
+      Object.entries(training).filter(([key]) => key !== "jobs"),
+    );
+    stub = stubApiRoutes({
+      "GET /admin/trainings?limit=20&offset=0": {
+        status: 200,
+        data: { items: [withoutJobs], total: 1 },
+      },
+    });
+
+    await expect(
+      fetchAdminTrainings(defaultTrainingFilters),
+    ).rejects.toMatchObject({ code: "invalid_training_list_response" });
+  });
+
+  it("creates a course sending the skill and job ids", async () => {
     stub = stubApiRoutes({
       "POST /admin/trainings": { status: 201, data: training },
     });
@@ -164,10 +195,11 @@ describe("training requests", () => {
       external_link: "https://example.invalid/excel",
       published: false,
       skill_ids: [skill.id],
+      job_ids: [jobOption.id],
     });
   });
 
-  it("updates a course through PATCH keeping its jobs untouched", async () => {
+  it("updates a course through PATCH sending its jobs as the complete set", async () => {
     stub = stubApiRoutes({
       [`PATCH /admin/trainings/${training.id}`]: {
         status: 200,
@@ -177,7 +209,7 @@ describe("training requests", () => {
 
     await updateTraining(training.id, trainingValuesSchema.parse(values));
 
-    expect(stub.requests[0]?.body).not.toHaveProperty("job_ids");
+    expect(stub.requests[0]?.body).toHaveProperty("job_ids", [jobOption.id]);
     expect(stub.requests[0]?.body).toHaveProperty("skill_ids", [skill.id]);
   });
 
@@ -214,6 +246,32 @@ describe("training requests", () => {
     expect(stub.requests[1]?.params).toEqual({ limit: 20 });
   });
 
+  it("searches the jobs an administrator can relate", async () => {
+    stub = stubApiRoutes({
+      "GET /admin/jobs": {
+        status: 200,
+        data: { items: [jobOption], total: 1 },
+      },
+    });
+
+    await expect(fetchJobOptions("  ana ")).resolves.toEqual({
+      items: [jobOption],
+      total: 1,
+    });
+    expect(stub.requests[0]?.params).toEqual({ limit: 20, search: "ana" });
+
+    await fetchJobOptions("");
+    expect(stub.requests[1]?.params).toEqual({ limit: 20 });
+  });
+
+  it("refuses a malformed job list", async () => {
+    stub = stubApiRoutes({ "GET /admin/jobs": { status: 200, data: [] } });
+
+    await expect(fetchJobOptions("")).rejects.toMatchObject({
+      code: "invalid_job_options_response",
+    });
+  });
+
   it("refuses a malformed skill list", async () => {
     stub = stubApiRoutes({ "GET /skills": { status: 200, data: {} } });
 
@@ -240,6 +298,20 @@ describe("error messages", () => {
     expect(
       trainingSaveErrorMessage(apiError(422, "training_relation_not_found")),
     ).toMatch(/competência escolhida não existe mais/);
+    const missingJob = new ApiError({
+      message: "no",
+      status: 422,
+      code: "training_relation_not_found",
+      errors: { job_ids: ["Some job does not exist."] },
+    });
+    expect(trainingSaveErrorMessage(missingJob)).toMatch(
+      /vaga escolhida não existe mais/,
+    );
+    expect(missingRelation(missingJob)).toBe("job_ids");
+    expect(missingRelation(apiError(422, "training_relation_not_found"))).toBe(
+      "skill_ids",
+    );
+    expect(missingRelation(apiError(500))).toBeNull();
     expect(trainingSaveErrorMessage(apiError(422, "validation_error"))).toMatch(
       /Revise os campos/,
     );
@@ -271,5 +343,6 @@ describe("error messages", () => {
       ),
     ).toMatch(/Apenas administradores/);
     expect(skillOptionsErrorMessage()).toMatch(/competências/);
+    expect(jobOptionsErrorMessage()).toMatch(/vagas/);
   });
 });

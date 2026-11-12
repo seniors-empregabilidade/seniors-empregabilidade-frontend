@@ -1,4 +1,5 @@
-import { jobStatusLabels } from "./job-labels";
+import { jobStatusLabels } from "@/lib/job-status-labels";
+
 import { todayIsoDate } from "./job-posting-schema";
 import type { Job } from "./jobs-api";
 

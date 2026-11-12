@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { apiClient } from "@/lib/api-client";
 import { ApiError } from "@/lib/api-error";
+import { jobStatuses } from "@/lib/job-status-labels";
 
 import {
   type JobPostingValues,
@@ -13,14 +14,7 @@ import {
 const SKILL_SUGGESTION_LIMIT = 6;
 export const MIN_SKILL_SEARCH_LENGTH = 2;
 
-export const jobStatusSchema = z.enum([
-  "draft",
-  "under_review",
-  "published",
-  "paused",
-  "expired",
-  "closed",
-]);
+export const jobStatusSchema = z.enum(jobStatuses);
 
 export type JobStatus = z.infer<typeof jobStatusSchema>;
 
