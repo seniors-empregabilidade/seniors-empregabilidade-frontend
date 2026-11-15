@@ -46,7 +46,7 @@ function visitApprovedCompanyArea(): void {
   cy.wait("@currentUser")
     .its("request.headers.authorization")
     .should("eq", "Bearer e2e-access-token");
-  cy.contains("h1", "Área da empresa").should("be.visible");
+  cy.contains("h1", "Candidatos por vaga").should("be.visible");
 }
 
 function openMyJobs(): void {
