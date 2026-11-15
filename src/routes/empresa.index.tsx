@@ -1,7 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
-import { RoleHomePage } from "@/features/auth/role-home-page";
-
+// A home da empresa é a tela de Candidatos: quem abrir /empresa (digitando a
+// URL, por exemplo) cai direto nela.
 export const Route = createFileRoute("/empresa/")({
-  component: () => <RoleHomePage title="Área da empresa" />,
+  beforeLoad: () => {
+    throw redirect({ to: "/empresa/candidatos", search: {}, replace: true });
+  },
 });

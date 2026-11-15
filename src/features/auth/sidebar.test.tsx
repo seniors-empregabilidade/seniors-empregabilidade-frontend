@@ -119,13 +119,22 @@ describe("Sidebar", () => {
     expect(profile).toHaveAttribute("aria-current", "page");
   });
 
-  it("shows the remaining company nav items as static text", () => {
+  it("lists the company pages with Candidatos first and no Relatórios", () => {
     render(<Sidebar userType="company" />);
 
-    expect(screen.getByText("Relatórios")).toBeVisible();
-    expect(
-      screen.queryByRole("link", { name: "Relatórios" }),
-    ).not.toBeInTheDocument();
+    expect(screen.getAllByRole("link").map((link) => link.textContent)).toEqual(
+      ["Candidatos", "Minhas vagas", "Perfil"],
+    );
+    expect(screen.queryByText("Relatórios")).not.toBeInTheDocument();
+  });
+
+  it("links Candidatos to the company home and marks it as current", () => {
+    pathname = "/empresa/candidatos";
+    render(<Sidebar userType="company" />);
+
+    const candidates = screen.getByRole("link", { name: "Candidatos" });
+    expect(candidates).toHaveAttribute("href", "/empresa/candidatos");
+    expect(candidates).toHaveAttribute("aria-current", "page");
   });
 
   it("links administrator pages and keeps the remaining items static", () => {
