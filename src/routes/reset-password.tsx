@@ -5,7 +5,7 @@ import { z } from "zod";
 import { ResetPasswordPage } from "@/features/password-reset/reset-password-page";
 
 const resetPasswordSearchSchema = z.object({
-  email: z.string().optional(),
+  email: z.string().optional().catch(undefined),
 });
 
 export const Route = createFileRoute("/reset-password")({
