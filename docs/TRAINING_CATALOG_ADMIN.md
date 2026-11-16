@@ -19,6 +19,7 @@ All paths start with `/api/v1`.
 | `POST /admin/trainings`       | `title`, `institution`, `mode`, `external_link`, `published`, `skill_ids`, `job_ids`          | `201`: `Training`                            |
 | `PATCH /admin/trainings/{id}` | any of the same fields; `skill_ids` and `job_ids` replace the whole set                       | `200`: the updated `Training`                |
 | `GET /skills`                 | `search`, `limit`; active catalog skills only                                                 | `200`: `[Skill]`                             |
+| `GET /admin/jobs`             | `search` (job title), `limit`; jobs of every status                                           | `200`: job options                           |
 
 `Training` is `{ id, title, institution, mode, external_link, published,
 skills: [Skill], job_ids: [uuid] }`.
@@ -27,25 +28,19 @@ skills: [Skill], job_ids: [uuid] }`.
 
 - **Create/edit**: one dialog. A new course starts without a mode and
   unpublished. The form sends `skill_ids` as the complete set chosen in the
-  picker. It never sends `job_ids`, so editing a course keeps the jobs already
-  related to it.
+  picker and `job_ids` as the complete set chosen in the job picker.
 - **Inactivate**: there is no separate status. Inactivating a course sends
   `{ "published": false }` after a confirmation; reactivating sends
   `{ "published": true }` without one. The course, its skills and its jobs stay.
   The screen does not call `DELETE`.
 - **Skills**: the picker searches `GET /skills` (debounced), shows the chosen
   skills as removable items and allows at most 50, like the backend.
+- **Jobs**: the picker searches `GET /admin/jobs` by title (debounced, 20
+  options), shows company and status because closed and draft jobs are listed
+  too, and allows at most 50 jobs per course.
 - **Errors**: `404 training_not_found`, `422 training_relation_not_found` (shown
   on the skills field), `422 validation_error` and `403` have their own
   messages; other failures keep the typed values.
-
-## Known limitation: relating courses to jobs
-
-The backend lists jobs only for candidates (`GET /jobs` requires a candidate
-account), so an administrator cannot search jobs. The screen therefore shows how
-many jobs each course is related to and preserves them, but cannot add or remove
-a job. Closing this needs an administrator job listing in the backend
-(for example `GET /admin/jobs`).
 
 ## Validation
 

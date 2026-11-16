@@ -34,6 +34,15 @@ describe("jobPostingSchema", () => {
     expect(jobPostingSchema.safeParse(valid).success).toBe(true);
   });
 
+  it("accepts a description up to the 10000 characters the API stores", () => {
+    expect(messagesFor({ ...valid, description: "a".repeat(10000) })).toEqual(
+      {},
+    );
+    expect(messagesFor({ ...valid, description: "a".repeat(10001) })).toEqual({
+      description: ["Use até 10000 caracteres."],
+    });
+  });
+
   it("requires a title, a work mode, a closing date and at least one skill", () => {
     expect(
       messagesFor({

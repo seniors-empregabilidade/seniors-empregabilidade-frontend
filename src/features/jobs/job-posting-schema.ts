@@ -30,7 +30,7 @@ export type JobSkill = z.infer<typeof jobSkillSchema>;
 
 export const jobPostingSchema = z.object({
   title: required(150),
-  description: required(5000),
+  description: required(10000),
   workMode: z.enum(workModes, { error: "Escolha a modalidade de trabalho." }),
   closingDate: z
     .string()
