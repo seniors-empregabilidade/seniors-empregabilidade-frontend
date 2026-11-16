@@ -1,10 +1,16 @@
 import { Link } from "@tanstack/react-router";
 
+interface Illustration {
+  src: string;
+  width: number;
+  height: number;
+  alt: string;
+}
+
 interface Step {
   title: string;
   description: string;
-  illustration: string;
-  illustrationAlt: string;
+  illustration: Illustration;
   shortcut?: { label: string; to: string };
 }
 
@@ -16,55 +22,64 @@ const steps: Step[] = [
     title: "Complete seu currículo",
     description:
       'Em "Meu perfil" você preenche resumo, experiências, habilidades e certificações. Quanto mais completo o perfil, mais fácil é ver o que você já atende nas vagas.',
-    illustration: "tela de perfil",
-    illustrationAlt:
-      "Ilustração da tela Meu perfil, com o resumo e as experiências do candidato em blocos de texto.",
+    illustration: {
+      src: "/images/como-usar/meu-perfil.webp",
+      width: 576,
+      height: 254,
+      alt: "Ilustração da tela Meu perfil, com o nome, o resumo e a experiência do candidato.",
+    },
     shortcut: { label: "Ir para Meu perfil", to: "/candidato/perfil" },
   },
   {
     title: "Procure vagas e veja o que você já atende",
     description:
       'Em "Vagas" você busca anúncios e abre cada um para ver quantos requisitos já tem no seu perfil e quais ainda faltam.',
-    illustration: "lista de vagas",
-    illustrationAlt:
-      "Ilustração da lista de vagas, com cartões de anúncios um abaixo do outro.",
+    illustration: {
+      src: "/images/como-usar/vagas.webp",
+      width: 576,
+      height: 376,
+      alt: "Ilustração da tela Vagas, com a busca pelo título e um cartão de vaga que mostra quantos requisitos o candidato atende.",
+    },
     shortcut: { label: "Ir para Vagas", to: "/candidato/vagas" },
   },
   {
     title: "Candidate-se à vaga",
     description:
       'Abra a vaga, leia a descrição e clique em "Candidatar-se". A candidatura usa o perfil que você mantém em "Meu perfil".',
-    illustration: "detalhe da vaga",
-    illustrationAlt:
-      "Ilustração da janela de detalhes da vaga, com a descrição e o botão Candidatar-se.",
+    illustration: {
+      src: "/images/como-usar/detalhe-da-vaga.webp",
+      width: 576,
+      height: 625,
+      alt: "Ilustração da janela de detalhes da vaga, com a descrição, os requisitos e o botão Candidatar-se.",
+    },
   },
   {
     title: "Acompanhe cada processo",
     description:
       'Em "Candidaturas" você vê a situação de cada processo, há quantos dias ele está em andamento e, se quiser, pode sair dele. Consulte essa tela para ver a situação mais recente.',
-    illustration: "candidaturas",
-    illustrationAlt:
-      "Ilustração da tela Candidaturas, com a lista de processos e a situação de cada um.",
+    illustration: {
+      src: "/images/como-usar/candidaturas.webp",
+      width: 576,
+      height: 248,
+      alt: "Ilustração da tela Candidaturas, com um processo seletivo e a situação dele.",
+    },
     shortcut: { label: "Ir para Candidaturas", to: "/candidato/candidaturas" },
   },
 ];
 
-function Illustration({ label, alt }: { label: string; alt: string }) {
+// Screen captures of the test candidate, whose data is synthetic. Width and
+// height reserve the space before the file loads, so the steps do not jump.
+function StepIllustration({ illustration }: { illustration: Illustration }) {
   return (
-    <div
-      role="img"
-      aria-label={alt}
-      className="w-full rounded-lg border border-border bg-muted p-4 md:w-72 md:shrink-0"
-    >
-      <div aria-hidden="true" className="flex flex-col gap-2">
-        <div className="h-3 w-3/5 rounded bg-border" />
-        <div className="h-2 w-full rounded bg-border/70" />
-        <div className="h-2 w-4/5 rounded bg-border/70" />
-        <p className="mt-2 text-base text-muted-foreground">
-          Ilustração: {label}
-        </p>
-      </div>
-    </div>
+    <img
+      data-imagem="como-usar"
+      src={illustration.src}
+      alt={illustration.alt}
+      width={illustration.width}
+      height={illustration.height}
+      loading="lazy"
+      className="h-auto w-full rounded-lg border border-border md:w-72 md:shrink-0"
+    />
   );
 }
 
@@ -110,10 +125,7 @@ export default function HowToUsePage() {
               ) : null}
             </div>
 
-            <Illustration
-              label={step.illustration}
-              alt={step.illustrationAlt}
-            />
+            <StepIllustration illustration={step.illustration} />
           </li>
         ))}
       </ol>

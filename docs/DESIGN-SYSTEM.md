@@ -183,14 +183,17 @@ pair of actions. Applies to listings, search results, and detail views. Card bor
 
 ## 6. Image slots
 
-| Slot                           | Shape                   | Specification                                                                                                                            |
-| ------------------------------ | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `data-logo="empresa"`          | 48 × 48, radius 8       | Precedes the job title in listing, detail, modal, and history. A missing file shows the two initials in `--foreground-2` over `--accent` |
-| `data-imagem="foto-candidato"` | 104 and 72, circular    | 104px on the profile, 72px in the edit modal. Upload is optional, JPG or PNG up to 5 MB. Without a file, a circular monogram             |
-| `data-imagem="landing-hero"`   | 388px height, radius 14 | Right column of the hero. `public/images/retrato-de-mulher-com-laptop-trabalhando.webp`. Free aspect ratio, cropped by the container     |
+| Slot                           | Shape                   | Specification                                                                                                                                                                          |
+| ------------------------------ | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `data-logo="empresa"`          | 48 × 48, radius 8       | Precedes the job title in listing, detail, modal, and history. A missing file shows the two initials in `--foreground-2` over `--accent`                                               |
+| `data-imagem="foto-candidato"` | 104 and 72, circular    | 104px on the profile, 72px in the edit modal. Upload is optional, JPG or PNG up to 5 MB. Without a file, a circular monogram                                                           |
+| `data-imagem="landing-hero"`   | 388px height, radius 14 | Right column of the hero. `public/images/retrato-de-mulher-com-laptop-trabalhando.webp`. Free aspect ratio, cropped by the container                                                   |
+| `data-imagem="como-usar"`      | 288px wide, radius 10   | One per step of the "Como usar" guide, full width below `md`. Screen captures of the test candidate (synthetic data) in `public/images/como-usar/`, WebP at 576px wide for 2× displays |
 
-All slots are `aria-hidden`: the equivalent information lives in the adjacent text. They
-do not require descriptive alternative text.
+The `como-usar` captures carry descriptive alternative text, because each one shows
+where its step happens on the screen. All other slots are `aria-hidden`: the equivalent
+information lives in the adjacent text, so they do not require descriptive alternative
+text.
 
 ## 7. Spacing, radius, and targets
 
