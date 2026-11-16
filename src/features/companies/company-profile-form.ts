@@ -103,7 +103,7 @@ const BLOCKED_EMAIL =
 const saveMessages: Record<string, string> = {
   company_email_domain_blocked: BLOCKED_EMAIL,
   approved_company_required:
-    "Sua empresa ainda não foi aprovada. Assim que a aprovação sair, você poderá editar o perfil.",
+    "O perfil pode ser editado quando o cadastro da sua empresa for aprovado.",
   invalid_access_token:
     "Sua sessão expirou. Entre novamente para salvar o perfil.",
   invalid_company_profile_response:

@@ -14,7 +14,7 @@ const GENERIC_PUBLISH_ERROR =
 const GENERIC_LIST_ERROR =
   "Não foi possível carregar suas vagas. Tente novamente.";
 const AWAITING_APPROVAL =
-  "Sua empresa ainda não foi aprovada. Assim que a aprovação sair, você poderá publicar e acompanhar vagas aqui.";
+  "Esta área fica disponível quando o cadastro da sua empresa for aprovado.";
 
 // FastAPI reports a location such as "body.skills.0.name"; the domain errors
 // of the jobs module report the bare field, such as "closing_date".

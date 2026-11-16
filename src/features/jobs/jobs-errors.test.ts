@@ -69,7 +69,7 @@ describe("jobPostingFailure", () => {
           code: "approved_company_required",
         }),
       ).message,
-    ).toMatch(/ainda não foi aprovada/);
+    ).toMatch(/cadastro da sua empresa for aprovado/);
   });
 
   it.each([
@@ -177,7 +177,9 @@ describe("myJobsErrorMessage", () => {
     });
 
     expect(isAwaitingApproval(error)).toBe(true);
-    expect(myJobsErrorMessage(error)).toMatch(/ainda não foi aprovada/);
+    expect(myJobsErrorMessage(error)).toMatch(
+      /cadastro da sua empresa for aprovado/,
+    );
   });
 
   it("stays generic for any other failure", () => {

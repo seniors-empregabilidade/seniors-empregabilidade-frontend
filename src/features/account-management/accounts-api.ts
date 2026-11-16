@@ -291,3 +291,73 @@ export function statusChangeErrorMessage(error: unknown): string {
   }
   return "Não foi possível alterar o status. A justificativa foi mantida; tente novamente.";
 }
+
+export const APPROVAL_REASON_MAX_LENGTH = 2000;
+
+export type CompanyDecision =
+  { status: "approved" } | { status: "rejected"; reason: string };
+
+const companyDecisionResponseSchema = z.object({
+  id: z.uuid(),
+  status: companyStatusSchema,
+});
+
+export const companyRejectionValuesSchema = z.object({
+  reason: z
+    .string()
+    .trim()
+    .min(1, { message: "Escreva o motivo da recusa antes de confirmar." })
+    .max(APPROVAL_REASON_MAX_LENGTH, {
+      message: `Use até ${APPROVAL_REASON_MAX_LENGTH} caracteres.`,
+    }),
+});
+
+export type CompanyRejectionValues = z.infer<
+  typeof companyRejectionValuesSchema
+>;
+
+export async function decideCompanyApproval(
+  companyId: string,
+  decision: CompanyDecision,
+): Promise<z.infer<typeof companyDecisionResponseSchema>> {
+  const response = await apiClient.patch<unknown>(
+    `/companies/${encodeURIComponent(companyId)}/approval`,
+    decision,
+  );
+  const parsed = companyDecisionResponseSchema.safeParse(response.data);
+  if (!parsed.success) {
+    throw new ApiError({
+      message: "Unexpected company approval response",
+      code: "invalid_company_approval_response",
+    });
+  }
+  return parsed.data;
+}
+
+const GENERIC_DECISION_ERROR =
+  "Não foi possível registrar a decisão. Tente novamente.";
+
+const decisionMessages: Record<string, string> = {
+  company_not_pending:
+    "Esta empresa já foi analisada por outra pessoa. A lista foi atualizada.",
+  company_activity_required:
+    "Esta empresa não tem atividade econômica (CNAE) confirmada e não pode ser aprovada.",
+  company_segment_blocked:
+    "O segmento desta empresa não é aceito na plataforma. Recuse o cadastro com o motivo.",
+  company_not_found: "Esta empresa não está mais disponível. Atualize a lista.",
+  invalid_company_decision: `Escreva o motivo da recusa com até ${APPROVAL_REASON_MAX_LENGTH} caracteres.`,
+  validation_error: `Escreva o motivo da recusa com até ${APPROVAL_REASON_MAX_LENGTH} caracteres.`,
+  administrator_required:
+    "Apenas administradores podem aprovar ou recusar empresas.",
+};
+
+export function companyDecisionErrorMessage(error: unknown): string {
+  if (
+    error instanceof ApiError &&
+    error.code !== undefined &&
+    Object.hasOwn(decisionMessages, error.code)
+  ) {
+    return decisionMessages[error.code] ?? GENERIC_DECISION_ERROR;
+  }
+  return GENERIC_DECISION_ERROR;
+}

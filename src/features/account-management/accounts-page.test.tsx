@@ -11,6 +11,7 @@ import {
 } from "../../../tests/api-stub";
 import { type DownloadStub, stubDownloads } from "../../../tests/download-stub";
 
+import { defaultAccountFilters } from "./accounts-api";
 import { AccountsPage } from "./accounts-page";
 
 const candidate = {
@@ -551,5 +552,173 @@ describe("AccountsPage", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Não foi possível carregar as contas. Tente novamente.",
     );
+  });
+
+  describe("company approval", () => {
+    const pendingCompany = {
+      ...company,
+      id: "60000000-0000-4000-8000-000000000004",
+      display_name: "Empresa Pendente",
+      account_status: "active",
+      company_status: "pending",
+    };
+    const approvalRoute = `PATCH /companies/${pendingCompany.id}/approval`;
+
+    function mountPending(approval: StubRoute) {
+      return mount({
+        [firstPage]: {
+          status: 200,
+          data: { items: [pendingCompany], total: 1 },
+        },
+        [`GET /admin/accounts/${pendingCompany.id}`]: {
+          status: 200,
+          data: companyDetail(pendingCompany),
+        },
+        [approvalRoute]: approval,
+      });
+    }
+
+    async function openPending(user: ReturnType<typeof userEvent.setup>) {
+      await shown("Empresa Pendente");
+      await user.click(
+        screen.getByRole("button", {
+          name: "Ver cadastro de Empresa Pendente",
+        }),
+      );
+      await screen.findByRole("heading", { name: "Análise do cadastro" });
+    }
+
+    function approvalBody() {
+      return stub?.requests.find((request) =>
+        request.url?.endsWith("/approval"),
+      )?.body;
+    }
+
+    it("approves a pending company without sending a reason", async () => {
+      const user = mountPending({
+        status: 200,
+        data: {
+          id: pendingCompany.id,
+          email: "company@example.invalid",
+          status: "approved",
+        },
+      });
+      await openPending(user);
+
+      await user.click(screen.getByRole("button", { name: "Aprovar empresa" }));
+
+      expect(await screen.findByRole("status")).toHaveTextContent(
+        "Empresa Empresa Pendente aprovada.",
+      );
+      expect(approvalBody()).toEqual({ status: "approved" });
+    });
+
+    it("requires a reason before rejecting and sends it trimmed", async () => {
+      const user = mountPending({
+        status: 200,
+        data: {
+          id: pendingCompany.id,
+          email: "company@example.invalid",
+          status: "rejected",
+        },
+      });
+      await openPending(user);
+
+      await user.click(screen.getByRole("button", { name: "Recusar" }));
+      await user.click(
+        screen.getByRole("button", { name: "Confirmar recusa" }),
+      );
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "Escreva o motivo da recusa antes de confirmar.",
+      );
+      expect(approvalBody()).toBeUndefined();
+
+      await user.type(
+        screen.getByLabelText("Motivo da recusa"),
+        "  CNPJ sintético inativo.  ",
+      );
+      await user.click(
+        screen.getByRole("button", { name: "Confirmar recusa" }),
+      );
+
+      expect(await screen.findByRole("status")).toHaveTextContent(
+        "Cadastro de Empresa Pendente recusado.",
+      );
+      expect(approvalBody()).toEqual({
+        status: "rejected",
+        reason: "CNPJ sintético inativo.",
+      });
+    });
+
+    it("explains when another administrator already decided and refreshes the list", async () => {
+      const user = mountPending({
+        status: 409,
+        data: { title: "Conflict", status: 409, code: "company_not_pending" },
+      });
+      await openPending(user);
+      const listCalls = () =>
+        stub?.requests.filter((request) =>
+          request.url?.startsWith("/admin/accounts?"),
+        ).length ?? 0;
+      const before = listCalls();
+
+      await user.click(screen.getByRole("button", { name: "Aprovar empresa" }));
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "Esta empresa já foi analisada por outra pessoa.",
+      );
+      await waitFor(() => expect(listCalls()).toBeGreaterThan(before));
+    });
+
+    it("starts on the pending companies when given initial filters", async () => {
+      stub = stubApiRoutes(
+        {},
+        { status: 200, data: { items: [pendingCompany], total: 1 } },
+      );
+      render(
+        <QueryClientProvider client={new QueryClient()}>
+          <AccountsPage
+            title="Empresas"
+            initialFilters={{
+              ...defaultAccountFilters,
+              userType: "company",
+              companyStatus: "pending",
+            }}
+          />
+        </QueryClientProvider>,
+      );
+
+      expect(
+        await screen.findByRole("heading", { name: "Empresas" }),
+      ).toBeVisible();
+      await shown("Empresa Pendente");
+      expect(stub.requests[0]?.url).toBe(
+        "/admin/accounts?user_type=company&company_status=pending&limit=20&offset=0",
+      );
+      expect(screen.getByLabelText("Situação da empresa")).toHaveValue(
+        "pending",
+      );
+    });
+
+    it("offers no decision for a company that is not pending", async () => {
+      const user = mount({
+        [firstPage]: { status: 200, data: { items: [company], total: 1 } },
+        [`GET /admin/accounts/${company.id}`]: {
+          status: 200,
+          data: companyDetail(),
+        },
+      });
+      await shown("Empresa Sintética");
+      await user.click(
+        screen.getByRole("button", {
+          name: "Ver cadastro de Empresa Sintética",
+        }),
+      );
+      await screen.findByText("11.222.333/0001-81");
+
+      expect(
+        screen.queryByRole("button", { name: "Aprovar empresa" }),
+      ).not.toBeInTheDocument();
+    });
   });
 });

@@ -209,7 +209,7 @@ describe("CompanyProfilePage", () => {
     renderPage();
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Sua empresa ainda não foi aprovada.",
+      "O perfil fica disponível quando o cadastro da sua empresa for aprovado.",
     );
     expect(
       screen.queryByRole("button", { name: "Tentar novamente" }),

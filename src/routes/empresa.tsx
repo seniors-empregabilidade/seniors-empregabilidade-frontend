@@ -2,6 +2,7 @@ import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 import { requireRole } from "@/features/auth/require-role";
 import { RoleShell } from "@/features/auth/role-shell";
+import { CompanyStatusNotice } from "@/features/companies/company-status-notice";
 import { NotificationsButton } from "@/features/notifications/notifications-button";
 
 export const Route = createFileRoute("/empresa")({
@@ -11,6 +12,7 @@ export const Route = createFileRoute("/empresa")({
       userType="company"
       headerAction={<NotificationsButton to="/empresa/notificacoes" />}
     >
+      <CompanyStatusNotice />
       <Outlet />
     </RoleShell>
   ),
