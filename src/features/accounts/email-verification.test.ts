@@ -60,6 +60,7 @@ describe("email verification transport", () => {
   it.each([
     "invalid_verification_code",
     "too_many_attempts",
+    "rate_limited",
     "identity_provider_unavailable",
     "validation_error",
     "unknown_code",

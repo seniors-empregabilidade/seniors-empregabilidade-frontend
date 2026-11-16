@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "@/lib/api-error";
+import { readPendingEmail } from "@/lib/pending-email";
 import { clearSession, readAccessToken } from "@/lib/session-storage";
 
 import { LoginPage } from "./login-page";
@@ -180,6 +181,62 @@ describe("LoginPage", () => {
           element.textContent === "E-mail ou senha incorretos",
       }),
     ).toBeVisible();
+  });
+
+  it.each([
+    ["too_many_attempts", 429, "Foram feitas muitas tentativas"],
+    ["rate_limited", 429, "Foram feitas muitas tentativas"],
+    ["account_unavailable", 403, "Esta conta não pode entrar"],
+    ["identity_provider_unavailable", 503, "Não foi possível entrar agora"],
+    ["authentication_challenge_required", 403, "Não foi possível entrar agora"],
+    [undefined, 502, "Não foi possível entrar agora"],
+    [undefined, undefined, "Não foi possível entrar agora"],
+    ["unexpected_code", 400, "E-mail ou senha incorretos"],
+  ])(
+    "explains the %s failure (status %s) instead of blaming the password",
+    async (code, status, message) => {
+      const user = userEvent.setup();
+      vi.mocked(login).mockRejectedValueOnce(
+        new ApiError({ message: "failure", status, code }),
+      );
+
+      renderLoginPage();
+      await user.type(
+        screen.getByLabelText("Usuário (e-mail)"),
+        "usuario@exemplo.com",
+      );
+      await user.type(screen.getByLabelText("Senha"), "Senha-Valida1");
+      await user.click(screen.getByRole("button", { name: "Entrar" }));
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(message);
+    },
+  );
+
+  it("sends an unconfirmed account to the email confirmation with its address", async () => {
+    const user = userEvent.setup();
+    vi.mocked(login).mockRejectedValueOnce(
+      new ApiError({
+        message: "Conflict",
+        status: 409,
+        code: "identity_confirmation_required",
+      }),
+    );
+
+    renderLoginPage();
+    await user.type(
+      screen.getByLabelText("Usuário (e-mail)"),
+      "usuario@exemplo.com",
+    );
+    await user.type(screen.getByLabelText("Senha"), "Senha-Valida1");
+    await user.click(screen.getByRole("button", { name: "Entrar" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Seu e-mail ainda não foi confirmado",
+    );
+    expect(
+      screen.getByRole("link", { name: "Confirmar e-mail" }),
+    ).toHaveAttribute("href", "/email-verification");
+    expect(readPendingEmail()?.email).toBe("usuario@exemplo.com");
   });
 
   it("shows field errors from the API on the matching inputs", async () => {

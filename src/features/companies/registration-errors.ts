@@ -22,6 +22,8 @@ const messages: Record<string, string> = {
     "Não foi possível confirmar com esse código. Confira se ele está correto e dentro do prazo. Se já confirmou, você pode entrar na sua conta.",
   too_many_attempts:
     "Houve muitas tentativas. Aguarde um pouco antes de tentar novamente.",
+  rate_limited:
+    "Houve muitas tentativas. Aguarde alguns minutos antes de tentar novamente.",
   password_policy_violation:
     "Use pelo menos 8 caracteres, com maiúscula, minúscula, número e símbolo.",
 };
