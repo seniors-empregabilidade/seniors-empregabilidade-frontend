@@ -28,7 +28,7 @@ const fieldsByLocation: Record<string, JobPostingField> = {
 
 const fieldMessages: Record<JobPostingField, string> = {
   title: "Confira o título: use de 1 a 150 caracteres.",
-  description: "Confira a descrição: use até 5000 caracteres.",
+  description: "Confira a descrição: use até 10000 caracteres.",
   workMode: "Escolha a modalidade de trabalho.",
   closingDate: "A data de encerramento não pode estar no passado.",
   skills:
