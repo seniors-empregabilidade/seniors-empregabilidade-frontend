@@ -164,7 +164,7 @@ function visitRoleArea(role: Role): void {
     .should("eq", `Bearer ${accounts[role].token}`);
   cy.contains(
     "h1",
-    role === "company" ? "Área da empresa" : "Área do candidato",
+    role === "company" ? "Candidatos por vaga" : "Área do candidato",
   ).should("be.visible");
 }
 

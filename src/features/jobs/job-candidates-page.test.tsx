@@ -350,6 +350,49 @@ describe("JobCandidatesPage", () => {
     ).toBeVisible();
   });
 
+  it("opens the candidates right below the job that was clicked", async () => {
+    const otherJobId = "66666666-6666-4666-8666-666666666666";
+    const responses = routes();
+    responses["GET /jobs/me"] = {
+      status: 200,
+      data: [job, { ...job, id: otherJobId, title: "Analista financeiro" }],
+    };
+    responses[`GET /jobs/${otherJobId}/applications`] = {
+      status: 200,
+      data: {
+        ...summary,
+        job_id: otherJobId,
+        total_applicant_count: 0,
+        full_match_count: 0,
+        applicants: [],
+      },
+    };
+    const user = mount(responses);
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "Ver candidatos de Analista de operações",
+      }),
+    );
+
+    const clickedJob = screen
+      .getByRole("heading", { name: "Analista de operações" })
+      .closest("li");
+    const otherJob = screen
+      .getByRole("heading", { name: "Analista financeiro" })
+      .closest("li");
+    expect(
+      within(clickedJob as HTMLElement).getByRole("heading", {
+        name: "Pessoa Exemplo",
+      }),
+    ).toBeVisible();
+    expect(
+      within(otherJob as HTMLElement).queryByRole("heading", {
+        name: "Pessoa Exemplo",
+      }),
+    ).not.toBeInTheDocument();
+  });
+
   it("retries a failed candidate listing", async () => {
     const responses = routes();
     let attempts = 0;

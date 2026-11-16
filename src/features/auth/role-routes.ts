@@ -2,7 +2,7 @@ import type { UserType } from "./schema";
 
 const roleHomePaths: Record<UserType, string> = {
   candidate: "/candidato",
-  company: "/empresa",
+  company: "/empresa/candidatos",
   administrator: "/administrador",
 };
 

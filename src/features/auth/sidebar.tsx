@@ -29,9 +29,8 @@ const roleNavItems: Record<UserType, NavItem[]> = {
     { label: "Meu perfil", to: "/candidato/perfil" },
   ],
   company: [
-    { label: "Relatórios" },
-    { label: "Minhas vagas", to: "/empresa/vagas" },
     { label: "Candidatos", to: "/empresa/candidatos" },
+    { label: "Minhas vagas", to: "/empresa/vagas" },
     { label: "Perfil", to: "/empresa/perfil" },
   ],
   administrator: [

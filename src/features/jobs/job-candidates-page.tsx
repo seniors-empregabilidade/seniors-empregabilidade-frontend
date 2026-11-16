@@ -136,7 +136,6 @@ export function JobCandidatesPage({
     },
   });
 
-  const selected = jobs.data?.find((entry) => entry.job.id === selectedJobId);
   const openJobs = jobs.data?.filter(({ job }) =>
     isOpenToCandidates(job),
   ).length;
@@ -274,41 +273,42 @@ export function JobCandidatesPage({
                           : "Ver candidatos"}
                       </Button>
                     </div>
+                    {selectedJobId === job.id && (
+                      <section
+                        id="selected-job-candidates"
+                        aria-labelledby="candidates-title"
+                        className="mt-5 border-t border-border pt-5"
+                      >
+                        <h4 id="candidates-title" className="text-xl font-bold">
+                          Candidatos — {job.title}
+                        </h4>
+                        {candidates.applicants.length === 0 ? (
+                          <p className="mt-4 rounded-lg border border-border bg-background p-6 text-lg">
+                            Nenhum candidato ainda para esta vaga.
+                          </p>
+                        ) : (
+                          <ul className="mt-4 grid gap-4">
+                            {candidates.applicants.map((applicant) => (
+                              <li key={applicant.application_id}>
+                                <ApplicantCard
+                                  applicant={applicant}
+                                  busy={action.isPending}
+                                  onProfile={() => setOpenProfile(applicant)}
+                                  onAction={(status) =>
+                                    requestAction(applicant, status)
+                                  }
+                                />
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </section>
+                    )}
                   </li>
                 ))}
               </ul>
             )}
           </section>
-
-          {selected && (
-            <section
-              id="selected-job-candidates"
-              aria-labelledby="candidates-title"
-              className="mt-8"
-            >
-              <h2 id="candidates-title" className="text-2xl font-bold">
-                Candidatos — {selected.job.title}
-              </h2>
-              {selected.candidates.applicants.length === 0 ? (
-                <p className="mt-4 rounded-lg border border-border bg-background p-6 text-lg">
-                  Nenhum candidato ainda para esta vaga.
-                </p>
-              ) : (
-                <ul className="mt-4 grid gap-4">
-                  {selected.candidates.applicants.map((applicant) => (
-                    <li key={applicant.application_id}>
-                      <ApplicantCard
-                        applicant={applicant}
-                        busy={action.isPending}
-                        onProfile={() => setOpenProfile(applicant)}
-                        onAction={(status) => requestAction(applicant, status)}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-          )}
         </>
       )}
 
@@ -564,7 +564,7 @@ function ApplicantCard({
     <article className="rounded-lg border border-border bg-background p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="text-xl font-bold">{applicant.profile.full_name}</h3>
+          <h5 className="text-xl font-bold">{applicant.profile.full_name}</h5>
           <p className="mt-1 text-base text-muted-foreground">
             {statusLabels[applicant.status]}
           </p>

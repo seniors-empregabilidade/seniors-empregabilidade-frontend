@@ -33,7 +33,7 @@ function visitRoleArea(
 ): void {
   const homePaths = {
     candidate: "/candidato",
-    company: "/empresa",
+    company: "/empresa/candidatos",
     administrator: "/administrador",
   };
   stubCurrentUser(userType);
