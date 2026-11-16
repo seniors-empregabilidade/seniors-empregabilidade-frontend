@@ -97,7 +97,7 @@ const GENERIC_LOAD_ERROR =
 
 const loadMessages: Record<string, string> = {
   approved_company_required:
-    "Sua empresa ainda não foi aprovada. Assim que a aprovação sair, o perfil aparece aqui.",
+    "O perfil fica disponível quando o cadastro da sua empresa for aprovado.",
   invalid_access_token:
     "Sua sessão expirou. Entre novamente para ver o perfil.",
 };

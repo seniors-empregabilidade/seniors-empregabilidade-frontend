@@ -510,7 +510,7 @@ describe("Company profile edit modal", () => {
     [
       "the company lost its approval",
       problem(403, "approved_company_required"),
-      "Sua empresa ainda não foi aprovada. Assim que a aprovação sair, você poderá editar o perfil.",
+      "O perfil pode ser editado quando o cadastro da sua empresa for aprovado.",
     ],
     [
       "the saved profile cannot be read",

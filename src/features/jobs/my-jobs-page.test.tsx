@@ -664,7 +664,7 @@ describe("MyJobsPage", () => {
     });
 
     expect(
-      await screen.findByText(/ainda não foi aprovada/),
+      await screen.findByText(/cadastro da sua empresa for aprovado/),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Cadastrar nova vaga" }),

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ApiError } from "@/lib/api-error";
 
 import {
   type AccountDetail,
@@ -25,6 +26,8 @@ import {
   type AccountFilters,
   type AccountStatusValues,
   type AccountSummary,
+  type CompanyDecision,
+  type CompanyRejectionValues,
   type WritableAccountStatus,
   accountDetailQueryOptions,
   accountDisplayName,
@@ -34,9 +37,13 @@ import {
   accountsQueryKey,
   accountsQueryOptions,
   ACCOUNTS_PAGE_SIZE,
+  APPROVAL_REASON_MAX_LENGTH,
   changeAccountStatus,
+  companyDecisionErrorMessage,
+  companyRejectionValuesSchema,
   companyStatusLabels,
   completionLabel,
+  decideCompanyApproval,
   defaultAccountFilters,
   exportAccounts,
   REASON_MAX_LENGTH,
@@ -47,8 +54,18 @@ import {
 const selectClassName =
   "h-12 w-full min-w-0 rounded-md border-[1.5px] border-input bg-background px-3.5 text-lg text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
-export function AccountsPage() {
-  const [filters, setFilters] = useState<AccountFilters>(defaultAccountFilters);
+interface AccountsPageProps {
+  title?: string;
+  description?: string;
+  initialFilters?: AccountFilters;
+}
+
+export function AccountsPage({
+  title = "Cadastros",
+  description = "Consulte profissionais e empresas e bloqueie ou desbloqueie uma conta com justificativa.",
+  initialFilters = defaultAccountFilters,
+}: AccountsPageProps) {
+  const [filters, setFilters] = useState<AccountFilters>(initialFilters);
   const [notice, setNotice] = useState<{ id: number; message: string } | null>(
     null,
   );
@@ -78,11 +95,8 @@ export function AccountsPage() {
     <div className="min-h-full bg-muted p-4 pb-24 md:p-8 md:pb-24">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 flex-col gap-1">
-          <h1 className="text-3xl font-bold text-foreground">Cadastros</h1>
-          <p className="text-lg text-muted-foreground">
-            Consulte profissionais e empresas e bloqueie ou desbloqueie uma
-            conta com justificativa.
-          </p>
+          <h1 className="text-3xl font-bold text-foreground">{title}</h1>
+          <p className="text-lg text-muted-foreground">{description}</p>
         </div>
         <ExportDataButton onExport={() => exportAccounts(filters)} />
       </div>
@@ -386,14 +400,36 @@ function AccountDialog({
       await queryClient.invalidateQueries({ queryKey: accountsQueryKey });
     },
   });
+  const approval = useMutation({
+    mutationFn: (decision: CompanyDecision) =>
+      decideCompanyApproval(account.id, decision),
+    onSuccess: async (_, decision) => {
+      setOpen(false);
+      onChanged(
+        decision.status === "approved"
+          ? `Empresa ${name} aprovada.`
+          : `Cadastro de ${name} recusado.`,
+      );
+      await queryClient.invalidateQueries({ queryKey: accountsQueryKey });
+    },
+    onError: async (error) => {
+      if (error instanceof ApiError && error.code === "company_not_pending") {
+        await queryClient.invalidateQueries({ queryKey: accountsQueryKey });
+      }
+    },
+  });
+  const busy = mutation.isPending || approval.isPending;
   const problem = errors.reason?.message;
 
   return (
     <Dialog
       open={open}
       onOpenChange={(nextOpen) => {
-        if (mutation.isPending) return;
-        if (nextOpen) mutation.reset();
+        if (busy) return;
+        if (nextOpen) {
+          mutation.reset();
+          approval.reset();
+        }
         setOpen(nextOpen);
       }}
     >
@@ -408,10 +444,7 @@ function AccountDialog({
           </Button>
         }
       />
-      <DialogContent
-        className="sm:max-w-2xl"
-        showCloseButton={!mutation.isPending}
-      >
+      <DialogContent className="sm:max-w-2xl" showCloseButton={!busy}>
         <div className="flex max-h-[calc(100dvh-6rem)] min-h-0 flex-col gap-4">
           <DialogHeader className="shrink-0 pr-8">
             <div className="flex items-center gap-4">
@@ -453,6 +486,18 @@ function AccountDialog({
             ) : null}
           </div>
 
+          {account.company_status === "pending" ? (
+            <CompanyApproval
+              busy={busy}
+              error={
+                approval.isError
+                  ? companyDecisionErrorMessage(approval.error)
+                  : null
+              }
+              onDecide={(decision) => approval.mutate(decision)}
+            />
+          ) : null}
+
           <form
             noValidate
             className="flex flex-col gap-4"
@@ -467,7 +512,7 @@ function AccountDialog({
                 id={reasonId}
                 rows={3}
                 maxLength={REASON_MAX_LENGTH}
-                disabled={mutation.isPending}
+                disabled={busy}
                 aria-invalid={Boolean(problem)}
                 aria-describedby={problem ? errorId : undefined}
               />
@@ -493,7 +538,7 @@ function AccountDialog({
               <Button
                 type="submit"
                 variant="outline"
-                disabled={mutation.isPending}
+                disabled={busy}
                 {...(blocking
                   ? {
                       className:
@@ -504,7 +549,7 @@ function AccountDialog({
                 {mutation.isPending ? "Salvando..." : actionLabel}
               </Button>
               <DialogClose
-                disabled={mutation.isPending}
+                disabled={busy}
                 render={
                   <Button type="button" variant="outline">
                     Fechar
@@ -516,6 +561,117 @@ function AccountDialog({
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function CompanyApproval({
+  busy,
+  error,
+  onDecide,
+}: {
+  busy: boolean;
+  error: string | null;
+  onDecide: (decision: CompanyDecision) => void;
+}) {
+  const [rejecting, setRejecting] = useState(false);
+  const reasonId = useId();
+  const errorId = useId();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<CompanyRejectionValues>({
+    resolver: zodResolver(companyRejectionValuesSchema),
+    defaultValues: { reason: "" },
+  });
+  const problem = errors.reason?.message;
+
+  return (
+    <section
+      aria-labelledby={`${reasonId}-title`}
+      className="flex flex-col gap-3 rounded-lg border border-border bg-muted p-4"
+    >
+      <h3
+        id={`${reasonId}-title`}
+        className="text-lg font-semibold text-foreground"
+      >
+        Análise do cadastro
+      </h3>
+      <p className="text-base text-muted-foreground">
+        Esta empresa aguarda aprovação para publicar vagas. A recusa é enviada à
+        empresa com o motivo.
+      </p>
+      {rejecting ? (
+        <form
+          noValidate
+          className="flex flex-col gap-3"
+          onSubmit={(event) => {
+            void handleSubmit(({ reason }) =>
+              onDecide({ status: "rejected", reason }),
+            )(event);
+          }}
+        >
+          <div className="space-y-2">
+            <Label htmlFor={reasonId}>Motivo da recusa</Label>
+            <Textarea
+              {...register("reason")}
+              id={reasonId}
+              rows={3}
+              maxLength={APPROVAL_REASON_MAX_LENGTH}
+              disabled={busy}
+              aria-invalid={Boolean(problem)}
+              aria-describedby={problem ? errorId : undefined}
+            />
+            {problem ? (
+              <p id={errorId} role="alert" className="text-destructive">
+                {problem}
+              </p>
+            ) : null}
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Button
+              type="submit"
+              variant="outline"
+              disabled={busy}
+              className="border-destructive text-destructive hover:bg-accent"
+            >
+              {busy ? "Salvando..." : "Confirmar recusa"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy}
+              onClick={() => setRejecting(false)}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Button
+            type="button"
+            disabled={busy}
+            onClick={() => onDecide({ status: "approved" })}
+          >
+            {busy ? "Salvando..." : "Aprovar empresa"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={busy}
+            onClick={() => setRejecting(true)}
+          >
+            Recusar
+          </Button>
+        </div>
+      )}
+      {error ? (
+        <p role="alert" className="text-lg text-destructive">
+          {error}
+        </p>
+      ) : null}
+    </section>
   );
 }
 

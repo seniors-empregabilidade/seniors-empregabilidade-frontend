@@ -24,6 +24,7 @@ import { Route as AdministradorCandidatosRouteImport } from './routes/administra
 import { Route as AdministradorCapacitacaoRouteImport } from './routes/administrador.capacitacao'
 import { Route as AdministradorCompetenciasRouteImport } from './routes/administrador.competencias'
 import { Route as AdministradorContasRouteImport } from './routes/administrador.contas'
+import { Route as AdministradorEmpresasRouteImport } from './routes/administrador.empresas'
 import { Route as CandidatoIndexRouteImport } from './routes/candidato.index'
 import { Route as CandidatoCandidaturasRouteImport } from './routes/candidato.candidaturas'
 import { Route as CandidatoCapacitacaoRouteImport } from './routes/candidato.capacitacao'
@@ -115,6 +116,11 @@ const AdministradorCompetenciasRoute =
 const AdministradorContasRoute = AdministradorContasRouteImport.update({
   id: '/contas',
   path: '/contas',
+  getParentRoute: () => AdministradorRoute,
+} as any)
+const AdministradorEmpresasRoute = AdministradorEmpresasRouteImport.update({
+  id: '/empresas',
+  path: '/empresas',
   getParentRoute: () => AdministradorRoute,
 } as any)
 const CandidatoIndexRoute = CandidatoIndexRouteImport.update({
@@ -209,6 +215,7 @@ export interface FileRoutesByFullPath {
   '/administrador/capacitacao': typeof AdministradorCapacitacaoRoute
   '/administrador/competencias': typeof AdministradorCompetenciasRoute
   '/administrador/contas': typeof AdministradorContasRoute
+  '/administrador/empresas': typeof AdministradorEmpresasRoute
   '/candidato/candidaturas': typeof CandidatoCandidaturasRoute
   '/candidato/capacitacao': typeof CandidatoCapacitacaoRoute
   '/candidato/como-usar': typeof CandidatoComoUsarRoute
@@ -238,6 +245,7 @@ export interface FileRoutesByTo {
   '/administrador/capacitacao': typeof AdministradorCapacitacaoRoute
   '/administrador/competencias': typeof AdministradorCompetenciasRoute
   '/administrador/contas': typeof AdministradorContasRoute
+  '/administrador/empresas': typeof AdministradorEmpresasRoute
   '/candidato/candidaturas': typeof CandidatoCandidaturasRoute
   '/candidato/capacitacao': typeof CandidatoCapacitacaoRoute
   '/candidato/como-usar': typeof CandidatoComoUsarRoute
@@ -271,6 +279,7 @@ export interface FileRoutesById {
   '/administrador/capacitacao': typeof AdministradorCapacitacaoRoute
   '/administrador/competencias': typeof AdministradorCompetenciasRoute
   '/administrador/contas': typeof AdministradorContasRoute
+  '/administrador/empresas': typeof AdministradorEmpresasRoute
   '/candidato/candidaturas': typeof CandidatoCandidaturasRoute
   '/candidato/capacitacao': typeof CandidatoCapacitacaoRoute
   '/candidato/como-usar': typeof CandidatoComoUsarRoute
@@ -305,6 +314,7 @@ export interface FileRouteTypes {
     | '/administrador/capacitacao'
     | '/administrador/competencias'
     | '/administrador/contas'
+    | '/administrador/empresas'
     | '/candidato/candidaturas'
     | '/candidato/capacitacao'
     | '/candidato/como-usar'
@@ -334,6 +344,7 @@ export interface FileRouteTypes {
     | '/administrador/capacitacao'
     | '/administrador/competencias'
     | '/administrador/contas'
+    | '/administrador/empresas'
     | '/candidato/candidaturas'
     | '/candidato/capacitacao'
     | '/candidato/como-usar'
@@ -366,6 +377,7 @@ export interface FileRouteTypes {
     | '/administrador/capacitacao'
     | '/administrador/competencias'
     | '/administrador/contas'
+    | '/administrador/empresas'
     | '/candidato/candidaturas'
     | '/candidato/capacitacao'
     | '/candidato/como-usar'
@@ -505,6 +517,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdministradorContasRouteImport
       parentRoute: typeof AdministradorRoute
     }
+    '/administrador/empresas': {
+      id: '/administrador/empresas'
+      path: '/empresas'
+      fullPath: '/administrador/empresas'
+      preLoaderRoute: typeof AdministradorEmpresasRouteImport
+      parentRoute: typeof AdministradorRoute
+    }
     '/candidato/': {
       id: '/candidato/'
       path: '/'
@@ -618,6 +637,7 @@ interface AdministradorRouteChildren {
   AdministradorCapacitacaoRoute: typeof AdministradorCapacitacaoRoute
   AdministradorCompetenciasRoute: typeof AdministradorCompetenciasRoute
   AdministradorContasRoute: typeof AdministradorContasRoute
+  AdministradorEmpresasRoute: typeof AdministradorEmpresasRoute
   AdministradorIndexRoute: typeof AdministradorIndexRoute
 }
 
@@ -626,6 +646,7 @@ const AdministradorRouteChildren: AdministradorRouteChildren = {
   AdministradorCapacitacaoRoute: AdministradorCapacitacaoRoute,
   AdministradorCompetenciasRoute: AdministradorCompetenciasRoute,
   AdministradorContasRoute: AdministradorContasRoute,
+  AdministradorEmpresasRoute: AdministradorEmpresasRoute,
   AdministradorIndexRoute: AdministradorIndexRoute,
 }
 

@@ -137,7 +137,7 @@ describe("Sidebar", () => {
     expect(candidates).toHaveAttribute("aria-current", "page");
   });
 
-  it("links administrator pages and keeps the remaining items static", () => {
+  it("links every administrator page", () => {
     render(<Sidebar userType="administrator" />);
 
     expect(screen.getByRole("link", { name: "Candidatos" })).toHaveAttribute(
@@ -160,10 +160,10 @@ describe("Sidebar", () => {
       "href",
       "/administrador/capacitacao",
     );
-    expect(screen.getByText("Empresas")).toBeVisible();
-    expect(
-      screen.queryByRole("link", { name: "Empresas" }),
-    ).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Empresas" })).toHaveAttribute(
+      "href",
+      "/administrador/empresas",
+    );
   });
 
   it("signs out, clears the query cache and navigates back to login", async () => {

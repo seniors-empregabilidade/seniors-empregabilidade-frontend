@@ -36,7 +36,7 @@ const roleNavItems: Record<UserType, NavItem[]> = {
   administrator: [
     { label: "Relatórios", to: "/administrador" },
     { label: "Cadastros", to: "/administrador/contas" },
-    { label: "Empresas" },
+    { label: "Empresas", to: "/administrador/empresas" },
     { label: "Candidatos", to: "/administrador/candidatos" },
     { label: "Competências", to: "/administrador/competencias" },
     { label: "Capacitação", to: "/administrador/capacitacao" },
