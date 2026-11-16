@@ -68,6 +68,7 @@ export function verificationError(error: unknown): {
           fields: ["code"],
         };
       case "too_many_attempts":
+      case "rate_limited":
         return {
           message:
             "Foram feitas muitas tentativas. Aguarde antes de tentar novamente.",

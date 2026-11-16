@@ -50,6 +50,32 @@ describe("registration contract", () => {
         "Não foi possível concluir o cadastro. Tente novamente mais tarde.",
       fields: [],
       offerLogin: false,
+      offerVerification: false,
     });
+  });
+
+  it.each(["rate_limited", "identity_conflict"])(
+    "translates %s without offering a next step",
+    (code) => {
+      const result = registrationError(
+        new ApiError({ message: "PRIVATE", code }),
+      );
+      expect(result.message).not.toContain("PRIVATE");
+      expect(result.message).not.toBe(
+        "Não foi possível concluir o cadastro. Tente novamente mais tarde.",
+      );
+      expect(result.offerVerification).toBe(false);
+    },
+  );
+
+  it("offers the email confirmation for an unconfirmed registration", () => {
+    const result = registrationError(
+      new ApiError({
+        message: "PRIVATE",
+        code: "identity_confirmation_required",
+      }),
+    );
+    expect(result.message).toContain("ainda não foi confirmado");
+    expect(result.offerVerification).toBe(true);
   });
 });

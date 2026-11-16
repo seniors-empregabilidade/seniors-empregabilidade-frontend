@@ -158,6 +158,7 @@ export function ProfessionalRegister({
   const [verificationRequired, setVerificationRequired] = useState(true);
   const [confirmation, setConfirmation] = useState<string | null>(null);
   const [offerLogin, setOfferLogin] = useState(false);
+  const [offerVerification, setOfferVerification] = useState(false);
   const confirmationRef = useRef<HTMLHeadingElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -273,12 +274,15 @@ export function ProfessionalRegister({
   async function onSubmit(data: RegisterFormData) {
     clearErrors("root");
     setOfferLogin(false);
+    setOfferVerification(false);
     let result;
     try {
       result = await registration.mutateAsync(data);
     } catch (error: unknown) {
       const failure = registrationError(error);
       setOfferLogin(failure.offerLogin);
+      setOfferVerification(failure.offerVerification);
+      if (failure.offerVerification) writePendingEmail(data.email);
       setError("root", { type: "server", message: failure.message });
       for (const field of failure.fields) {
         setError(field, { type: "server", message: failure.message });
@@ -353,6 +357,14 @@ export function ProfessionalRegister({
             {offerLogin && (
               <a href="/login" className="flex min-h-11 items-center underline">
                 Entrar na minha conta
+              </a>
+            )}
+            {offerVerification && (
+              <a
+                href="/email-verification"
+                className="flex min-h-11 items-center underline"
+              >
+                Confirmar e-mail
               </a>
             )}
           </div>

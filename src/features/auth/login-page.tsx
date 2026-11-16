@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ApiError } from "@/lib/api-error";
+import { writePendingEmail } from "@/lib/pending-email";
 import { writeAccessToken, writeRefreshToken } from "@/lib/session-storage";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +19,32 @@ import { getRoleHomePath } from "./role-routes";
 import { type LoginFormValues, loginSchema } from "./schema";
 
 const GENERIC_LOGIN_ERROR = "E-mail ou senha incorretos";
+const UNCONFIRMED_EMAIL_ERROR =
+  "Seu e-mail ainda não foi confirmado. Confirme com o código que enviamos para conseguir entrar.";
+const TOO_MANY_ATTEMPTS_ERROR =
+  "Foram feitas muitas tentativas. Aguarde alguns minutos e tente novamente.";
+const UNAVAILABLE_ERROR =
+  "Não foi possível entrar agora. Tente novamente em alguns minutos.";
+
+const loginErrorMessages: Record<string, string> = {
+  identity_confirmation_required: UNCONFIRMED_EMAIL_ERROR,
+  too_many_attempts: TOO_MANY_ATTEMPTS_ERROR,
+  rate_limited: TOO_MANY_ATTEMPTS_ERROR,
+  account_unavailable:
+    "Esta conta não pode entrar na plataforma no momento. Fale com o suporte.",
+  identity_provider_unavailable: UNAVAILABLE_ERROR,
+  authentication_challenge_required: UNAVAILABLE_ERROR,
+};
+
+// Unknown failures keep the generic message so the form never tells which field is wrong.
+function loginErrorMessage(error: unknown): string {
+  if (!(error instanceof ApiError)) return UNAVAILABLE_ERROR;
+  if (error.code && Object.hasOwn(loginErrorMessages, error.code))
+    return loginErrorMessages[error.code] ?? GENERIC_LOGIN_ERROR;
+  if (error.status === undefined || error.status >= 500)
+    return UNAVAILABLE_ERROR;
+  return GENERIC_LOGIN_ERROR;
+}
 
 const fieldClassName = "h-12 px-4 py-3 text-lg md:text-lg";
 
@@ -58,13 +85,15 @@ export function LoginPage() {
       queryClient.clear();
       void router.navigate({ href: getRoleHomePath(session.user_type) });
     },
-    onError: (error) => {
+    onError: (error, values) => {
       if (error instanceof ApiError && applyLoginFieldErrors(error, setError)) {
         setAuthError(null);
         return;
       }
 
-      setAuthError(GENERIC_LOGIN_ERROR);
+      const message = loginErrorMessage(error);
+      if (message === UNCONFIRMED_EMAIL_ERROR) writePendingEmail(values.email);
+      setAuthError(message);
     },
   });
 
@@ -101,6 +130,14 @@ export function LoginPage() {
                 className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-lg text-destructive"
               >
                 {authError}
+                {authError === UNCONFIRMED_EMAIL_ERROR ? (
+                  <>
+                    {" "}
+                    <a href="/email-verification" className={linkClassName}>
+                      Confirmar e-mail
+                    </a>
+                  </>
+                ) : null}
               </p>
             ) : null}
 

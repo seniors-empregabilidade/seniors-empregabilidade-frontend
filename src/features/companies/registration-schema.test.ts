@@ -105,3 +105,11 @@ it.each([
 ])("masks the zip code %s as %s", (typed, expected) => {
   expect(maskZipCode(typed)).toBe(expected);
 });
+
+it("asks to wait when the registration is rate limited", () => {
+  expect(
+    registrationErrorMessage(
+      new ApiError({ message: "Private", code: "rate_limited" }),
+    ),
+  ).toContain("Aguarde");
+});

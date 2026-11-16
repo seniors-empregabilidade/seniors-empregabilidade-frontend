@@ -65,6 +65,12 @@ const messages: Record<string, string> = {
     "O serviço de cadastro está indisponível. Tente novamente mais tarde.",
   too_many_attempts:
     "Foram feitas muitas tentativas. Aguarde antes de tentar novamente.",
+  rate_limited:
+    "Foram feitas muitas tentativas. Aguarde alguns minutos e tente novamente.",
+  identity_confirmation_required:
+    "Este e-mail já começou um cadastro e ainda não foi confirmado. Confirme o e-mail com o código recebido e depois entre na sua conta.",
+  identity_conflict:
+    "Não foi possível vincular este e-mail. Confira seus dados ou entre na sua conta.",
 };
 
 export function registrationError(error: unknown) {
@@ -85,5 +91,6 @@ export function registrationError(error: unknown) {
     fields,
     offerLogin:
       code === "cpf_already_registered" || code === "email_already_registered",
+    offerVerification: code === "identity_confirmation_required",
   };
 }
