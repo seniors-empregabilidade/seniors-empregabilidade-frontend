@@ -24,6 +24,12 @@ describe("fetchJobDetail", () => {
     expect(stub.requests).toHaveLength(1);
   });
 
+  it("encodes the job id in the path", async () => {
+    stub = stubApi(200, jobDetail);
+    await fetchJobDetail("a/b?c", undefined).catch(() => undefined);
+    expect(stub.requests[0]?.url).toBe("/jobs/a%2Fb%3Fc");
+  });
+
   it.each(["closed", "paused", "expired"] as const)(
     "accepts a readable %s job without optional metadata",
     async (status) => {

@@ -17,7 +17,7 @@ export function isApplication(
 }
 
 export const candidateManagementSearchSchema = z.object({
-  jobId: z.uuid().optional(),
+  jobId: z.uuid().optional().catch(undefined),
 });
 
 const applicantDetailSchema = z.object({

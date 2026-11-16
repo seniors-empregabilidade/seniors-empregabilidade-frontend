@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { fetchJobApplicants } from "@/lib/job-applicants";
 import { stubApi, type ApiStub } from "../../../tests/api-stub";
 import {
+  candidateManagementSearchSchema,
   changeApplicationStatus,
   fetchApplicantDetail,
 } from "./job-candidates-api";
@@ -171,4 +172,21 @@ describe("candidate management API boundaries", () => {
       changeApplicationStatus({ applicationId: id, status: "hired" }),
     ).rejects.toMatchObject({ code: "invalid_application_action_response" });
   });
+});
+
+describe("candidateManagementSearchSchema", () => {
+  it("keeps a valid job id", () => {
+    expect(candidateManagementSearchSchema.parse({ jobId: id })).toEqual({
+      jobId: id,
+    });
+  });
+
+  it.each([{ jobId: "abc" }, { jobId: 7 }, { jobId: null }])(
+    "drops an invalid job id instead of breaking the page: %j",
+    (search) => {
+      expect(
+        candidateManagementSearchSchema.parse(search).jobId,
+      ).toBeUndefined();
+    },
+  );
 });

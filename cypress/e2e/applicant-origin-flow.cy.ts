@@ -294,6 +294,14 @@ describe("origin of each professional in a job", () => {
     expectOrigin("Pedro Parcial", "Match automático", "66,67%");
   });
 
+  it("opens the candidates page when the job id in the URL is invalid", () => {
+    fakeApi();
+    visitAs("origin-company", "/empresa/candidatos?jobId=abc");
+
+    cy.contains("h1", "Candidatos por vaga").should("be.visible");
+    cy.contains(JOB_TITLE).should("be.visible");
+  });
+
   it("keeps the origin labels readable on a phone", () => {
     cy.viewport(390, 844);
     fakeApi();

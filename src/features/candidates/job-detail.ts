@@ -14,7 +14,7 @@ export async function fetchJobDetail(
   signal?: AbortSignal,
 ): Promise<JobDetail> {
   const response = await apiClient.get<unknown>(
-    `/jobs/${jobId}`,
+    `/jobs/${encodeURIComponent(jobId)}`,
     signal ? { signal } : {},
   );
   const parsed = jobDetailSchema.safeParse(response.data);
